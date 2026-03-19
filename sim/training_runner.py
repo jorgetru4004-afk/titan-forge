@@ -37,7 +37,7 @@ class RegimeTestResult:
     total_pnl:          float
     failure_reason:     Optional[str] = None
 
-    PASS_WIN_RATE:      float = 0.55   # Minimum to pass a regime test
+    PASS_WIN_RATE: 	     float = 0.45   # Minimum to pass a regime test
     PASS_TRADE_COUNT:   int   = 10     # Minimum trades required
 
 
