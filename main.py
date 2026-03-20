@@ -5,10 +5,9 @@ print("Running multiple protocol cycles to mature all capabilities...")
 
 r = TrainingRunner()
 
-# Run enough cycles to mature all capabilities
 for i in range(200):
     report = r.run_full_protocol()
-    if report.cleared:
+    if report.cleared_for_live:
         print(f"CLEARED after {i+1} cycles!")
         break
     if (i + 1) % 20 == 0:
