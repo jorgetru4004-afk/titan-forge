@@ -53,7 +53,7 @@ class NewsCheckResult:
 _FIRM_BLACKOUT: dict[str, dict] = {
     FirmID.FTMO: {
         "eval_minutes_before": 0, "eval_minutes_after": 0,    # No restriction in eval
-        "fund_minutes_before": 2, "fund_minutes_after": 2,    # Funded: 2 min
+        "fund_minutes_before": 5, "fund_minutes_after": 3,    # Funded: 5 min before, 3 after (research-validated)
         "risk_off_before": 5,   # Implement 5-min Risk-Off protocol
         "can_hold_through": False,
         "impacts": [NewsImpact.HIGH, NewsImpact.EXTREME],

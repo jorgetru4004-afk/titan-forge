@@ -43,6 +43,8 @@ from datetime import date, datetime, time
 from enum import Enum, auto
 from typing import Optional
 
+from behavioral_arch import check_behavioral_consistency, BehavioralConsistencyCheck
+
 logger = logging.getLogger("titan_forge.session_quality")
 
 
@@ -258,20 +260,50 @@ class SessionQualityFilter:
 
     def score_session(
         self,
-        data:              PreSessionData,
-        pacing_threshold:  float = SCORE_GOOD,   # From FORGE-04 PacingEngine
+        data:                   PreSessionData,
+        pacing_threshold:       float = SCORE_GOOD,   # From FORGE-04 PacingEngine
+        # FORGE-56: Behavioral consistency inputs (Bug 6)
+        position_sizes:         Optional[list[float]] = None,
+        entry_hours:            Optional[list[int]]   = None,
+        baseline_win_rate:      float = 0.60,
+        recent_win_rate:        float = 0.60,
     ) -> SessionQualityScore:
         """
         Score the pre-session market conditions.
 
         Args:
-            data:              Complete pre-session market data.
-            pacing_threshold:  Minimum session score from pacing engine.
-                               Ranges from 3.0 (urgent) to 7.0 (ahead of pace).
+            data:               Complete pre-session market data.
+            pacing_threshold:   Minimum session score from pacing engine.
+                                Ranges from 3.0 (urgent) to 7.0 (ahead of pace).
+            position_sizes:     Recent position sizes for FORGE-56 consistency check.
+            entry_hours:        Recent entry hours (0-23) for FORGE-56 check.
+            baseline_win_rate:  Lifetime win rate baseline for drift detection.
+            recent_win_rate:    Recent win rate (last 10-20 trades) for drift detection.
 
         Returns:
             SessionQualityScore with decision and all component scores.
         """
+        # ── FORGE-56: Behavioral Consistency Check (Bug 6) ───────────────────
+        # Auto-runs at session start before any scoring or trading decisions.
+        behavioral_check: BehavioralConsistencyCheck = check_behavioral_consistency(
+            position_sizes=position_sizes or [1.0],
+            entry_hours=entry_hours or [9],
+            baseline_win_rate=baseline_win_rate,
+            recent_win_rate=recent_win_rate,
+        )
+        if behavioral_check.severity == "FLAGGED":
+            logger.warning(
+                "[FORGE-56][%s] Behavioral consistency FLAGGED: %s",
+                data.firm_id, " | ".join(behavioral_check.flags),
+            )
+        elif behavioral_check.severity == "CAUTION":
+            logger.info(
+                "[FORGE-56][%s] Behavioral consistency CAUTION: %s",
+                data.firm_id, " | ".join(behavioral_check.flags),
+            )
+        else:
+            logger.info("[FORGE-56][%s] Behavioral profile: CLEAN.", data.firm_id)
+
         # ── Component scores ─────────────────────────────────────────────────
         s_futures = self._score_futures(data.futures)
         s_vix     = self._score_vix(data.vix)
@@ -291,7 +323,11 @@ class SessionQualityFilter:
 
         # ── Streak penalty (FORGE-15 integration) ─────────────────────────────
         streak_penalty = self._streak_penalty(data.consecutive_losses)
-        composite_with_penalty = max(0.0, composite - streak_penalty)
+
+        # ── Behavioral penalty (FORGE-56 integration) ──────────────────────
+        behavioral_penalty = 0.5 if behavioral_check.severity == "FLAGGED" else 0.0
+
+        composite_with_penalty = max(0.0, composite - streak_penalty - behavioral_penalty)
 
         # ── Threshold calculation ─────────────────────────────────────────────
         # Pacing threshold is already adjusted by FORGE-04.

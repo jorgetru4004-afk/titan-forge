@@ -84,12 +84,18 @@ class TradeRecord:
     strategy_name:      str
     entry_time:         datetime
     exit_time:          datetime
-    pnl:                float          # Realized P&L in dollars
+    pnl:                float          # Realized P&L in dollars (gross)
+    commission:         float          # Commission + spread cost for this trade
     unrealized_peak:    float          # Highest unrealized gain reached (Apex trailing)
     position_size:      float          # Position size at entry
     setup_type:         str            # e.g. "GEX-01", "ICT-02"
     is_win:             bool
     session_date:       date           # Trading day this trade belongs to
+
+    @property
+    def net_pnl(self) -> float:
+        """Net P&L after commission. This is the real money earned."""
+        return self.pnl - self.commission
 
     @property
     def hold_seconds(self) -> float:
@@ -108,6 +114,7 @@ class SessionSnapshot:
     opening_balance:        float      # Balance at start of this session
     opening_equity:         float      # Equity at start of this session
     gross_pnl:              float = 0.0
+    total_commission:       float = 0.0   # Cumulative commissions this session
     trade_count:            int   = 0
     win_count:              int   = 0
     loss_count:             int   = 0
@@ -125,19 +132,21 @@ class SessionSnapshot:
 
     @property
     def net_pnl(self) -> float:
-        return self.gross_pnl
+        """Real money earned — gross P&L minus all commissions.""'''
+        return self.gross_pnl - self.total_commission
 
     def record_trade(self, trade: TradeRecord, qualifying_threshold: Optional[float]) -> None:
         """Update session metrics with a completed trade."""
-        self.gross_pnl  += trade.pnl
+        self.gross_pnl        += trade.pnl
+        self.total_commission += trade.commission
         self.trade_count += 1
         if trade.is_win:
             self.win_count += 1
         else:
             self.loss_count += 1
         self.peak_unrealized = max(self.peak_unrealized, trade.unrealized_peak)
-        # Update qualifying day status
-        if qualifying_threshold is not None and self.gross_pnl >= qualifying_threshold:
+        # Qualifying day uses NET P&L — commissions reduce qualification
+        if qualifying_threshold is not None and self.net_pnl >= qualifying_threshold:
             self.is_qualifying_day = True
 
     def close_session(self, closing_equity: float) -> None:
@@ -211,6 +220,12 @@ class EvaluationSnapshot:
     at_yellow:                  bool     # 50% drawdown used
     at_orange:                  bool     # 70% drawdown used
     at_red:                     bool     # 85% drawdown — close all
+
+    # Daily loss tiered stops (Bug Fix — protects the 5% firm limit)
+    daily_soft_stop:            bool     # 4% daily loss used — half size
+    daily_hard_stop:            bool     # 4.5% daily loss used — no new trades today
+    daily_loss_pct:             float    # Current daily loss as fraction of daily limit
+    daily_size_multiplier:      float    # 1.0 / 0.75 / 0.5 / 0.25 / 0.0 based on level
 
     # Streak / behavioral
     consecutive_losses:         int
@@ -836,10 +851,32 @@ class EvaluationStateMachine:
         min_days     = self._rules.min_trading_days or 0
         days_still_needed = max(0, min_days - trading_days)
 
-        # Thresholds
+        # Thresholds — total drawdown
         at_yellow = dd_pct_used >= 0.50
         at_orange = dd_pct_used >= 0.70
         at_red    = dd_pct_used >= 0.85
+
+        # Daily loss tiered stops (Bug Fix GEN-BUG-04)
+        # Protects the firm's 5% daily limit with a 2-tier buffer
+        # Soft stop at 4% (80% of 5% limit): half size
+        # Hard stop at 4.5% (90% of 5% limit): no new trades
+        if daily_limit and daily_limit != float("inf") and daily_limit > 0:
+            _daily_loss_pct = daily_used / daily_limit  # 0.0–1.0 fraction of daily limit
+        else:
+            _daily_loss_pct = 0.0
+
+        daily_soft_stop   = _daily_loss_pct >= 0.80   # 4% of daily limit used
+        daily_hard_stop   = _daily_loss_pct >= 0.90   # 4.5% of daily limit used
+
+        # Size multiplier based on daily loss level
+        if daily_hard_stop:
+            _daily_size_mult = 0.0   # No new trades
+        elif daily_soft_stop:
+            _daily_size_mult = 0.5   # Half size
+        elif _daily_loss_pct >= 0.60:
+            _daily_size_mult = 0.75  # 3% used: 75% size
+        else:
+            _daily_size_mult = 1.0   # Full size
 
         # Gates
         profit_gate = profit >= self._profit_target_dollars
@@ -889,6 +926,10 @@ class EvaluationStateMachine:
             at_yellow                   = at_yellow,
             at_orange                   = at_orange,
             at_red                      = at_red,
+            daily_soft_stop             = daily_soft_stop,
+            daily_hard_stop             = daily_hard_stop,
+            daily_loss_pct              = round(_daily_loss_pct, 4),
+            daily_size_multiplier       = _daily_size_mult,
             consecutive_losses          = self._consecutive_losses,
             consecutive_wins            = self._consecutive_wins,
             consecutive_profitable_sessions = self._consecutive_profitable_sessions,

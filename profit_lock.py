@@ -180,3 +180,113 @@ def calculate_milestone_trajectory(
             f"At ${avg_daily_profit:,.0f}/day → ~{int(days)} days."
         )
     )
+
+
+# ── BUG FIX: Apex-Specific Aggressive Unrealized P&L Lock ─────────────────────
+# Apex trailing drawdown tracks PEAK UNREALIZED — not just closed P&L.
+# If position goes +$1,000 unrealized then reverses to breakeven:
+# $1,000 is permanently removed from the trailing buffer.
+# Generic profit lock (0.5R → BE) is too slow for Apex.
+# Fix: Apex gets its own aggressive lock at 60% of peak unrealized.
+#
+# Rule: Once unrealized_pnl reaches 60% of peak_unrealized,
+#       move stop to lock in at least 60% of that peak gain.
+
+APEX_LOCK_PCT: float = 0.60          # Lock 60% of peak unrealized
+APEX_LOCK_TRIGGER_R: float = 0.30    # Start locking earlier than generic (0.3R not 0.5R)
+
+@dataclass
+class ApexProfitLockAction:
+    """Apex-specific aggressive profit lock action."""
+    should_lock:        bool
+    lock_price:         Optional[float]   # Price level that locks 60% of peak
+    current_unrealized: float
+    peak_unrealized:    float
+    pct_of_peak:        float            # current / peak (0–1)
+    trailing_buffer_at_risk: float       # How much buffer would be lost if reversed now
+    reason:             str
+    urgency:            str              # "critical" / "normal" / "hold"
+
+
+def calculate_apex_profit_lock(
+    current_unrealized: float,    # Current unrealized P&L in dollars
+    peak_unrealized:    float,    # Highest unrealized reached this trade
+    trailing_buffer:    float,    # Remaining Apex trailing buffer
+    entry_price:        float,
+    current_price:      float,
+    direction:          str,      # "long" / "short"
+    initial_risk:       float,    # Original dollar risk on this trade
+) -> ApexProfitLockAction:
+    """
+    Bug Fix GEN-BUG-05: Apex-specific aggressive unrealized P&L lock.
+
+    The problem: Apex trailing drawdown tracks peak unrealized.
+    If position runs +$1,000 then reverses to $0 — $1,000 is gone from buffer FOREVER.
+    Generic 0.5R lock is too slow — Apex needs the lock EARLIER and HARDER.
+
+    Solution: Once position has moved 0.3R+ in our favor,
+    lock 60% of peak unrealized immediately.
+    If current unrealized drops below 60% of peak — close immediately.
+    """
+    if peak_unrealized <= 0:
+        return ApexProfitLockAction(
+            should_lock=False,
+            lock_price=None,
+            current_unrealized=current_unrealized,
+            peak_unrealized=peak_unrealized,
+            pct_of_peak=0.0,
+            trailing_buffer_at_risk=0.0,
+            reason="No unrealized peak yet. Nothing to lock.",
+            urgency="hold"
+        )
+
+    pct_of_peak = current_unrealized / peak_unrealized if peak_unrealized > 0 else 0.0
+    buffer_at_risk = peak_unrealized - current_unrealized  # What we'd lose if reversed now
+
+    # Critical: unrealized has given back more than 40% of peak
+    # This means we're below the 60% lock threshold — close immediately
+    if pct_of_peak < APEX_LOCK_PCT and peak_unrealized > 0:
+        # Calculate what price locks 60% of peak
+        locked_target = peak_unrealized * APEX_LOCK_PCT
+        if initial_risk > 0:
+            lock_r = locked_target / initial_risk
+            if direction.lower() == "long":
+                lock_price = entry_price + (lock_r * initial_risk)
+            else:
+                lock_price = entry_price - (lock_r * initial_risk)
+        else:
+            lock_price = entry_price
+
+        urgency = "critical" if buffer_at_risk > trailing_buffer * 0.15 else "normal"
+
+        return ApexProfitLockAction(
+            should_lock=True,
+            lock_price=round(lock_price, 4),
+            current_unrealized=current_unrealized,
+            peak_unrealized=peak_unrealized,
+            pct_of_peak=round(pct_of_peak, 3),
+            trailing_buffer_at_risk=round(buffer_at_risk, 2),
+            reason=(
+                f"APEX LOCK: Unrealized {pct_of_peak:.0%} of peak "
+                f"(${current_unrealized:.0f} / ${peak_unrealized:.0f}). "
+                f"Buffer at risk: ${buffer_at_risk:.0f}. "
+                f"Lock price: {lock_price:.4f}. EXIT NOW."
+            ),
+            urgency=urgency
+        )
+
+    # Still above 60% of peak — monitor but no action needed yet
+    return ApexProfitLockAction(
+        should_lock=False,
+        lock_price=None,
+        current_unrealized=current_unrealized,
+        peak_unrealized=peak_unrealized,
+        pct_of_peak=round(pct_of_peak, 3),
+        trailing_buffer_at_risk=round(buffer_at_risk, 2),
+        reason=(
+            f"Apex lock: {pct_of_peak:.0%} of peak unrealized "
+            f"(${current_unrealized:.0f} / ${peak_unrealized:.0f}). "
+            f"Above 60% threshold. Monitoring."
+        ),
+        urgency="hold"
+    )

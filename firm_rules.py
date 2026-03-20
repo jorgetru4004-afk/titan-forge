@@ -213,8 +213,8 @@ FIRM_DATABASE: dict[str, FirmRules] = {
         profit_target_phase2_pct=0.05,      # 5%
         min_trading_days=None,              # No minimum trading days required
         max_calendar_days=None,             # No strict time limit
-        news_blackout_minutes_before=2,     # Funded only: 2-min restriction
-        news_blackout_minutes_after=2,      # Implement 5-min Risk-Off protocol
+        news_blackout_minutes_before=5,     # Funded: 5-min before (research: FOMC volatility at all-time high 2026)
+        news_blackout_minutes_after=3,      # 3-min after — slippage window clears
         news_can_hold_through=False,        # No holding through funded news events
         consistency_rule_pct=None,          # NO CONSISTENCY RULE — biggest advantage
         consistency_applies_to=None,
@@ -540,7 +540,10 @@ FIRM_DAILY_RESET: dict[str, dict] = {
         "timezone":    "Europe/Prague",
         "reset_time":  "00:00",   # Midnight CET
         "offset_from_et_hours": 5,  # Summer; 6 in winter
-        "note": "Midnight CET Prague time. Track carefully during US evening."
+        "note": "Midnight CET Prague time. Track carefully during US evening.",
+        "cet_offset_hours": 1,    # CET = UTC+1 (winter), CEST = UTC+2 (summer)
+        "daily_reset_utc_winter": 23,  # 23:00 UTC = midnight CET (Oct-Mar)
+        "daily_reset_utc_summer": 22,  # 22:00 UTC = midnight CEST (Mar-Oct)
     },
     FirmID.DNA_FUNDED: {
         "timezone":    "UTC",
@@ -1251,3 +1254,70 @@ class MultiFirmRuleEngine:
             "scaling":          f"+{rules.scaling_pct_increase*100:.0f}% every {rules.scaling_trigger_months} months, cap ${rules.scaling_cap_dollars:,.0f}" if rules.has_scaling_plan and rules.scaling_trigger_months else "milestone-based" if rules.has_scaling_plan else "N/A",
             "critical_note":    rules.critical_note[:100] + "...",
         }
+
+
+# ── BUG FIX: CET Timezone Daily Reset ─────────────────────────────────────────
+# FTMO resets the daily loss limit at midnight CET (Prague time).
+# CET = UTC+1 (winter, Oct–Mar), CEST = UTC+2 (summer, Mar–Oct).
+# Bug was: system used UTC midnight, which is 1–2 hours wrong.
+# Fix: always calculate FTMO daily reset in CET/CEST, not UTC.
+
+from datetime import timezone, timedelta
+import time as _time
+
+def get_ftmo_daily_reset_utc(for_date=None) -> "datetime":
+    """
+    Return the UTC datetime of the FTMO daily loss reset for a given date.
+    FTMO resets at midnight CET/CEST (Prague time).
+
+    CET  = UTC+1 (standard time, last Sunday Oct → last Sunday Mar)
+    CEST = UTC+2 (summer time,  last Sunday Mar → last Sunday Oct)
+    """
+    from datetime import datetime, date as date_type
+    if for_date is None:
+        for_date = datetime.now(timezone.utc).date()
+    if isinstance(for_date, date_type) and not isinstance(for_date, datetime):
+        for_date = datetime(for_date.year, for_date.month, for_date.day)
+
+    # Determine if Prague is on summer time (CEST = UTC+2) or winter (CET = UTC+1)
+    # Python's time.localtime uses the system timezone — we calculate manually.
+    # CEST starts: last Sunday of March at 02:00 CET
+    # CEST ends:   last Sunday of October at 03:00 CEST
+
+    def last_sunday(year, month):
+        """Return the date of the last Sunday in a given month."""
+        import calendar
+        last_day = calendar.monthrange(year, month)[1]
+        d = datetime(year, month, last_day)
+        # Walk back to Sunday
+        while d.weekday() != 6:  # 6 = Sunday
+            d = d.replace(day=d.day - 1)
+        return d
+
+    year = for_date.year
+    cest_start = last_sunday(year, 3)   # Last Sunday in March
+    cest_end   = last_sunday(year, 10)  # Last Sunday in October
+
+    is_summer = cest_start <= for_date < cest_end
+    cet_offset = timedelta(hours=2) if is_summer else timedelta(hours=1)
+
+    # Midnight Prague time = 00:00 CET/CEST = (00:00 - offset) UTC
+    midnight_prague = datetime(for_date.year, for_date.month, for_date.day,
+                               0, 0, 0, tzinfo=timezone(cet_offset))
+    reset_utc = midnight_prague.astimezone(timezone.utc)
+    return reset_utc
+
+
+def is_new_ftmo_day(last_reset_utc: "datetime", now_utc: "datetime") -> bool:
+    """
+    Returns True if FTMO's daily loss limit has reset since last_reset_utc.
+    Uses Prague midnight (CET/CEST) not UTC midnight.
+    """
+    today_reset = get_ftmo_daily_reset_utc(now_utc.date())
+    yesterday_reset = get_ftmo_daily_reset_utc(
+        (now_utc - timedelta(days=1)).date()
+    )
+    # A new FTMO day started if we've passed Prague midnight since last check
+    return (last_reset_utc < today_reset <= now_utc or
+            last_reset_utc < yesterday_reset <= now_utc)
+
