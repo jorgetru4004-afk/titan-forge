@@ -40,7 +40,10 @@ from firm_rules import FirmID
 
 logger = logging.getLogger("titan_forge.mt5")
 
-# MetaAPI REST API base URL
+# MetaAPI REST API URLs
+# Provisioning API — account management and status checks
+METAAPI_PROVISIONING = "https://mt-provisioning-api-v1.agiliumtrade.agiliumtrade.ai"
+# Client API — trading operations (price, orders, positions)
 METAAPI_BASE = "https://mt-client-api-v1.london.agiliumtrade.ai"
 
 # MT5 order type constants (mirrors MetaTrader5 values)
@@ -120,8 +123,8 @@ class MT5Adapter(ExecutionAdapter):
         try:
             self._session = aiohttp.ClientSession(headers=self._headers)
 
-            # Verify account exists and is deployed
-            url = f"{METAAPI_BASE}/users/current/accounts/{self.account_id}"
+            # Verify account exists via provisioning API
+            url = f"{METAAPI_PROVISIONING}/users/current/accounts/{self.account_id}"
             async with self._session.get(url) as resp:
                 if resp.status == 200:
                     data  = await resp.json()
@@ -170,7 +173,7 @@ class MT5Adapter(ExecutionAdapter):
                     error="Not connected",
                 )
 
-            url = f"{METAAPI_BASE}/users/current/accounts/{self.account_id}"
+            url = f"{METAAPI_PROVISIONING}/users/current/accounts/{self.account_id}"
             async with self._session.get(url) as resp:
                 latency = (time.time() - start) * 1000
                 if resp.status == 200:
