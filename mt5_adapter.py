@@ -84,7 +84,10 @@ class MT5Adapter(ExecutionAdapter):
         password:    str = "",
         is_demo:     bool = True,
     ):
-        super().__init__(FirmID.FTMO, account_id, is_demo)
+        # Always use METAAPI_ACCOUNT_ID from env — overrides whatever caller passes
+        # (caller may pass FTMO_ACCOUNT_ID which is the MT5 login number, not MetaAPI UUID)
+        metaapi_account_id = os.environ.get("METAAPI_ACCOUNT_ID", account_id)
+        super().__init__(FirmID.FTMO, metaapi_account_id, is_demo)
         self._token      = os.environ.get("METAAPI_TOKEN", "")
         self._session:   Optional[aiohttp.ClientSession] = None
         self._headers    = {
