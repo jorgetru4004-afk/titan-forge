@@ -1,3 +1,2 @@
 aiohttp 
-MetaTrader5
 aiohttp
