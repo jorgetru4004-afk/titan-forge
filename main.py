@@ -621,7 +621,9 @@ async def run_session_cycle(
             consecutive_losses=consecutive_losses,
             recent_loss_pct=max(0.0, -daily_pnl_pct),
         )
-        final_size = max(0.01, round(sizing.final_size, 2))
+        # FTMO OANDA US100.sim min lot = 0.10, step = 0.01
+        raw_size = sizing.final_size
+        final_size = max(0.10, round(raw_size, 2))
         logger.info("[EXECUTE][%s] Sizing: %s", setup_id, sizing.reason)
 
         if signal.stop_price is None:
@@ -630,6 +632,27 @@ async def run_session_cycle(
                 setup_id,
             )
             continue
+
+        # Recalculate TP if missing or equal to SL (degenerate ORB range)
+        rr = config.get("rr_ratio", 2.0)
+        risk = abs(mid - signal.stop_price)
+        if (
+            signal.target_price is None
+            or signal.target_price == 0
+            or abs(signal.target_price - signal.stop_price) < 0.001
+        ):
+            if signal.direction == "long":
+                fixed_tp = mid + risk * rr
+            else:
+                fixed_tp = mid - risk * rr
+            logger.info(
+                "[EXECUTE][%s] TP recalculated: %.5f (entry %.5f ± %.5f × %.1fR)",
+                setup_id, fixed_tp, mid, risk, rr,
+            )
+            # Use corrected TP via local variable
+            take_profit_price = fixed_tp
+        else:
+            take_profit_price = signal.target_price
 
         # ── Place order ──────────────────────────────────────────────────────
         direction = (
@@ -641,7 +664,7 @@ async def run_session_cycle(
             size=final_size,
             order_type=OrderType.MARKET,
             stop_loss=signal.stop_price,
-            take_profit=signal.target_price,
+            take_profit=take_profit_price,
             comment=f"TF|{setup_id}|{opp.conviction_level}",
             magic_number=1000,
         )
@@ -655,7 +678,7 @@ async def run_session_cycle(
             final_size,
             mid,
             signal.stop_price,
-            f"{signal.target_price:.5f}" if signal.target_price else "NONE",
+            f"{take_profit_price:.5f}" if take_profit_price else "NONE",
         )
 
         try:
