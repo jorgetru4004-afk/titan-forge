@@ -3,24 +3,13 @@
 ║                        NEXUS CAPITAL — TITAN FORGE                          ║
 ║                     main.py — EXECUTION ENGINE WIRED                        ║
 ║                                                                              ║
-║  VERSION 3 — Execution engine live. FORGE now scans, scores, and trades.   ║
+║  VERSION 4 — Auto ticker discovery. FORGE now finds the correct             ║
+║  OANDA symbol name automatically on first boot.                             ║
 ║                                                                              ║
-║  WHAT CHANGED (v2 → v3):                                                    ║
-║    - SessionTracker: tracks ORB range + session H/L across 60s cycles      ║
-║    - check_signal_for_setup(): routes setup IDs to signal generators        ║
-║    - run_session_cycle(): score → signal → size → place                    ║
-║    - manage_open_position(): FORGE-64 profit lock on every open position   ║
-║    - Trade results update session_wins/losses/consecutive_losses            ║
-║    - Behavioral FLAGGED now blocks execution (was just logged)              ║
-║                                                                              ║
-║  DATA APPROXIMATIONS (until Polygon/Alpaca feed is integrated):             ║
-║    - ATR:    0.1% of price for indices, 0.05% for forex                    ║
-║    - VWAP:   Session open price                                             ║
-║    - Volume: Assumed confirmed (TODO: real volume from data feed)           ║
-║    - ORB:    Tracked from first cycle, locked after 9:45am ET              ║
-║                                                                              ║
-║  ⚠ INSTRUMENT NAMES: Verify NAS100 exact ticker on your OANDA demo         ║
-║    account — may be "NAS100", "XNASDAQ100", or "US100"                     ║
+║  WHAT CHANGED (v3 → v4):                                                    ║
+║    - SYMBOL_ALIASES: tries multiple OANDA ticker names per instrument       ║
+║    - resolve_instrument(): auto-discovers working ticker, caches result     ║
+║    - No more manual ticker changes needed                                   ║
 ║                                                                              ║
 ║  Jorge Trujillo — Founder | Claude — AI Partner | March 2026               ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
@@ -73,13 +62,142 @@ from execution_base import OrderRequest, OrderDirection, OrderType
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# SYMBOL ALIASES
+# OANDA uses different ticker names depending on the account type.
+# FORGE will try each alias in order and cache the first one that returns
+# a valid price. No manual changes needed.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Keywords to search for each logical instrument
+SYMBOL_KEYWORDS: dict[str, list[str]] = {
+    "NAS100": ["nas", "ustec", "us100", "ndx", "nasdaq", "nq"],
+    "EURUSD": ["eurusd"],
+    "GBPUSD": ["gbpusd"],
+    "USDJPY": ["usdjpy"],
+}
+
+# Cache: logical name → confirmed working ticker
+_resolved_symbols: dict[str, str] = {}
+# Cache: all symbols fetched from MetaAPI
+_all_symbols: list[str] = []
+
+
+async def fetch_all_symbols(account_id: str) -> list[str]:
+    """Query MetaAPI REST API to get all symbols available on this account."""
+    global _all_symbols
+    if _all_symbols:
+        return _all_symbols
+
+    token = os.environ.get("METAAPI_TOKEN", "")
+    if not token:
+        logger.warning("[TICKER] METAAPI_TOKEN not set — cannot fetch symbol list.")
+        return []
+
+    url = (
+        f"https://mt-client-api-v1.agiliumtrade.agiliumtrade.ai"
+        f"/users/current/accounts/{account_id}/symbols"
+    )
+    try:
+        import aiohttp
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                url,
+                headers={"auth-token": token},
+                timeout=aiohttp.ClientTimeout(total=15),
+            ) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    # data is a list of symbol strings or dicts with 'symbol' key
+                    if data and isinstance(data[0], dict):
+                        symbols = [s.get("symbol", "") for s in data]
+                    else:
+                        symbols = [str(s) for s in data]
+                    _all_symbols = [s for s in symbols if s]
+                    logger.info(
+                        "[TICKER] ✅ Fetched %d symbols from MetaAPI. "
+                        "NAS/US100 candidates: %s",
+                        len(_all_symbols),
+                        [s for s in _all_symbols if any(
+                            k in s.lower() for k in ["nas", "us1", "ustec", "ndx"]
+                        )],
+                    )
+                    return _all_symbols
+                else:
+                    body = await resp.text()
+                    logger.warning(
+                        "[TICKER] MetaAPI symbols endpoint returned %d: %s",
+                        resp.status, body[:200],
+                    )
+    except Exception as e:
+        logger.warning("[TICKER] Failed to fetch symbols from MetaAPI: %s", e)
+    return []
+
+
+async def resolve_instrument(adapter: MT5Adapter, logical: str) -> Optional[str]:
+    """
+    Find the working OANDA ticker for a logical instrument name.
+    1. Tries MetaAPI symbol list to find candidate tickers
+    2. Tests each candidate with a live price call
+    3. Caches the winner
+    """
+    if logical in _resolved_symbols:
+        return _resolved_symbols[logical]
+
+    account_id = os.environ.get("FTMO_ACCOUNT_ID", "")
+    keywords = SYMBOL_KEYWORDS.get(logical, [logical.lower()])
+
+    # Step 1: fetch full symbol list and filter candidates
+    all_syms = await fetch_all_symbols(account_id)
+    if all_syms:
+        candidates = [
+            s for s in all_syms
+            if any(k in s.lower() for k in keywords)
+        ]
+        if not candidates:
+            # Fallback: try all symbols for the keywords
+            candidates = [logical]
+        logger.info(
+            "[TICKER] Resolving '%s' — %d candidates from MetaAPI: %s",
+            logical, len(candidates), candidates,
+        )
+    else:
+        # No symbol list available — try hardcoded fallbacks
+        candidates = {
+            "NAS100": ["NAS100", "USTEC", "US100", "NAS100.cash",
+                       "NAS100_USD", "XNASDAQ100", "NDX100", "US100.cash"],
+        }.get(logical, [logical])
+        logger.info(
+            "[TICKER] No MetaAPI symbol list — trying %d hardcoded aliases for '%s'",
+            len(candidates), logical,
+        )
+
+    # Step 2: test each candidate with a live price
+    for alias in candidates:
+        try:
+            bid, ask = await adapter.get_current_price(alias)
+            if bid > 0 and ask > 0:
+                logger.info(
+                    "[TICKER] ✅ '%s' resolved → '%s' (bid=%.5f ask=%.5f)",
+                    logical, alias, bid, ask,
+                )
+                _resolved_symbols[logical] = alias
+                return alias
+        except Exception:
+            pass
+
+    logger.warning("[TICKER] ⚠ Could not resolve '%s'. Candidates tried: %s",
+                   logical, candidates)
+    return None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # SETUP CONFIGURATION
 # Maps session quality setup IDs → instruments + signal generators + stats
 # ─────────────────────────────────────────────────────────────────────────────
 
 SETUP_CONFIG: dict[str, dict] = {
     "ICT-01": {
-        "instrument":     "NAS100",     # ⚠ Verify exact name on OANDA demo
+        "instrument":     "NAS100",     # logical name — auto-resolved at runtime
         "signal_fn":      "vwap_reclaim",
         "win_rate":       0.62,
         "avg_rr":         2.0,
@@ -123,8 +241,6 @@ SETUP_CONFIG: dict[str, dict] = {
 
 # ─────────────────────────────────────────────────────────────────────────────
 # SESSION TRACKER
-# Maintains per-instrument price history across the 60-second cycles.
-# Eliminates the need for a live data feed for ORB range + session H/L.
 # ─────────────────────────────────────────────────────────────────────────────
 
 @dataclass
@@ -133,17 +249,12 @@ class InstrumentSession:
     open_price:   Optional[float] = None
     session_high: Optional[float] = None
     session_low:  Optional[float] = None
-    orb_high:     Optional[float] = None   # Locked at 9:45am ET
+    orb_high:     Optional[float] = None
     orb_low:      Optional[float] = None
     orb_locked:   bool = False
 
 
 class SessionTracker:
-    """
-    Tracks intraday data across cycles using prices from the adapter.
-    Resets automatically at session open (when open_price is None).
-    """
-
     def __init__(self) -> None:
         self._data: dict[str, InstrumentSession] = {}
 
@@ -158,14 +269,11 @@ class SessionTracker:
 
         s = self._data[instrument]
 
-        # Update running high/low
         if s.session_high is None or mid > s.session_high:
             s.session_high = mid
         if s.session_low is None or mid < s.session_low:
             s.session_low = mid
 
-        # Lock ORB range once after 9:45am ET
-        # TODO: proper DST handling — currently hardcodes UTC-5
         now_et = now_utc - timedelta(hours=5)
         if not s.orb_locked and now_et.time() >= dtime(9, 45):
             s.orb_high = s.session_high
@@ -179,14 +287,13 @@ class SessionTracker:
         return s
 
     def reset(self) -> None:
-        """Reset all sessions (call at start of new trading day)."""
         self._data.clear()
+        _resolved_symbols.clear()   # also clear ticker cache on new day
         logger.info("[SESSION] Session tracker reset for new day.")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # SIGNAL DISPATCH
-# Routes setup_id → correct FORGE signal generator with best available data.
 # ─────────────────────────────────────────────────────────────────────────────
 
 def check_signal_for_setup(
@@ -197,24 +304,16 @@ def check_signal_for_setup(
     now_et_time: dtime,
     sq_score:    SessionQualityScore,
 ) -> Signal:
-    """
-    Dispatch setup_id to the correct signal generator.
-    Uses session-tracked data for ORB range and VWAP approximation.
-    Volume is approximated until Polygon/Alpaca feed is integrated.
-    """
     fn  = config.get("signal_fn", "")
-    # ATR approximation: 0.1% for indices, 0.05% for forex
     is_forex = config["instrument"] in ("EURUSD", "GBPUSD", "USDJPY", "AUDUSD",
                                         "USDCHF", "USDCAD", "NZDUSD")
     atr = mid * (0.0005 if is_forex else 0.001)
 
-    # ── Opening Range Breakout (ORD-02) ───────────────────────────────────────
     if fn == "orb":
         if session.orb_locked and session.orb_high and session.orb_low:
             rh = session.orb_high
             rl = session.orb_low
         else:
-            # ORB not yet locked — return PENDING so we wait
             rh = mid + atr * 5
             rl = mid - atr * 5
 
@@ -223,15 +322,13 @@ def check_signal_for_setup(
             range_high=rh,
             range_low=rl,
             current_time_et=now_et_time,
-            current_volume=2.5,    # TODO: real volume from Polygon/Alpaca
+            current_volume=2.5,
             avg_volume=1.0,
             atr=atr,
         )
 
-    # ── VWAP Reclaim (ICT-01) ─────────────────────────────────────────────────
     elif fn == "vwap_reclaim":
         vwap   = session.open_price or mid
-        # Dip detected if session_low traded 0.1% below session open
         dipped = (
             session.session_low is not None and
             session.session_low < vwap * 0.999
@@ -241,18 +338,15 @@ def check_signal_for_setup(
             prior_close=session.open_price or mid,
             vwap=vwap,
             dipped_below=dipped,
-            volume_at_reclaim=1.5,  # TODO: real volume
+            volume_at_reclaim=1.5,
             avg_volume=1.0,
             atr=atr,
         )
 
-    # ── Trend Day Momentum (VOL-03) ───────────────────────────────────────────
     elif fn == "trend_momentum":
-        # Proxy GEX negative: session quality above 6.5 suggests trending day
         gex_neg   = sq_score.composite_score >= 6.5
         vwap      = session.open_price or mid
         direction = "bullish" if mid > vwap else "bearish"
-        # First pullback: price pulled back from session high by at least 0.05%
         is_first_pb = (
             session.session_high is not None and
             mid < session.session_high * 0.9995
@@ -266,9 +360,7 @@ def check_signal_for_setup(
             is_first_pullback=is_first_pb,
         )
 
-    # ── Mean Reversion (VOL-05) ───────────────────────────────────────────────
     elif fn == "mean_reversion":
-        # Proxy GEX positive: session quality below 7.0 suggests ranging
         gex_pos = sq_score.composite_score < 7.0
         vwap    = session.open_price or mid
         return check_mean_reversion(
@@ -280,7 +372,6 @@ def check_signal_for_setup(
             atr=atr,
         )
 
-    # ── London Session Forex (SES-01) ─────────────────────────────────────────
     elif fn == "london_forex":
         return check_london_session_forex(
             pair=config["instrument"],
@@ -288,7 +379,6 @@ def check_signal_for_setup(
             is_evaluation=True,
         )
 
-    # ── Unknown ───────────────────────────────────────────────────────────────
     else:
         return Signal(
             setup_id, SignalVerdict.PENDING, None, None, None, None, 0.0,
@@ -298,16 +388,9 @@ def check_signal_for_setup(
 
 # ─────────────────────────────────────────────────────────────────────────────
 # PROFIT LOCK — FORGE-64
-# Runs on every open position each cycle.
 # ─────────────────────────────────────────────────────────────────────────────
 
 async def manage_open_position(adapter: MT5Adapter, pos, account) -> None:
-    """
-    FORGE-64: Three-stage profit lock.
-      0.5R → Move SL to breakeven
-      1.5R → Close 30% (partial exit)
-      3.0R → Trail SL to 2R level
-    """
     if pos.stop_loss is None or pos.entry_price is None:
         return
 
@@ -327,7 +410,6 @@ async def manage_open_position(adapter: MT5Adapter, pos, account) -> None:
         pos.position_id, pos.instrument, pos.current_price, r, pos.stop_loss,
     )
 
-    # ── Stage 1: 0.5R → Breakeven ─────────────────────────────────────────────
     if r >= 0.5:
         be = pos.entry_price
         sl_needs_update = (is_long and pos.stop_loss < be) or (not is_long and pos.stop_loss > be)
@@ -339,7 +421,6 @@ async def manage_open_position(adapter: MT5Adapter, pos, account) -> None:
             except Exception as e:
                 logger.error("[FORGE-64] modify_position error: %s", e)
 
-    # ── Stage 2: 1.5R → Close 30% ─────────────────────────────────────────────
     if r >= 1.5:
         partial_size = round(pos.size * 0.30, 2)
         if partial_size >= 0.01:
@@ -350,7 +431,6 @@ async def manage_open_position(adapter: MT5Adapter, pos, account) -> None:
             except Exception as e:
                 logger.error("[FORGE-64] close_position error: %s", e)
 
-    # ── Stage 3: 3R → Trail SL to 2R ─────────────────────────────────────────
     if r >= 3.0:
         trail_sl = (
             pos.entry_price + (risk_per_unit * 2.0) if is_long
@@ -368,8 +448,6 @@ async def manage_open_position(adapter: MT5Adapter, pos, account) -> None:
 
 # ─────────────────────────────────────────────────────────────────────────────
 # SESSION EXECUTION CYCLE
-# Replaces the "Awaiting execution engine wire-up" placeholder.
-# Called once per 60-second loop iteration.
 # ─────────────────────────────────────────────────────────────────────────────
 
 async def run_session_cycle(
@@ -380,28 +458,21 @@ async def run_session_cycle(
     consecutive_losses: int,
     daily_pnl_pct:      float,
 ) -> list:
-    """
-    One complete execution cycle:
-      1. FORGE-64: Profit lock on all open positions
-      2. P-07: Enforce max 2 simultaneous positions
-      3. For each approved setup: score → signal → size → place
-    Returns list of OrderResult from any orders placed this cycle.
-    """
     results = []
     firm_id = os.environ.get("FTMO_ACCOUNT_ID", "FTMO")
 
     now_utc     = datetime.now(timezone.utc)
-    now_et      = now_utc - timedelta(hours=5)   # TODO: proper DST
+    now_et      = now_utc - timedelta(hours=5)
     now_et_time = now_et.time()
 
-    # ── 1. PROFIT LOCK — manage every open position ────────────────────────────
+    # ── 1. PROFIT LOCK ──────────────────────────────────────────────────────
     for pos in account.open_positions:
         try:
             await manage_open_position(adapter, pos, account)
         except Exception as e:
             logger.error("[FORGE-64] Error on position %s: %s", pos.position_id, e)
 
-    # ── 2. POSITION LIMIT — P-07 max 2 simultaneous ────────────────────────────
+    # ── 2. POSITION LIMIT ───────────────────────────────────────────────────
     current_positions = account.open_position_count
     if current_positions >= 2:
         logger.info(
@@ -410,11 +481,11 @@ async def run_session_cycle(
         )
         return results
 
-    # ── 3. ACCOUNT METRICS ─────────────────────────────────────────────────────
+    # ── 3. ACCOUNT METRICS ──────────────────────────────────────────────────
     drawdown_pct_used   = max(0.0, min(1.0, -daily_pnl_pct / 0.05))
-    profit_pct_complete = 0.0   # TODO: integrate evaluation_state.py
+    profit_pct_complete = 0.0
 
-    # ── 4. SCAN SETUPS ─────────────────────────────────────────────────────────
+    # ── 4. SCAN SETUPS ──────────────────────────────────────────────────────
     for setup_id in sq_score.best_setups_for_today:
         if current_positions >= 2:
             break
@@ -424,9 +495,9 @@ async def run_session_cycle(
             logger.debug("[EXECUTE][%s] No config found — skipping.", setup_id)
             continue
 
-        instrument = config["instrument"]
+        logical_instrument = config["instrument"]
 
-        # ── Opportunity score ─────────────────────────────────────────────
+        # ── Opportunity score ────────────────────────────────────────────────
         opp = score_opportunity(
             setup_id=setup_id,
             firm_id=firm_id,
@@ -447,7 +518,16 @@ async def run_session_cycle(
 
         logger.info("[EXECUTE][%s] ✓ Opportunity approved: %s", setup_id, opp.reason)
 
-        # ── Fetch live price ──────────────────────────────────────────────
+        # ── Resolve actual ticker ────────────────────────────────────────────
+        instrument = await resolve_instrument(adapter, logical_instrument)
+        if instrument is None:
+            logger.warning(
+                "[EXECUTE][%s] ⚠ No working ticker found for '%s' — skipping.",
+                setup_id, logical_instrument,
+            )
+            continue
+
+        # ── Fetch live price ─────────────────────────────────────────────────
         try:
             bid, ask = await adapter.get_current_price(instrument)
             if bid <= 0 or ask <= 0:
@@ -462,10 +542,10 @@ async def run_session_cycle(
 
         mid = (bid + ask) / 2.0
 
-        # ── Update session tracker ────────────────────────────────────────
+        # ── Update session tracker ───────────────────────────────────────────
         session = session_tracker.update(instrument, mid, now_utc)
 
-        # ── Check signal ──────────────────────────────────────────────────
+        # ── Check signal ─────────────────────────────────────────────────────
         signal = check_signal_for_setup(
             setup_id=setup_id,
             config=config,
@@ -484,7 +564,7 @@ async def run_session_cycle(
 
         logger.info("[EXECUTE][%s] ✅ Signal CONFIRMED: %s", setup_id, signal.reason)
 
-        # ── Dynamic position sizing ────────────────────────────────────────
+        # ── Dynamic position sizing ──────────────────────────────────────────
         base_size = config["base_size"] * opp.size_multiplier
         sizing    = calculate_dynamic_size(
             base_size=base_size,
@@ -496,16 +576,14 @@ async def run_session_cycle(
         final_size = max(0.01, round(sizing.final_size, 2))
         logger.info("[EXECUTE][%s] Sizing: %s", setup_id, sizing.reason)
 
-        # ── Stop loss is required (FORGE-11) ──────────────────────────────
         if signal.stop_price is None:
             logger.warning(
-                "[EXECUTE][%s] No stop loss provided by signal — skipping. "
-                "FORGE-11 requires SL on every order.",
+                "[EXECUTE][%s] No stop loss provided by signal — skipping.",
                 setup_id,
             )
             continue
 
-        # ── Place order ────────────────────────────────────────────────────
+        # ── Place order ──────────────────────────────────────────────────────
         direction = (
             OrderDirection.LONG if signal.direction == "long" else OrderDirection.SHORT
         )
@@ -558,7 +636,6 @@ async def run_session_cycle(
 # ─────────────────────────────────────────────────────────────────────────────
 
 def run_simulation_training() -> bool:
-    """Run simulation cycles until FORGE clears for live trading."""
     logger.info("TITAN FORGE — Starting simulation training...")
     logger.info("Running protocol cycles to mature all capabilities...")
 
@@ -585,7 +662,6 @@ def run_simulation_training() -> bool:
 # ─────────────────────────────────────────────────────────────────────────────
 
 def is_market_session_active() -> bool:
-    """Returns True if any tradeable session is currently active."""
     now_utc = datetime.now(timezone.utc)
     if now_utc.weekday() >= 5:
         return False
@@ -594,7 +670,6 @@ def is_market_session_active() -> bool:
 
 
 def seconds_until_next_session() -> int:
-    """Seconds until the next session opens."""
     now_utc = datetime.now(timezone.utc)
     if now_utc.weekday() >= 5:
         days = 7 - now_utc.weekday()
@@ -615,11 +690,6 @@ def seconds_until_next_session() -> int:
 # ─────────────────────────────────────────────────────────────────────────────
 
 async def live_trading_loop(adapter: MT5Adapter) -> None:
-    """
-    Continuous live trading loop. Never returns.
-    Each 60-second cycle: health → account → behavioral → session quality
-                          → execution engine → sleep.
-    """
     sqf             = SessionQualityFilter()
     session_tracker = SessionTracker()
 
@@ -637,7 +707,6 @@ async def live_trading_loop(adapter: MT5Adapter) -> None:
         cycle += 1
 
         try:
-            # ── RESET SESSION TRACKER ON NEW DAY ──────────────────────────────
             today = date.today()
             if today != last_session_date:
                 session_tracker.reset()
@@ -647,7 +716,6 @@ async def live_trading_loop(adapter: MT5Adapter) -> None:
                 last_session_date  = today
                 logger.info("[Cycle %d] New session day — trackers reset.", cycle)
 
-            # ── WAIT FOR MARKET SESSION ────────────────────────────────────────
             if not is_market_session_active():
                 wait_seconds = seconds_until_next_session()
                 logger.info(
@@ -657,7 +725,6 @@ async def live_trading_loop(adapter: MT5Adapter) -> None:
                 await asyncio.sleep(wait_seconds)
                 continue
 
-            # ── HEALTH CHECK ───────────────────────────────────────────────────
             health = await adapter.health_check()
             if not health.is_healthy:
                 logger.warning(
@@ -667,7 +734,6 @@ async def live_trading_loop(adapter: MT5Adapter) -> None:
                 await asyncio.sleep(30)
                 continue
 
-            # ── ACCOUNT STATE ──────────────────────────────────────────────────
             account = await adapter.get_account_state()
             logger.info(
                 f"[Cycle {cycle}] Account: "
@@ -682,7 +748,6 @@ async def live_trading_loop(adapter: MT5Adapter) -> None:
                 if account.balance > 0 else 0.0
             )
 
-            # ── BEHAVIORAL CONSISTENCY CHECK — FORGE-56 ────────────────────────
             now_hour = datetime.now(timezone.utc).hour
             recent_entry_hours.append(now_hour)
             recent_entry_hours = recent_entry_hours[-20:]
@@ -715,7 +780,6 @@ async def live_trading_loop(adapter: MT5Adapter) -> None:
             else:
                 logger.info(f"[Cycle {cycle}][FORGE-56] Behavioral: CLEAN.")
 
-            # ── SESSION QUALITY CHECK — FORGE-08 ──────────────────────────────
             pre_session = build_pre_session_data(
                 session_date=date.today(),
                 firm_id=os.environ.get("FTMO_ACCOUNT_ID", "FTMO"),
@@ -753,7 +817,6 @@ async def live_trading_loop(adapter: MT5Adapter) -> None:
                 f"Best setups={sq_score.best_setups_for_today}"
             )
 
-            # ── EXECUTION ENGINE ───────────────────────────────────────────────
             trade_results = await run_session_cycle(
                 adapter=adapter,
                 account=account,
@@ -763,7 +826,6 @@ async def live_trading_loop(adapter: MT5Adapter) -> None:
                 daily_pnl_pct=daily_pnl_pct,
             )
 
-            # ── UPDATE SESSION STATS ───────────────────────────────────────────
             for result in trade_results:
                 if result.success:
                     session_wins       += 1
@@ -774,7 +836,6 @@ async def live_trading_loop(adapter: MT5Adapter) -> None:
                     session_losses     += 1
                     consecutive_losses += 1
 
-            # ── SLEEP UNTIL NEXT CYCLE ─────────────────────────────────────────
             await asyncio.sleep(60)
 
         except asyncio.CancelledError:
@@ -796,13 +857,6 @@ async def live_trading_loop(adapter: MT5Adapter) -> None:
 # ─────────────────────────────────────────────────────────────────────────────
 
 async def main() -> None:
-    """
-    1. Simulation training until cleared.
-    2. Connect to FTMO via MT5Adapter.
-    3. Enter live trading loop — never exits.
-    """
-
-    # ── STEP 1: SIMULATION ────────────────────────────────────────────────────
     cleared = run_simulation_training()
     if not cleared:
         logger.error(
@@ -812,7 +866,6 @@ async def main() -> None:
         await asyncio.sleep(600)
         return
 
-    # ── STEP 2: CONNECT ───────────────────────────────────────────────────────
     logger.info("TITAN FORGE — Simulation cleared. Connecting to FTMO MT5...")
 
     adapter = MT5Adapter(
@@ -837,11 +890,16 @@ async def main() -> None:
         f"Account: {adapter.account_id}."
     )
 
-    # ── STEP 3: LIVE LOOP — NEVER EXITS ──────────────────────────────────────
+    # ── SYMBOL DISCOVERY ON BOOT ──────────────────────────────────────────
+    logger.info("[TICKER] Fetching full symbol list from MetaAPI...")
+    syms = await fetch_all_symbols(adapter.account_id)
+    if syms:
+        logger.info("[TICKER] All available symbols (%d total): %s", len(syms), syms)
+    else:
+        logger.warning("[TICKER] Could not fetch symbol list — will try hardcoded aliases.")
+
     await live_trading_loop(adapter)
 
 
 if __name__ == "__main__":
     asyncio.run(main())
-# v5-force 
-# v5-force 
