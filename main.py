@@ -3,7 +3,7 @@
 ║                        NEXUS CAPITAL — TITAN FORGE                          ║
 ║                     main.py — EXECUTION ENGINE WIRED                        ║
 ║                                                                              ║
-║  VERSION 11 — Min stop distance enforcement. FORGE now finds the correct             ║
+║  VERSION 12 — Signal cooldown + min stop distance. FORGE now finds the correct             ║
 ║  OANDA symbol name automatically on first boot.                             ║
 ║                                                                              ║
 ║  WHAT CHANGED (v3 → v4):                                                    ║
@@ -305,6 +305,15 @@ class InstrumentSession:
 class SessionTracker:
     def __init__(self) -> None:
         self._data: dict[str, InstrumentSession] = {}
+        self._traded_setups: set[str] = set()   # setup_ids fired this session
+
+    def has_traded(self, setup_id: str) -> bool:
+        """True if this setup already fired a trade today."""
+        return setup_id in self._traded_setups
+
+    def mark_traded(self, setup_id: str) -> None:
+        """Record that this setup fired a trade today."""
+        self._traded_setups.add(setup_id)
 
     def update(self, instrument: str, mid: float, now_utc: datetime) -> InstrumentSession:
         if instrument not in self._data:
@@ -336,6 +345,7 @@ class SessionTracker:
 
     def reset(self) -> None:
         self._data.clear()
+        self._traded_setups.clear()
         _resolved_symbols.clear()   # also clear ticker cache on new day
         logger.info("[SESSION] Session tracker reset for new day.")
 
@@ -564,6 +574,14 @@ async def run_session_cycle(
             logger.info("[EXECUTE][%s] ✗ Opportunity rejected: %s", setup_id, opp.reason)
             continue
 
+        # ── Signal cooldown: one trade per setup per session ────────────────
+        if session_tracker.has_traded(setup_id):
+            logger.info(
+                "[EXECUTE][%s] Already traded this session — skipping.",
+                setup_id,
+            )
+            continue
+
         logger.info("[EXECUTE][%s] ✓ Opportunity approved: %s", setup_id, opp.reason)
 
         # ── Resolve actual ticker ────────────────────────────────────────────
@@ -706,6 +724,7 @@ async def run_session_cycle(
 
             if result.success:
                 current_positions += 1
+                session_tracker.mark_traded(setup_id)   # cooldown: once per session
                 logger.info(
                     "[EXECUTE][%s] ✅ FILLED: order_id=%s fill=%.5f",
                     setup_id, result.order_id, result.fill_price or mid,
