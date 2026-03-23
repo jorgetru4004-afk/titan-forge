@@ -20,7 +20,7 @@
 ║    - ORB:    Tracked from first cycle, locked after 9:45am ET              ║
 ║                                                                              ║
 ║  ⚠ INSTRUMENT NAMES: Verify NAS100 exact ticker on your OANDA demo         ║
-║    account — may be "US100", "XNASDAQ100", or "US100"                     ║
+║    account — may be "NAS100", "XNASDAQ100", or "US100"                     ║
 ║                                                                              ║
 ║  Jorge Trujillo — Founder | Claude — AI Partner | March 2026               ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
@@ -79,7 +79,7 @@ from execution_base import OrderRequest, OrderDirection, OrderType
 
 SETUP_CONFIG: dict[str, dict] = {
     "ICT-01": {
-        "instrument":     "US100",     # ⚠ Verify exact name on OANDA demo
+        "instrument":     "NAS100",     # ⚠ Verify exact name on OANDA demo
         "signal_fn":      "vwap_reclaim",
         "win_rate":       0.62,
         "avg_rr":         2.0,
@@ -87,7 +87,7 @@ SETUP_CONFIG: dict[str, dict] = {
         "base_size":      0.01,
     },
     "ORD-02": {
-        "instrument":     "US100",
+        "instrument":     "NAS100",
         "signal_fn":      "orb",
         "win_rate":       0.68,
         "avg_rr":         2.2,
@@ -95,7 +95,7 @@ SETUP_CONFIG: dict[str, dict] = {
         "base_size":      0.01,
     },
     "VOL-03": {
-        "instrument":     "US100",
+        "instrument":     "NAS100",
         "signal_fn":      "trend_momentum",
         "win_rate":       0.58,
         "avg_rr":         2.5,
@@ -103,7 +103,7 @@ SETUP_CONFIG: dict[str, dict] = {
         "base_size":      0.01,
     },
     "VOL-05": {
-        "instrument":     "US100",
+        "instrument":     "NAS100",
         "signal_fn":      "mean_reversion",
         "win_rate":       0.65,
         "avg_rr":         1.8,
