@@ -3,7 +3,7 @@
 ║                        NEXUS CAPITAL — TITAN FORGE                          ║
 ║                     main.py — EXECUTION ENGINE WIRED                        ║
 ║                                                                              ║
-║  VERSION 4 — Auto ticker discovery. FORGE now finds the correct             ║
+║  VERSION 11 — Min stop distance enforcement. FORGE now finds the correct             ║
 ║  OANDA symbol name automatically on first boot.                             ║
 ║                                                                              ║
 ║  WHAT CHANGED (v3 → v4):                                                    ║
@@ -632,6 +632,25 @@ async def run_session_cycle(
                 setup_id,
             )
             continue
+
+        # ── Minimum stop distance enforcement ───────────────────────────────
+        # OANDA FTMO rejects orders where SL is too close to entry.
+        # US100.sim requires >= 5 points. Forex requires >= 0.0005 (5 pips).
+        is_forex_inst = config["instrument"] in (
+            "EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCHF", "USDCAD", "NZDUSD"
+        )
+        MIN_STOP_DISTANCE = 0.0005 if is_forex_inst else 5.0
+
+        raw_sl_distance = abs(mid - signal.stop_price)
+        if raw_sl_distance < MIN_STOP_DISTANCE:
+            logger.info(
+                "[EXECUTE][%s] SL distance %.5f < min %.5f — expanding to minimum.",
+                setup_id, raw_sl_distance, MIN_STOP_DISTANCE,
+            )
+            if signal.direction == "long":
+                signal.stop_price = mid - MIN_STOP_DISTANCE
+            else:
+                signal.stop_price = mid + MIN_STOP_DISTANCE
 
         # Recalculate TP if missing or equal to SL (degenerate ORB range)
         rr = config.get("rr_ratio", 2.0)
