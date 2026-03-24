@@ -2028,9 +2028,13 @@ async def run_session_cycle(
         synthetic_atr = mid * (0.0005 if is_forex_inst else 0.001)
         atr = session_tracker.get_real_atr(instrument, fallback=synthetic_atr)
 
-        # ── ATR completion filter — don't trade exhausted moves
-        # Research: 72% of NQ days respect daily ATR; price extended beyond 85% rarely continues
-        if not is_forex_inst and session.session_high and session.session_low and atr > 0:
+        # ── ATR completion filter — RTH ONLY (9:30 ET onward)
+        # Overnight/pre-market moves must NOT consume the RTH ATR budget
+        # Before 9:30 ET: skip this filter — overnight range is irrelevant
+        is_rth = now_et_time >= dtime(9, 30)
+        atr_consumed = 0.0
+        if not is_forex_inst and is_rth and session.session_high and session.session_low and atr > 0:
+            # Only count RTH range — use session data only after market opens
             session_range = session.session_high - session.session_low
             atr_consumed  = session_range / atr
             if atr_consumed > 0.85 and signal_fn not in ("noon_curve",):
@@ -2045,7 +2049,11 @@ async def run_session_cycle(
 
         # ── IB direction filter — trade with the IB break, not against it
         # Research: NQ IB single break probability 82.17% — second break is rare
-        if not is_forex_inst and session.ib_locked and session.ib_high and session.ib_low:
+        # Only apply when IB has a legitimate range (not degenerate <5pts)
+        ib_high_broken = False
+        ib_low_broken  = False
+        ib_range = (session.ib_high - session.ib_low) if (session.ib_high and session.ib_low) else 0
+        if not is_forex_inst and session.ib_locked and ib_range >= 5.0:
             ib_high_broken = mid > session.ib_high
             ib_low_broken  = mid < session.ib_low
             if signal_fn in ("orb", "fair_value_gap", "liquidity_sweep"):
