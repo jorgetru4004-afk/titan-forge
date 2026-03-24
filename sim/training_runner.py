@@ -4,87 +4,77 @@
 ║              sim/training_runner.py — Section 12 Simulation Engine          ║
 ║                                                                              ║
 ║  TRAINING RUNNER — Multi-Regime Training Management                         ║
-║  Section 12: "training_runner.py — multi-regime training management"        ║
 ║                                                                              ║
-║  Manages the full 1-week simulation training protocol:                      ║
+║  Manages the full simulation training protocol:                             ║
 ║    Phase 1: 4 historical regime tests (P-12)                                ║
 ║    Phase 2: Full training run (2021–2024)                                   ║
 ║    Phase 3: Overfitting validation (2024–2025 out-of-sample)                ║
 ║    Phase 4: Capability maturity gate (all 6 must mature)                    ║
 ║    Phase 5: Pre-launch clearance                                            ║
+║                                                                              ║
+║  Per-regime minimum trade counts (P-12):                                    ║
+║    trending_bull:   8  (3-month window, enough data)                        ║
+║    trending_bear:   4  (signal filter tight in downtrends)                  ║
+║    choppy_ranging:  8  (3-month window, enough data)                        ║
+║    high_vol_crisis: 4  (COVID crash = short 10-week window)                 ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 """
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Optional
 
-from sim.sim_engine import SimEngine, SimResult, SimEvaluation, CapabilityMaturity, MATURITY_THRESHOLDS
+from sim.sim_engine import (
+    SimEngine, SimResult, SimEvaluation,
+    CapabilityMaturity, MATURITY_THRESHOLDS,
+)
 from sim.data_loader import DataLoader, REGIME_WINDOWS
 
 logger = logging.getLogger("titan_forge.sim.runner")
+
+# Per-regime minimum trade count for P-12 pass/fail
+# Short historical windows produce fewer trades — thresholds adjusted accordingly
+REGIME_MIN_TRADES: dict[str, int] = {
+    "trending_bull":   8,    # Q1 2023 — 3 months, plenty of data
+    "trending_bear":   4,    # Mid-2022 — signal filter tight in downtrends
+    "choppy_ranging":  8,    # Aug-Oct 2023 — 3 months, plenty of data
+    "high_vol_crisis": 4,    # COVID crash — only 10 weeks of data
+}
+
+# Minimum win rate for any regime test to pass
+REGIME_MIN_WIN_RATE: float = 0.45
 
 
 @dataclass
 class RegimeTestResult:
     """P-12: Result of one historical regime test."""
-    regime_name:        str
-    evaluation:         SimEvaluation
-    passed:             bool
-    win_rate:           float
-    total_pnl:          float
-    failure_reason:     Optional[str] = None
-
-    PASS_WIN_RATE:      float = 0.45   # Minimum to pass a regime test
-    PASS_TRADE_COUNT:   int   = 4      # Minimum trades required
-                                       # (lowered from 10: short regime windows
-                                       #  like high_vol_crisis / trending_bear
-                                       #  naturally produce only 4-9 trades)
-
-    # Per-regime overrides for minimum trade count
-    # Short windows need lower thresholds
-    REGIME_MIN_TRADES: dict = None
-
-    def __post_init__(self):
-        if self.REGIME_MIN_TRADES is None:
-            object.__setattr__(self, 'REGIME_MIN_TRADES', {
-                "trending_bull":   8,   # 3-month window — enough data for 8
-                "trending_bear":   4,   # 4-month window — tight signal filter
-                "choppy_ranging":  8,   # 3-month window — enough data for 8
-                "high_vol_crisis": 4,   # COVID crash — very short window
-            })
-
-    def get_min_trades(self) -> int:
-        """Return regime-specific minimum trade count."""
-        if self.REGIME_MIN_TRADES:
-            return self.REGIME_MIN_TRADES.get(self.regime_name, self.PASS_TRADE_COUNT)
-        return self.PASS_TRADE_COUNT
+    regime_name:    str
+    evaluation:     SimEvaluation
+    passed:         bool
+    win_rate:       float
+    total_pnl:      float
+    failure_reason: Optional[str] = None
 
 
 @dataclass
 class TrainingReport:
-    """Complete training run results — presented to Jorge before first paid eval."""
-    completed_at:           datetime
-    # Phase 1: Regime tests
-    regime_tests:           dict[str, RegimeTestResult]
-    all_regimes_passed:     bool
-    # Phase 2 & 3: Training vs validation
-    training_result:        Optional[SimResult]
-    validation_result:      Optional[SimResult]
-    overfitting_ok:         bool
-    overfitting_gap:        float   # training WR - validation WR (< 0.10 = OK)
-    # Phase 4: Capability maturity
-    capability_maturity:    CapabilityMaturity
+    """Complete training run results."""
+    completed_at:            datetime
+    regime_tests:            dict[str, RegimeTestResult]
+    all_regimes_passed:      bool
+    training_result:         Optional[SimResult]
+    validation_result:       Optional[SimResult]
+    overfitting_ok:          bool
+    overfitting_gap:         float
+    capability_maturity:     CapabilityMaturity
     all_capabilities_mature: bool
-    # Phase 5: Overall
-    cleared_for_live:       bool
-    blocking_reasons:       list[str]
-    summary:                str
+    cleared_for_live:        bool
+    blocking_reasons:        list[str]
+    summary:                 str
 
     def print_report(self) -> None:
-        """Print readable report to logs."""
         logger.info("=" * 70)
         logger.info("TITAN FORGE SIMULATION TRAINING REPORT")
         logger.info("Completed: %s", self.completed_at.strftime("%Y-%m-%d %H:%M UTC"))
@@ -95,20 +85,16 @@ class TrainingReport:
             status = "✅ PASS" if result.passed else "❌ FAIL"
             logger.info(
                 "  %s %-20s WR: %.1f%% | PnL: $%.0f | Trades: %d",
-                status, name, result.win_rate * 100,
-                result.total_pnl, result.evaluation.total_trades,
+                status, name,
+                result.win_rate * 100,
+                result.total_pnl,
+                result.evaluation.total_trades,
             )
 
         if self.training_result and self.validation_result:
             logger.info("\n📊 PHASE 2/3: OVERFITTING CHECK")
-            logger.info(
-                "  Training WR:    %.1f%%",
-                self.training_result.overall_win_rate * 100,
-            )
-            logger.info(
-                "  Validation WR:  %.1f%%",
-                self.validation_result.overall_win_rate * 100,
-            )
+            logger.info("  Training WR:    %.1f%%", self.training_result.overall_win_rate * 100)
+            logger.info("  Validation WR:  %.1f%%", self.validation_result.overall_win_rate * 100)
             logger.info(
                 "  Gap:            %.1f%% (%s)",
                 self.overfitting_gap * 100,
@@ -116,8 +102,7 @@ class TrainingReport:
             )
 
         logger.info("\n🧠 PHASE 4: CAPABILITY MATURITY (FX-03)")
-        report = self.capability_maturity.maturity_report()
-        for cap, data in report.items():
+        for cap, data in self.capability_maturity.maturity_report().items():
             status = "✅" if data["mature"] else "⚠️ "
             logger.info(
                 "  %s %-35s %d / %d",
@@ -139,17 +124,16 @@ class TrainingRunner:
     Section 12: Full training management system.
 
     Runs the complete simulation training protocol before any real money
-    is spent. Takes approximately 1 week at 100× speed.
+    is spent.
 
     Usage:
         runner = TrainingRunner()
         report = runner.run_full_protocol()
         if report.cleared_for_live:
-            # Green light — proceed to FTMO $10K warmup
+            # Green light — proceed to FTMO live trading
     """
 
-    # Overfitting tolerance: training vs validation WR gap
-    MAX_OVERFITTING_GAP = 0.10   # 10% — if bigger, examine for overfitting
+    MAX_OVERFITTING_GAP = 0.10   # 10% max gap between train and validation WR
 
     def __init__(
         self,
@@ -162,10 +146,7 @@ class TrainingRunner:
         self._firm_id    = firm_id
 
     def run_full_protocol(self) -> TrainingReport:
-        """
-        Run the complete simulation training protocol.
-        Section 12: all 5 phases, must complete before first paid eval.
-        """
+        """Run the complete 5-phase simulation training protocol."""
         logger.info("[SIM][RUNNER] Starting full training protocol.")
         logger.info("[SIM][RUNNER] Instrument: %s | Firm: %s", self._instrument, self._firm_id)
 
@@ -173,8 +154,8 @@ class TrainingRunner:
 
         # ── Phase 1: P-12 Regime Tests ────────────────────────────────────────
         logger.info("[SIM][RUNNER] Phase 1: Running 4 regime tests (P-12)...")
-        regime_tests    = self._run_regime_tests()
-        all_regimes_ok  = all(r.passed for r in regime_tests.values())
+        regime_tests   = self._run_regime_tests()
+        all_regimes_ok = all(r.passed for r in regime_tests.values())
 
         if not all_regimes_ok:
             failed = [n for n, r in regime_tests.items() if not r.passed]
@@ -188,7 +169,7 @@ class TrainingRunner:
             self._instrument, self._firm_id, n_evaluations=10
         )
 
-        # ── Phase 3: Validation Run (Overfitting Check) ───────────────────────
+        # ── Phase 3: Validation Run ───────────────────────────────────────────
         logger.info("[SIM][RUNNER] Phase 3: Validation run (2024–2025 out-of-sample)...")
         validation = self._engine.run_validation(
             self._instrument, self._firm_id, n_evaluations=5
@@ -199,28 +180,27 @@ class TrainingRunner:
 
         if not overfit_ok:
             blocking_reasons.append(
-                f"Overfitting detected: training WR "
-                f"{training.overall_win_rate:.1%} vs validation "
-                f"{validation.overall_win_rate:.1%} (gap: {overfit_gap:.1%} > 10%)"
+                f"Overfitting detected: training {training.overall_win_rate:.1%} "
+                f"vs validation {validation.overall_win_rate:.1%} "
+                f"(gap: {overfit_gap:.1%} > 10%)"
             )
 
         # ── Phase 4: Capability Maturity Gate (FX-03) ─────────────────────────
         logger.info("[SIM][RUNNER] Phase 4: Checking capability maturity (FX-03)...")
-        maturity      = self._engine.maturity
-        all_mature    = maturity.all_mature
+        maturity   = self._engine.maturity
+        all_mature = maturity.all_mature
 
         if not all_mature:
-            mature_report = maturity.maturity_report()
             immature = [
                 f"{cap} ({d['count']}/{d['threshold']})"
-                for cap, d in mature_report.items()
+                for cap, d in maturity.maturity_report().items()
                 if not d["mature"]
             ]
             blocking_reasons.append(
                 f"FX-03: Capabilities not yet mature: {immature}"
             )
 
-        # ── Phase 5: Minimum Win Rate Check ───────────────────────────────────
+        # ── Phase 5: Minimum Win Rate ──────────────────────────────────────────
         if training.overall_win_rate < 0.60:
             blocking_reasons.append(
                 f"Win rate too low: {training.overall_win_rate:.1%} < 60% minimum"
@@ -228,20 +208,16 @@ class TrainingRunner:
 
         cleared = len(blocking_reasons) == 0
 
-        # ── Build Report ──────────────────────────────────────────────────────
-        if cleared:
-            summary = (
-                f"✅ TRAINING COMPLETE. System cleared for live trading. "
-                f"Training WR: {training.overall_win_rate:.1%}. "
-                f"Validation WR: {validation.overall_win_rate:.1%}. "
-                f"All 4 regimes passed. All 6 capabilities mature. "
-                f"Next step: FTMO $10K warmup evaluation."
-            )
-        else:
-            summary = (
-                f"❌ NOT CLEARED. {len(blocking_reasons)} blocking issue(s). "
-                f"Run more simulations to mature capabilities."
-            )
+        summary = (
+            f"✅ TRAINING COMPLETE. System cleared for live trading. "
+            f"Training WR: {training.overall_win_rate:.1%}. "
+            f"Validation WR: {validation.overall_win_rate:.1%}. "
+            f"All 4 regimes passed. All 6 capabilities mature. "
+            f"Next step: FTMO $10K warmup evaluation."
+            if cleared else
+            f"❌ NOT CLEARED. {len(blocking_reasons)} blocking issue(s). "
+            f"Run more simulations to mature capabilities."
+        )
 
         report = TrainingReport(
             completed_at=datetime.now(timezone.utc),
@@ -266,33 +242,28 @@ class TrainingRunner:
         regime_evals = self._engine.run_all_regime_tests(
             self._instrument, self._firm_id
         )
-        results = {}
+        results: dict[str, RegimeTestResult] = {}
+
         for regime_name, evaluation in regime_evals.items():
-            # Use regime-specific minimum trade count
-            # (short windows like high_vol_crisis need lower threshold)
-            min_trades = {
-                "trending_bull":   8,
-                "trending_bear":   4,
-                "choppy_ranging":  8,
-                "high_vol_crisis": 4,
-            }.get(regime_name, 4)
+            min_trades = REGIME_MIN_TRADES.get(regime_name, 4)
 
             passed = (
-                evaluation.win_rate >= RegimeTestResult.PASS_WIN_RATE and
+                evaluation.win_rate >= REGIME_MIN_WIN_RATE and
                 evaluation.total_trades >= min_trades
             )
-            failure_reason = None
+
             if not passed:
                 if evaluation.total_trades < min_trades:
                     failure_reason = (
-                        f"Too few trades: {evaluation.total_trades} < "
-                        f"{min_trades}"
+                        f"Too few trades: {evaluation.total_trades} < {min_trades}"
                     )
                 else:
                     failure_reason = (
                         f"Win rate too low: {evaluation.win_rate:.1%} < "
-                        f"{RegimeTestResult.PASS_WIN_RATE:.1%}"
+                        f"{REGIME_MIN_WIN_RATE:.1%}"
                     )
+            else:
+                failure_reason = None
 
             results[regime_name] = RegimeTestResult(
                 regime_name=regime_name,
@@ -302,6 +273,7 @@ class TrainingRunner:
                 total_pnl=evaluation.total_pnl,
                 failure_reason=failure_reason,
             )
+
         return results
 
     def run_regime_test_only(self, regime_name: str) -> RegimeTestResult:
@@ -309,20 +281,16 @@ class TrainingRunner:
         evaluation = self._engine.run_regime_test(
             regime_name, self._instrument, self._firm_id
         )
-        min_trades = {
-            "trending_bull":   8,
-            "trending_bear":   4,
-            "choppy_ranging":  8,
-            "high_vol_crisis": 4,
-        }.get(regime_name, 4)
-
+        min_trades = REGIME_MIN_TRADES.get(regime_name, 4)
         passed = (
-            evaluation.win_rate >= RegimeTestResult.PASS_WIN_RATE and
+            evaluation.win_rate >= REGIME_MIN_WIN_RATE and
             evaluation.total_trades >= min_trades
         )
         return RegimeTestResult(
-            regime_name=regime_name, evaluation=evaluation,
-            passed=passed, win_rate=evaluation.win_rate,
+            regime_name=regime_name,
+            evaluation=evaluation,
+            passed=passed,
+            win_rate=evaluation.win_rate,
             total_pnl=evaluation.total_pnl,
         )
 
