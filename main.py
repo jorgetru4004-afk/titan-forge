@@ -381,9 +381,8 @@ def fetch_session_levels(instrument: str = "NQ%3DF") -> SessionLevels:
             data = json.loads(resp.read())
         result = data["chart"]["result"][0]
         q = result["indicators"]["quote"][0]
-        timestamps = result["timestamps"]
-        # Get last 2 complete days
-        if len(q["close"]) >= 2:
+        # Get last 2 complete days (Yahoo v8 uses 'timestamp', v7 uses 'timestamps')
+        if len(q.get("close", [])) >= 2:
             closes = [c for c in q["close"] if c is not None]
             highs  = [h for h in q["high"]  if h is not None]
             lows   = [l for l in q["low"]   if l is not None]
@@ -2021,6 +2020,9 @@ async def run_session_cycle(
 
         # ── Update session tracker ───────────────────────────────────────────
         session = session_tracker.update(instrument, mid, now_utc)
+        
+        # ── Define signal_fn early — used in multiple filters below ──────────
+        signal_fn = config.get("signal_fn", "")
 
         # ── Real ATR from price history ──────────────────────────────────────
         synthetic_atr = mid * (0.0005 if is_forex_inst else 0.001)
@@ -2059,7 +2061,6 @@ async def run_session_cycle(
                         setup_id, levels.prev_day_high, levels.prev_day_low, sentiment_bias)
 
         # ── Skip ORB in VIX crisis mode
-        signal_fn = config.get("signal_fn", "")
         if signal_fn == "orb" and ctx.vix >= 35:
             logger.info("[EXECUTE][%s] VIX %.1f CRISIS — ORB skipped.", setup_id, ctx.vix)
             continue
