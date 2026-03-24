@@ -1181,12 +1181,13 @@ async def run_session_cycle(
         atr = session_tracker.get_real_atr(instrument, fallback=synthetic_atr)
 
         # ── Skip ORB in VIX crisis mode
-        if fn == "orb" and ctx.vix >= 35:
+        signal_fn = config.get("signal_fn", "")
+        if signal_fn == "orb" and ctx.vix >= 35:
             logger.info("[EXECUTE][%s] VIX %.1f CRISIS — ORB skipped.", setup_id, ctx.vix)
             continue
 
         # ── Futures directional gate for ORB — no longs against strong bear futures
-        if fn == "orb":
+        if signal_fn == "orb":
             if ctx.futures_bias == "bearish" and ctx.futures_pct < -0.005:
                 # Only allow shorts on strong bear days
                 logger.info("[EXECUTE][%s] Futures bear (%.2f%%) — longs blocked.",
@@ -1446,10 +1447,10 @@ async def live_trading_loop(adapter: MT5Adapter) -> None:
     last_week_number:      int         = date.today().isocalendar()[1]
     reconnect_attempts:    int         = 0
 
-    logger.info("TITAN FORGE v13 — SUPERIOR EXECUTION ENGINE ACTIVE.")
+    logger.info("TITAN FORGE v14 — ELITE BUILD ACTIVE.")
     send_telegram(
-        "🔱 <b>TITAN FORGE v13 ONLINE</b>\n"
-        "Superior build deployed.\n"
+        "🔱 <b>TITAN FORGE v14 ONLINE</b>\n"
+        "Research-backed elite build active.\n"
         "All 5 setups active | Real ATR | Risk management armed.\n"
         "Watching for setups..."
     )
