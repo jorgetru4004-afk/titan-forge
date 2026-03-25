@@ -897,13 +897,13 @@ async def live_trading_loop(adapter: MT5Adapter) -> None:
             delay = camouflage_entry_delay()
             await asyncio.sleep(delay)
 
-            trade_id = f"TF-{uuid.uuid4().hex[:8]}"
+            trade_id = f"TF-{uuid.uuid4().hex[:6]}"
             order = OrderRequest(
                 instrument=instrument,
                 direction=OrderDirection.LONG if signal.direction == "long" else OrderDirection.SHORT,
                 size=lot_size, order_type=OrderType.MARKET,
                 stop_loss=signal.stop_loss, take_profit=signal.take_profit,
-                comment=f"{setup_id}|{trade_id}|{_trade_mode}|Bayes={conviction.posterior:.0%}|EV=${ev_result.ev_dollars:.0f}",
+                comment=f"{setup_id}|{trade_id}|{conviction.posterior:.0%}",
             )
 
             logger.info("🔫 [%s][%s] %s %s %.2f lots | E=%.2f SL=%.2f TP=%.2f | P=%.0f%% EV=$%.0f",
