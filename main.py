@@ -63,7 +63,7 @@ from forge_risk import (
 from mt5_adapter import MT5Adapter
 from execution_base import OrderRequest, OrderDirection, OrderType
 
-FORGE_VERSION = "v17"
+FORGE_VERSION = "v18"
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -529,6 +529,15 @@ async def live_trading_loop(adapter: MT5Adapter) -> None:
     logger.info("🔱 TITAN FORGE %s — THE BEAST IS ONLINE.", FORGE_VERSION)
     send_telegram(f"🔱 <b>TITAN FORGE {FORGE_VERSION} ONLINE</b>\nThe beast is awake. All systems armed.")
 
+    # Fetch market context immediately so VIX/futures/PDH are real from cycle 1
+    try:
+        ctx = fetch_market_context()
+        logger.info("[INIT] Market context: VIX=%.1f (%s) Futures=%s ATR=%.0f",
+                    ctx.vix, ctx.vix_regime, ctx.futures_bias, ctx.atr)
+    except Exception as e:
+        logger.warning("[INIT] Context fetch failed, using defaults: %s", e)
+        ctx = MarketContext()
+
     while True:
         cycle += 1
         try:
@@ -579,7 +588,7 @@ async def live_trading_loop(adapter: MT5Adapter) -> None:
                     f"📈 Futures: {ctx.futures_pct*100:+.2f}% ({ctx.futures_bias})\n"
                     f"📏 PDH: {ctx.pdh:.0f} | PDL: {ctx.pdl:.0f}\n"
                     f"📐 ATR: {ctx.atr:.0f}\n"
-                    f"🔫 8 setups armed"
+                    f"🔫 8 setups armed | Adaptive tiers active"
                 )
 
             # ── Market Hours ─────────────────────────────────────────────────
@@ -659,15 +668,16 @@ async def live_trading_loop(adapter: MT5Adapter) -> None:
                 await asyncio.sleep(60); continue
 
             # ── News Blackout (Bug #17: DST-aware) ───────────────────────────
-            if is_news_blackout():
+            _in_blackout = is_news_blackout()
+            if _in_blackout:
                 news_mins = minutes_to_next_news()
                 if news_mins is not None and news_mins <= 3 and account.open_position_count > 0:
                     logger.warning("[NEWS] Event in %.1fmin — closing", news_mins)
                     send_telegram("⚡ <b>NEWS</b>\nClosing before event")
                     try: await adapter.close_all_positions()
                     except Exception: pass
-                logger.info("[Cycle %d] News blackout.", cycle)
-                await asyncio.sleep(60); continue
+                logger.info("[Cycle %d] News blackout — evaluating but not entering.", cycle)
+                # NOTE: We continue to evaluate signals below but skip execution
 
             # ── Emergency ────────────────────────────────────────────────────
             if firm_state.should_emergency_close(account.equity):
@@ -689,10 +699,18 @@ async def live_trading_loop(adapter: MT5Adapter) -> None:
             if trans_prob > 0.50: logger.info("[BRAIN] %s", trans_desc)
 
             # ════════════════════════════════════════════════════════════════
-            # DECISION PIPELINE — Scan all 8 setups
+            # DECISION PIPELINE v18 — Adaptive conviction tiers
+            #
+            # ELITE  (82%+, 7+ confirm) → full Kelly size, full R:R
+            # HIGH   (72%+, 5+ confirm) → 75% size
+            # STANDARD (60%+, 4+ confirm) → 50% size
+            # CAUTIOUS (50%+)           → minimum size (0.10)
+            # SCALP  (35%+)             → minimum size, tight SL (20pt), quick TP (1R)
+            # REJECT (<35%)             → phantom log only
             # ════════════════════════════════════════════════════════════════
             best_action = None
             best_ev = -999999
+            _cycle_signals = []  # track all evaluations for logging
 
             mid = _price_cache.get_mid(primary_inst or "") or (
                 tracker.price_history[-1] if tracker.price_history else 0)
@@ -701,9 +719,16 @@ async def live_trading_loop(adapter: MT5Adapter) -> None:
 
             atr = ctx.atr if ctx.atr > 0 else 100.0
 
+            # Determine trading mode from market conditions
+            _mode = "SNIPER"  # default
+            if ctx.atr_consumed_pct > 0.70:
+                _mode = "GUERRILLA"  # choppy/exhausted day → scalp mode
+            elif ctx.vix_regime in ("ELEVATED", "EXTREME"):
+                _mode = "HUNTER"  # elevated vol → medium aggression
+
             for setup_id, config in SETUP_CONFIG.items():
                 if setup_id in traded_setups: continue
-                if is_rth() and ctx.atr_consumed_pct > 0.85 and setup_id != "VOL-06": continue
+                if is_rth() and ctx.atr_consumed_pct > 0.90 and setup_id not in ("VOL-06", "VOL-05"): continue
 
                 signal = generate_signal(setup_id, config, mid, tracker, ctx, atr)
                 if signal.verdict != SignalVerdict.CONFIRMED:
@@ -717,7 +742,12 @@ async def live_trading_loop(adapter: MT5Adapter) -> None:
                     live_win_rate=live_wr,
                 )
 
-                if conviction.conviction_level == "REJECT":
+                # Log every evaluated signal
+                _cycle_signals.append(f"{setup_id} {signal.direction} → {conviction.conviction_level} "
+                                     f"({conviction.posterior:.0%}, {conviction.confirming}/{conviction.total})")
+
+                # REJECT threshold lowered to 35% — everything above gets considered
+                if conviction.posterior < 0.35:
                     _evidence.log_trade(TradeFingerprint(
                         trade_id=f"PH-{uuid.uuid4().hex[:8]}",
                         timestamp=datetime.now(timezone.utc).isoformat(),
@@ -734,8 +764,34 @@ async def live_trading_loop(adapter: MT5Adapter) -> None:
                     ))
                     continue
 
-                if conviction.conviction_level not in ("ELITE", "HIGH"):
-                    continue
+                # Determine tier-based sizing and trade parameters
+                _is_scalp = False
+                if conviction.conviction_level == "ELITE":
+                    _size_mult = 1.0    # full size
+                elif conviction.conviction_level == "HIGH":
+                    _size_mult = 0.75
+                elif conviction.conviction_level == "STANDARD":
+                    _size_mult = 0.50
+                elif conviction.conviction_level == "REDUCED":
+                    _size_mult = 0.25   # cautious minimum
+                else:
+                    # SCALP mode: posterior 35-50%, tight stops, quick target
+                    _size_mult = 0.0    # will use min lot
+                    _is_scalp = True
+
+                # For scalps, override SL/TP to tight scalp parameters
+                ep = signal.entry_price or mid
+                if _is_scalp and "NAS100" in config.get("instrument", ""):
+                    scalp_sl = 20.0  # 20 point stop
+                    scalp_tp = 25.0  # 25 point target (~1.25R)
+                    if signal.direction == "long":
+                        signal = Signal(signal.setup_id, signal.verdict, signal.direction,
+                                        ep, round(ep - scalp_sl, 2), round(ep + scalp_tp, 2),
+                                        signal.conviction, f"SCALP {signal.reason}")
+                    else:
+                        signal = Signal(signal.setup_id, signal.verdict, signal.direction,
+                                        ep, round(ep + scalp_sl, 2), round(ep - scalp_tp, 2),
+                                        signal.conviction, f"SCALP {signal.reason}")
 
                 risk_dollars = abs((signal.entry_price or 0) - (signal.stop_loss or 0)) * config["base_size"] * 10
                 reward_dollars = abs((signal.take_profit or 0) - (signal.entry_price or 0)) * config["base_size"] * 10
@@ -747,18 +803,37 @@ async def live_trading_loop(adapter: MT5Adapter) -> None:
                     max_position_pct=0.02, minutes_remaining=ctx.minutes_remaining,
                 )
 
-                if ev_result.action == "SKIP": continue
-                if ev_result.action == "WAIT" and ctx.minutes_remaining > 120: continue
+                # Scalps and cautious trades skip the WAIT/SKIP gate — they're small enough
+                if not _is_scalp and conviction.conviction_level not in ("REDUCED",):
+                    if ev_result.action == "SKIP": continue
+                    if ev_result.action == "WAIT" and ctx.minutes_remaining > 120: continue
 
-                if ev_result.net_ev > best_ev:
-                    best_ev = ev_result.net_ev
-                    best_action = (setup_id, config, signal, conviction, ev_result)
+                # Score: weight by conviction tier
+                tier_weight = {"ELITE": 3.0, "HIGH": 2.0, "STANDARD": 1.5,
+                              "REDUCED": 1.0}.get(conviction.conviction_level, 0.5)
+                weighted_ev = ev_result.net_ev * tier_weight
+
+                if weighted_ev > best_ev:
+                    best_ev = weighted_ev
+                    best_action = (setup_id, config, signal, conviction, ev_result, _size_mult, _is_scalp)
+
+            # Log all evaluated signals this cycle
+            if _cycle_signals:
+                logger.info("[Cycle %d] Signals: %s", cycle, " | ".join(_cycle_signals))
 
             # ── Execute ──────────────────────────────────────────────────────
             if best_action is None:
                 await asyncio.sleep(60); continue
 
-            setup_id, config, signal, conviction, ev_result = best_action
+            # Block execution during news blackout (evaluation already happened above)
+            if _in_blackout:
+                s_id = best_action[0]
+                s_conv = best_action[3]
+                logger.info("[Cycle %d] %s %s would trade but NEWS BLACKOUT active",
+                           cycle, s_id, s_conv.conviction_level)
+                await asyncio.sleep(60); continue
+
+            setup_id, config, signal, conviction, ev_result, _size_mult, _is_scalp = best_action
 
             risk_decision = risk_fortress.evaluate(
                 firm_state=firm_state, equity=account.equity,
@@ -781,18 +856,25 @@ async def live_trading_loop(adapter: MT5Adapter) -> None:
                 logger.warning("[Cycle %d][%s] STRESS: %s", cycle, setup_id, stress.reason)
                 await asyncio.sleep(60); continue
 
-            # Bug #16: NO C-14 win size-up
-            conv_mult = {"ELITE": 1.2, "HIGH": 1.0}.get(conviction.conviction_level, 1.0)
+            # Bug #16: NO C-14 win size-up — v18: tier-based sizing
+            conv_mult = {"ELITE": 1.2, "HIGH": 1.0, "STANDARD": 0.8,
+                         "REDUCED": 0.5}.get(conviction.conviction_level, 0.3)
             lot_size = compute_kelly_size(
                 win_prob=conviction.posterior, reward_risk_ratio=ev_result.reward_risk_ratio,
                 account_balance=account.balance, base_lot_size=config["base_size"],
-                firm_max_risk_pct=0.02, risk_multiplier=risk_decision.size_multiplier,
+                firm_max_risk_pct=0.02, risk_multiplier=risk_decision.size_multiplier * _size_mult,
                 vix_multiplier=ctx.vix_size_mult, day_multiplier=ctx.day_strength,
                 conviction_mult=conv_mult,
             )
-            lot_size = max(0.10, lot_size)
+            lot_size = max(0.10, lot_size)  # FTMO minimum
 
-            if not firm_state.is_size_consistent(lot_size):
+            # Scalps and cautious always cap at minimum
+            if _is_scalp or conviction.conviction_level in ("REDUCED",):
+                lot_size = 0.10
+
+            _trade_mode = "SCALP" if _is_scalp else conviction.conviction_level
+
+            if not _is_scalp and not firm_state.is_size_consistent(lot_size):
                 lot_size = (sum(firm_state.recent_sizes[-5:]) / max(1, len(firm_state.recent_sizes[-5:]))
                            if firm_state.recent_sizes else config["base_size"])
 
@@ -821,11 +903,11 @@ async def live_trading_loop(adapter: MT5Adapter) -> None:
                 direction=OrderDirection.LONG if signal.direction == "long" else OrderDirection.SHORT,
                 size=lot_size, order_type=OrderType.MARKET,
                 stop_loss=signal.stop_loss, take_profit=signal.take_profit,
-                comment=f"{setup_id}|{trade_id}|Bayes={conviction.posterior:.0%}|EV=${ev_result.ev_dollars:.0f}",
+                comment=f"{setup_id}|{trade_id}|{_trade_mode}|Bayes={conviction.posterior:.0%}|EV=${ev_result.ev_dollars:.0f}",
             )
 
-            logger.info("🔫 [%s] %s %s %.2f lots | E=%.2f SL=%.2f TP=%.2f | P=%.0f%% EV=$%.0f",
-                        setup_id, (signal.direction or "").upper(), instrument, lot_size,
+            logger.info("🔫 [%s][%s] %s %s %.2f lots | E=%.2f SL=%.2f TP=%.2f | P=%.0f%% EV=$%.0f",
+                        setup_id, _trade_mode, (signal.direction or "").upper(), instrument, lot_size,
                         signal.entry_price or 0, signal.stop_loss or 0, signal.take_profit or 0,
                         conviction.posterior * 100, ev_result.ev_dollars)
 
@@ -837,7 +919,7 @@ async def live_trading_loop(adapter: MT5Adapter) -> None:
                 firm_state.record_size(lot_size)
 
                 send_telegram(
-                    f"🔫 <b>TRADE</b>\n"
+                    f"🔫 <b>TRADE — {_trade_mode}</b>\n"
                     f"{setup_id} ({config['name']})\n"
                     f"{(signal.direction or '').upper()} {instrument} @ {result.fill_price:.2f}\n"
                     f"Size: {lot_size} | SL: {signal.stop_loss:.2f} | TP: {signal.take_profit:.2f}\n"

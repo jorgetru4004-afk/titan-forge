@@ -57,11 +57,11 @@ class BayesianConviction:
     confirming:     int             # count of confirming dimensions
     contradicting:  int             # count of contradicting dimensions
     total:          int             # total dimensions evaluated
-    conviction_level: str           # ELITE / HIGH / STANDARD / REDUCED / REJECT
+    conviction_level: str           # ELITE / HIGH / STANDARD / REDUCED / SCALP / REJECT
 
     @property
     def is_tradeable(self) -> bool:
-        return self.conviction_level not in ("REDUCED", "REJECT")
+        return self.conviction_level != "REJECT"
 
 
 def compute_bayesian_conviction(
@@ -254,7 +254,7 @@ def compute_bayesian_conviction(
     contradicting = sum(1 for d in dimensions if not d.confirms and d.weight > 0)
     total = sum(1 for d in dimensions if d.weight > 0)
 
-    # Conviction levels
+    # Conviction levels — v18: added SCALP tier for adaptive trading
     if posterior >= 0.82 and confirming >= 7:
         level = "ELITE"
     elif posterior >= 0.72 and confirming >= 5:
@@ -263,6 +263,8 @@ def compute_bayesian_conviction(
         level = "STANDARD"
     elif posterior >= 0.50:
         level = "REDUCED"
+    elif posterior >= 0.35:
+        level = "SCALP"
     else:
         level = "REJECT"
 

@@ -463,7 +463,7 @@ HIGH_IMPACT_TIMES_ET = [
 
 
 def is_news_blackout(
-    blackout_before: int = 15,
+    blackout_before: int = 5,
     blackout_after: int = 5,
 ) -> bool:
     """
