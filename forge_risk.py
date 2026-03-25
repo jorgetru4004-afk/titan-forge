@@ -142,10 +142,13 @@ class PropFirmState:
     # ── Emergency Checks ─────────────────────────────────────────────────────
     def should_emergency_close(self, equity: float) -> bool:
         """True if floating equity is dangerously close to any firm limit."""
-        # Within 1% of daily loss limit
-        if (-self.current_day_pnl) >= self.daily_loss_limit * 0.80:
+        # Guard: if daily_start_balance not initialized, can't evaluate
+        if self.daily_start_balance <= 0:
+            return False
+        # Within 80% of daily loss limit
+        if self.daily_loss_limit > 0 and (-self.current_day_pnl) >= self.daily_loss_limit * 0.80:
             return True
-        # Within 2% of max loss
+        # Within 2% of max loss floor
         if equity < self.max_loss_floor + self.initial_balance * 0.02:
             return True
         return False
