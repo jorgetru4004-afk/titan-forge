@@ -1406,7 +1406,8 @@ async def live_trading_loop(adapter: MT5Adapter) -> None:
                 vix_multiplier=ctx.vix_size_mult, day_multiplier=ctx.day_strength,
                 conviction_mult=conv_mult,
             )
-            lot_size = max(0.10, round(lot_size, 2))
+            # FTMO requires 0.10 lot increments on indices
+            lot_size = max(0.10, round(round(lot_size / 0.10) * 0.10, 2))
             lot_size = min(lot_size, 2.0)
 
             _trade_mode = "SCALP" if _is_scalp else conviction.conviction_level
