@@ -1,19 +1,11 @@
 """
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║                        NEXUS CAPITAL — TITAN FORGE                          ║
+║                        NEXUS CAPITAL — TITAN FORGE V20                      ║
 ║                  forge_evidence.py — THE EVIDENCE ENGINE                    ║
 ║                                                                              ║
-║  FORGE doesn't just trade. It LEARNS from every trade — and every          ║
-║  trade it DIDN'T take.                                                      ║
-║                                                                              ║
-║  Every trade gets a full fingerprint.                                      ║
-║  Every rejected signal becomes a phantom trade.                             ║
-║  Parameters evolve from FORGE's own evidence — not from backtests.         ║
-║                                                                              ║
-║  MANDATORY: Every FORGE record gets PROP_FIRM tag per V2.3 architecture.   ║
-║                                                                              ║
-║  Bug #10 FIX: Persistent storage at /data/evidence/, not /tmp/.            ║
-║  Bug #11 FIX: update_trade_outcome() called on position close.             ║
+║  V20: Added regime tagging, GATE_FAIL outcomes, MTF alignment tracking.   ║
+║  Every trade gets a full fingerprint. Every rejected signal → phantom.     ║
+║  Parameters evolve from FORGE's own evidence.                               ║
 ║                                                                              ║
 ║  Jorge Trujillo — Founder | Claude — AI Architect | March 2026              ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
@@ -29,23 +21,18 @@ from typing import Optional
 
 logger = logging.getLogger("titan_forge.evidence")
 
-# Bug #10: Persistent storage path — Railway volume mount at /data/
 EVIDENCE_DIR = Path(os.environ.get("EVIDENCE_PATH", "/data/evidence"))
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# TRADE FINGERPRINT — Complete context of every decision
-# ═══════════════════════════════════════════════════════════════════════════════
 
 @dataclass
 class TradeFingerprint:
     """Complete fingerprint of a trade decision — taken or phantom."""
     # Identity
     trade_id:           str
-    timestamp:          str              # ISO format
+    timestamp:          str
     setup_id:           str
     instrument:         str
-    direction:          str              # "long" / "short"
+    direction:          str
 
     # Prices
     entry_price:        float
@@ -55,8 +42,6 @@ class TradeFingerprint:
 
     # Sizing
     lot_size:           float            = 0.0
-
-    # Firm
     firm_id:            str              = "FTMO"
 
     # Market context at entry
@@ -72,36 +57,35 @@ class TradeFingerprint:
     pdh:                float            = 0.0
     pdl:                float            = 0.0
 
+    # V20: Regime + MTF context
+    regime:             str              = "NORMAL"
+    regime_bias:        str              = "neutral"
+    mtf_m15_trend:      str              = "neutral"
+    mtf_h1_trend:       str              = "neutral"
+    mtf_m5_confirms:    bool             = False
+    candlestick_pattern: Optional[str]   = None
+
     # Decision quality
     bayesian_posterior: float             = 0.0
     confluence_score:   int              = 0
     expected_value:     float            = 0.0
     conviction_level:   str              = ""
 
-    # Results (updated on close — Bug #11 fix)
+    # V20: Gate failure tracking
+    gate_failed:        Optional[str]    = None  # which gate failed, if any
+
+    # Results
     pnl:                Optional[float]  = None
-    outcome:            str              = "OPEN"  # OPEN / WIN / LOSS / BREAKEVEN / PHANTOM
+    outcome:            str              = "OPEN"
     r_multiple:         Optional[float]  = None
     exit_time:          Optional[str]    = None
 
-    # Architecture tag (V2.3 — MANDATORY)
+    # Architecture tag
     capital_vehicle:    str              = "PROP_FIRM"
     is_phantom:         bool             = False
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# EVIDENCE LOGGER — PERSISTENT STORAGE
-# ═══════════════════════════════════════════════════════════════════════════════
-
 class EvidenceLogger:
-    """
-    Logs every trade (real and phantom) to persistent JSON storage.
-
-    Files organized by date: evidence_2026-03-24.json
-    Bug #10: Uses /data/ persistent volume on Railway.
-    Bug #11: update_trade_outcome() updates records when trades close.
-    """
-
     def __init__(self, base_dir: Optional[Path] = None):
         self._dir = base_dir or EVIDENCE_DIR
         self._ensure_dir()
@@ -109,7 +93,6 @@ class EvidenceLogger:
         self._load_history()
 
     def _ensure_dir(self) -> None:
-        """Create evidence directory. Falls back to home if /data/ unavailable."""
         try:
             self._dir.mkdir(parents=True, exist_ok=True)
         except PermissionError:
@@ -121,10 +104,9 @@ class EvidenceLogger:
         return self._dir / f"evidence_{d.isoformat()}.json"
 
     def _load_history(self) -> None:
-        """Load recent evidence files into memory for queries."""
         try:
             files = sorted(self._dir.glob("evidence_*.json"))
-            for f in files[-30:]:  # Last 30 days
+            for f in files[-30:]:
                 try:
                     with open(f) as fh:
                         records = json.load(fh)
@@ -137,7 +119,6 @@ class EvidenceLogger:
             logger.warning("[EVIDENCE] Failed to load history: %s", e)
 
     def log_trade(self, fp: TradeFingerprint) -> None:
-        """Log a trade fingerprint to persistent storage."""
         today = date.today()
         filepath = self._get_file(today)
         record = asdict(fp)
@@ -156,7 +137,8 @@ class EvidenceLogger:
             with open(filepath, "w") as fh:
                 json.dump(existing, fh, indent=2, default=str)
 
-            log_type = "PHANTOM" if fp.is_phantom else fp.outcome
+            log_type = "PHANTOM" if fp.is_phantom else (
+                "GATE_FAIL" if fp.gate_failed else fp.outcome)
             logger.info("[EVIDENCE] Logged %s: %s %s %s | P(win)=%.1f%%",
                        log_type, fp.setup_id, fp.direction, fp.instrument,
                        fp.bayesian_posterior * 100)
@@ -166,13 +148,8 @@ class EvidenceLogger:
     def update_trade_outcome(
         self, trade_id: str, exit_price: float, pnl: float, exit_time: str
     ) -> None:
-        """
-        Bug #11 FIX: Update a trade's outcome when it closes.
-        Called from position management when a trade exits.
-        """
         outcome = "WIN" if pnl > 0 else ("LOSS" if pnl < 0 else "BREAKEVEN")
 
-        # Update in-memory
         for record in reversed(self._all_records):
             if record.get("trade_id") == trade_id:
                 record["exit_price"] = exit_price
@@ -184,7 +161,6 @@ class EvidenceLogger:
                     record["r_multiple"] = round(pnl / risk, 2) if risk > 0 else 0
                 break
 
-        # Update on disk
         try:
             for filepath in sorted(self._dir.glob("evidence_*.json"), reverse=True):
                 try:
@@ -215,11 +191,9 @@ class EvidenceLogger:
     # ── QUERIES ──────────────────────────────────────────────────────────────
 
     def get_recent_trades(self, days: int = 30) -> list[dict]:
-        """Get recent trade records for parameter evolution."""
-        return self._all_records[-500:]  # Last 500 records max
+        return self._all_records[-500:]
 
     def get_setup_stats(self, setup_id: str, last_n: int = 50) -> dict:
-        """Get performance stats for a specific setup."""
         trades = [r for r in self._all_records
                  if r.get("setup_id") == setup_id
                  and r.get("outcome") in ("WIN", "LOSS")
@@ -243,7 +217,6 @@ class EvidenceLogger:
         }
 
     def get_daily_summary(self) -> dict:
-        """Get today's trading summary."""
         today_str = date.today().isoformat()
         today_trades = [r for r in self._all_records
                        if r.get("timestamp", "").startswith(today_str)
@@ -261,6 +234,15 @@ class EvidenceLogger:
             "win_rate": wins / max(len(completed), 1) * 100,
             "total_pnl": total_pnl,
         }
+
+    def get_gate_fail_stats(self) -> dict:
+        """V20: Track which gates fail most often — reveals unnecessary restrictions."""
+        gate_counts: dict[str, int] = {}
+        for r in self._all_records:
+            gate = r.get("gate_failed")
+            if gate:
+                gate_counts[gate] = gate_counts.get(gate, 0) + 1
+        return gate_counts
 
     @property
     def total_records(self) -> int:
