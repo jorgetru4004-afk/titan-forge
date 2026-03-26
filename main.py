@@ -1112,8 +1112,8 @@ async def live_trading_loop(adapter: MT5Adapter) -> None:
                 await asyncio.sleep(60); continue
 
             # ── Position Limit ───────────────────────────────────────────
-            if account.open_position_count >= 3:
-                logger.info("[Cycle %d] Max positions (3/3).", cycle)
+            if account.open_position_count >= 5:
+                logger.info("[Cycle %d] Max positions (5/5).", cycle)
                 await asyncio.sleep(60); continue
 
             # ── V20: Anomaly Check ───────────────────────────────────────
@@ -1231,7 +1231,7 @@ async def live_trading_loop(adapter: MT5Adapter) -> None:
                 _cycle_signals.append(f"{setup_id} {signal.direction} → {conviction.conviction_level} "
                                      f"({conviction.posterior:.0%}, {conviction.confirming}/{conviction.total})")
 
-                if conviction.posterior < 0.35:
+                if conviction.posterior < 0.35 or conviction.conviction_level == "REJECT":
                     _evidence.log_trade(TradeFingerprint(
                         trade_id=f"PH-{uuid.uuid4().hex[:8]}",
                         timestamp=datetime.now(timezone.utc).isoformat(),
@@ -1371,6 +1371,21 @@ async def live_trading_loop(adapter: MT5Adapter) -> None:
                 await asyncio.sleep(60); continue
 
             setup_id, config, signal, conviction, ev_result, _size_mult, _is_scalp = best_action
+
+            # Bug 2 FIX: Block opposite direction on same instrument
+            _direction_conflict = False
+            _target_inst = await resolve_instrument(adapter, config["instrument"])
+            if _target_inst and account.open_positions:
+                for pos in account.open_positions:
+                    if hasattr(pos, 'instrument') and pos.instrument == _target_inst:
+                        pos_dir = pos.direction.value if hasattr(pos.direction, 'value') else str(pos.direction)
+                        if pos_dir != signal.direction:
+                            logger.info("[CONFLICT] %s %s blocked — already %s %s open",
+                                       setup_id, signal.direction, pos_dir, _target_inst)
+                            _direction_conflict = True
+                            break
+            if _direction_conflict:
+                await asyncio.sleep(60); continue
 
             risk_decision = risk_fortress.evaluate(
                 firm_state=firm_state, equity=account.equity,
