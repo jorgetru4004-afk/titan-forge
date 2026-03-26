@@ -215,13 +215,19 @@ class ATRTracker:
 # V20: POLYGON CANDLE FETCHING
 # ═══════════════════════════════════════════════════════════════════════════════
 
-# Polygon ticker mapping
+# Polygon ticker mapping — USE ETF TICKERS, NOT INDEX TICKERS
+# Index tickers (I:NDX) only return daily bars on Starter plan.
+# ETF tickers (QQQ) return full intraday minute bars on Starter (15-min delayed).
+# 15-min delay is irrelevant for M15/H1 trend analysis — we need direction, not precise timing.
 POLYGON_TICKERS = {
-    "NAS100": "I:NDX",      # NASDAQ-100 index
-    "ES": "I:SPX",           # S&P 500 index
-    "XAUUSD": "C:XAUUSD",   # Gold
-    "DXY": "C:DXY",          # Dollar index (for correlation)
+    "NAS100": ["QQQ", "TQQQ"],          # QQQ tracks NDX — primary + fallback
+    "ES":     ["SPY", "VOO"],             # SPY tracks SPX
+    "XAUUSD": ["GLD", "IAU"],             # GLD tracks gold
+    "DXY":    ["UUP"],                     # UUP tracks dollar index
 }
+
+# Track which ticker actually works per instrument
+_polygon_working_ticker: dict[str, str] = {}
 
 
 def _polygon_fetch(
@@ -231,9 +237,11 @@ def _polygon_fetch(
     from_date: str,
     to_date: str,
 ) -> Optional[list[dict]]:
-    """Fetch candle data from Polygon REST API."""
+    """Fetch candle data from Polygon REST API with diagnostic logging."""
     if not POLYGON_API_KEY:
+        logger.warning("[POLYGON] No API key set — candle fetch disabled")
         return None
+    url = ""
     try:
         url = (f"https://api.polygon.io/v2/aggs/ticker/{ticker}"
                f"/range/{multiplier}/{timespan}/{from_date}/{to_date}"
@@ -241,10 +249,44 @@ def _polygon_fetch(
         req = urllib.request.Request(url, headers={"User-Agent": "TITAN-FORGE/2.0"})
         with urllib.request.urlopen(req, timeout=15, context=_SSL_CTX) as resp:
             data = json.loads(resp.read().decode())
-            if data.get("resultsCount", 0) > 0:
+            results_count = data.get("resultsCount", 0)
+            status = data.get("status", "unknown")
+            if results_count > 0:
+                logger.info("[POLYGON] %s %d×%s: %d bars (status=%s)",
+                           ticker, multiplier, timespan, results_count, status)
                 return data.get("results", [])
+            else:
+                # Log WHY we got zero — could be wrong ticker, wrong date, or plan limit
+                logger.warning("[POLYGON] %s %d×%s: 0 bars (status=%s, queryCount=%s, request_id=%s)",
+                              ticker, multiplier, timespan, status,
+                              data.get("queryCount", "?"), data.get("request_id", "?"))
+                return None
     except Exception as e:
-        logger.warning("[POLYGON] Fetch failed %s %s %s: %s", ticker, multiplier, timespan, e)
+        logger.warning("[POLYGON] Fetch failed %s %d×%s: %s", ticker, multiplier, timespan, e)
+    return None
+
+
+def _find_working_ticker(instrument: str) -> Optional[str]:
+    """Try each ticker in the fallback chain until one returns data."""
+    # If we already know which ticker works, use it
+    if instrument in _polygon_working_ticker:
+        return _polygon_working_ticker[instrument]
+
+    candidates = POLYGON_TICKERS.get(instrument, ["QQQ"])
+    today = date.today().isoformat()
+    yesterday = (date.today() - timedelta(days=1)).isoformat()
+
+    for ticker in candidates:
+        raw = _polygon_fetch(ticker, 5, "minute", yesterday, today)
+        if raw and len(raw) > 0:
+            _polygon_working_ticker[instrument] = ticker
+            logger.info("[POLYGON] ✅ Working ticker for %s: %s (%d bars)",
+                       instrument, ticker, len(raw))
+            return ticker
+        logger.info("[POLYGON] ❌ %s returned no data for %s, trying next...", ticker, instrument)
+
+    logger.warning("[POLYGON] No working ticker found for %s (tried: %s)",
+                  instrument, ", ".join(candidates))
     return None
 
 
@@ -253,16 +295,24 @@ def fetch_polygon_candles(
     timeframes: Optional[list[str]] = None,
 ) -> dict[str, list[Candle]]:
     """
-    Fetch M1/M5/M15/H1 candles from Polygon for a given instrument.
+    Fetch M5/M15/H1 candles from Polygon for a given instrument.
     Returns {timeframe: [Candle, ...]}.
-    Rate limit: 5 calls/minute on starter plan — batch efficiently.
+
+    Rate limit strategy (Starter plan = 5 calls/min):
+    - Skip M1 (we get tick data from MetaAPI already)
+    - Fetch M5 + M15 = 2 calls per instrument (stays under limit)
+    - H1 derived from M15 candles (no extra call needed)
     """
     if timeframes is None:
-        timeframes = ["M1", "M5", "M15", "H1"]
+        timeframes = ["M5", "M15"]  # Skip M1 (MetaAPI) and H1 (derive from M15)
 
-    ticker = POLYGON_TICKERS.get(instrument, "I:NDX")
+    ticker = _find_working_ticker(instrument)
+    if not ticker:
+        return {}
+
     today = date.today().isoformat()
-    yesterday = (date.today() - timedelta(days=3)).isoformat()
+    # Go back 2 days to ensure we have enough data even on Monday
+    from_date = (date.today() - timedelta(days=2)).isoformat()
 
     tf_params = {
         "M1": (1, "minute"),
@@ -278,7 +328,7 @@ def fetch_polygon_candles(
         if tf not in tf_params:
             continue
         mult, span = tf_params[tf]
-        raw = _polygon_fetch(ticker, mult, span, yesterday, today)
+        raw = _polygon_fetch(ticker, mult, span, from_date, today)
         candles = []
         if raw:
             for bar in raw:
@@ -294,10 +344,41 @@ def fetch_polygon_candles(
         if candles:
             store.store(instrument, tf, candles)
 
+    # Derive H1 from M15 candles if we didn't fetch H1 directly
+    if "H1" not in result and "M15" in result and result["M15"]:
+        h1_candles = _derive_h1_from_m15(result["M15"])
+        result["H1"] = h1_candles
+        if h1_candles:
+            store.store(instrument, "H1", h1_candles)
+
     store.mark_fetched(instrument)
-    logger.info("[POLYGON] Fetched %s: %s",
-               instrument, " | ".join(f"{tf}={len(cs)}" for tf, cs in result.items()))
+
+    total_bars = sum(len(cs) for cs in result.values())
+    logger.info("[POLYGON] %s (%s): %s | total=%d bars",
+               instrument, ticker,
+               " | ".join(f"{tf}={len(cs)}" for tf, cs in result.items()),
+               total_bars)
     return result
+
+
+def _derive_h1_from_m15(m15_candles: list[Candle]) -> list[Candle]:
+    """Build H1 candles by aggregating groups of 4 M15 candles."""
+    if not m15_candles:
+        return []
+    h1_candles = []
+    for i in range(0, len(m15_candles) - 3, 4):
+        group = m15_candles[i:i+4]
+        if len(group) < 4:
+            break
+        h1_candles.append(Candle(
+            timestamp=group[0].timestamp,
+            open=group[0].open,
+            high=max(c.high for c in group),
+            low=min(c.low for c in group),
+            close=group[-1].close,
+            volume=sum(c.volume for c in group),
+        ))
+    return h1_candles
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

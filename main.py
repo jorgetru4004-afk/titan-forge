@@ -920,7 +920,9 @@ async def live_trading_loop(adapter: MT5Adapter) -> None:
     ctx = MarketContext()
     atr_session_high = 0.0
     atr_session_low = float("inf")
-    _last_polygon_fetch = datetime.min.replace(tzinfo=timezone.utc)
+    _last_m5_fetch = datetime.min.replace(tzinfo=timezone.utc)
+    _last_m15_fetch = datetime.min.replace(tzinfo=timezone.utc)
+    _last_h1_fetch = datetime.min.replace(tzinfo=timezone.utc)
 
     logger.info("🔱 TITAN FORGE %s — 25 SETUPS ARMED.", FORGE_VERSION)
     send_telegram(
@@ -1054,27 +1056,46 @@ async def live_trading_loop(adapter: MT5Adapter) -> None:
                     if cached and not cached.stale:
                         logger.info("[Cycle %d] Using cached: %.2f", cycle, cached.mid)
 
-            # V20: Fetch Polygon candles every 5 minutes
+            # V20: Staggered Polygon candle fetching (stays under 5 calls/min)
+            # M5: every 5 minutes | M15: every 15 minutes | H1: derived from M15
             now_utc = datetime.now(timezone.utc)
-            if (now_utc - _last_polygon_fetch).total_seconds() >= 300 and is_rth():
-                try:
-                    fetch_polygon_candles("NAS100", ["M1", "M5", "M15", "H1"])
-                    _last_polygon_fetch = now_utc
-                    # Update MTF context
+            if is_rth():
+                _fetched_any = False
+
+                # M5: fetch every 5 minutes (1 API call)
+                if (now_utc - _last_m5_fetch).total_seconds() >= 300:
+                    try:
+                        fetch_polygon_candles("NAS100", ["M5"])
+                        _last_m5_fetch = now_utc
+                        _fetched_any = True
+                        # Update VWAP from M5 candle volume data
+                        m5_candles = candle_store.get("NAS100", "M5", 10)
+                        for c in m5_candles:
+                            tracker.update_vwap(c.typical_price, c.volume)
+                    except Exception as e:
+                        logger.warning("[POLYGON] M5 fetch failed: %s", e)
+
+                # M15: fetch every 15 minutes (1 API call)
+                if (now_utc - _last_m15_fetch).total_seconds() >= 900:
+                    try:
+                        fetch_polygon_candles("NAS100", ["M15"])
+                        _last_m15_fetch = now_utc
+                        _fetched_any = True
+                    except Exception as e:
+                        logger.warning("[POLYGON] M15 fetch failed: %s", e)
+
+                # H1: derived from M15 candles inside fetch_polygon_candles — no extra call
+
+                if _fetched_any:
+                    # Update MTF context from whatever we have
                     m15_candles = candle_store.get("NAS100", "M15", 6)
                     h1_candles = candle_store.get("NAS100", "H1", 5)
-                    m5_candles = candle_store.get("NAS100", "M5", 5)
                     ctx.mtf_trend_m15 = get_m15_trend(m15_candles)
                     ctx.mtf_trend_h1 = get_h1_trend(h1_candles)
-                    # Update VWAP from M1 candles
-                    m1_candles = candle_store.get("NAS100", "M1", 10)
-                    for c in m1_candles:
-                        tracker.update_vwap(c.typical_price, c.volume)
-                    logger.info("[MTF] M15=%s H1=%s VWAP=%.2f",
-                               ctx.mtf_trend_m15, ctx.mtf_trend_h1,
+                    logger.info("[MTF] M15=%s (%d bars) H1=%s (%d bars) VWAP=%.2f",
+                               ctx.mtf_trend_m15, len(m15_candles),
+                               ctx.mtf_trend_h1, len(h1_candles),
                                tracker.vwap or 0)
-                except Exception as e:
-                    logger.warning("[POLYGON] Fetch failed: %s", e)
 
             ctx.session_state = get_session_state()
             ctx.minutes_remaining = session_minutes_remaining()
