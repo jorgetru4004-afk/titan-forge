@@ -1177,10 +1177,11 @@ async def live_trading_loop(adapter: MT5Adapter) -> None:
                     _regime_bias = "long"
                     logger.info("[REGIME] REVERSAL: IB broke short but price above IB high")
 
-            if _regime_bias == "neutral" and vwap and vwap > 0 and mid > 0:
-                if mid > vwap * 1.003:
+            _loop_vwap = tracker.vwap or tracker.open_price or mid
+            if _regime_bias == "neutral" and _loop_vwap and _loop_vwap > 0 and mid > 0:
+                if mid > _loop_vwap * 1.003:
                     _regime_bias = "long"
-                elif mid < vwap * 0.997:
+                elif mid < _loop_vwap * 0.997:
                     _regime_bias = "short"
 
             ctx.regime = _regime
