@@ -25,34 +25,37 @@ logger = logging.getLogger("titan_forge.brain")
 # ═══════════════════════════════════════════════════════════════════════════════
 
 REGIME_MULT: dict[str, dict[str, float]] = {
+    # GENESIS CALIBRATED — from 22d × 100 MC backtest (March 2026)
+    # TREND: 51.8% WR, +$460 avg | CHOP: 47.9% WR, +$321 avg | NORMAL: 48.3% WR, +$251 avg
     # Trend-following setups: boosted on TREND, suppressed on CHOP
-    "ORD-02":     {"TREND": 1.10, "CHOP": 0.85, "NORMAL": 1.0, "REVERSAL": 0.90},
+    "ORD-02":     {"TREND": 1.15, "CHOP": 0.85, "NORMAL": 1.0, "REVERSAL": 0.90},
     "OD-01":      {"TREND": 1.15, "CHOP": 0.70, "NORMAL": 1.0, "REVERSAL": 0.80},
     "GAP-02":     {"TREND": 1.10, "CHOP": 0.75, "NORMAL": 1.0, "REVERSAL": 0.80},
-    "IB-01":      {"TREND": 1.15, "CHOP": 0.00, "NORMAL": 0.90, "REVERSAL": 0.80},
+    "IB-01":      {"TREND": 1.15, "CHOP": 0.80, "NORMAL": 1.0, "REVERSAL": 0.90},
     "VOL-03":     {"TREND": 1.15, "CHOP": 0.80, "NORMAL": 1.0, "REVERSAL": 0.85},
-    "PWR-01":     {"TREND": 1.10, "CHOP": 0.80, "NORMAL": 1.0, "REVERSAL": 0.85},
-    "PWR-02":     {"TREND": 1.10, "CHOP": 0.75, "NORMAL": 1.0, "REVERSAL": 0.85},
     "MID-02":     {"TREND": 1.10, "CHOP": 0.75, "NORMAL": 0.95, "REVERSAL": 0.85},
     "VWAP-03":    {"TREND": 1.10, "CHOP": 0.85, "NORMAL": 1.0, "REVERSAL": 0.95},
     "ES-ORD-02":  {"TREND": 1.10, "CHOP": 0.85, "NORMAL": 1.0, "REVERSAL": 0.90},
     # Mean reversion / range: boosted on CHOP, suppressed on TREND
-    "VOL-05":     {"TREND": 0.85, "CHOP": 1.10, "NORMAL": 1.0, "REVERSAL": 1.05},
-    "VOL-06":     {"TREND": 0.85, "CHOP": 1.10, "NORMAL": 1.0, "REVERSAL": 1.05},
-    "MID-01":     {"TREND": 0.80, "CHOP": 1.15, "NORMAL": 1.0, "REVERSAL": 1.10},
+    "VOL-05":     {"TREND": 0.85, "CHOP": 1.15, "NORMAL": 1.0, "REVERSAL": 1.10},
+    "VOL-06":     {"TREND": 0.85, "CHOP": 1.10, "NORMAL": 1.0, "REVERSAL": 1.15},
     "IB-02":      {"TREND": 0.00, "CHOP": 1.15, "NORMAL": 0.90, "REVERSAL": 0.95},
     "LVL-02":     {"TREND": 0.85, "CHOP": 1.10, "NORMAL": 1.0, "REVERSAL": 1.0},
-    "PWR-03":     {"TREND": 0.80, "CHOP": 0.90, "NORMAL": 0.90, "REVERSAL": 1.10},
     # Neutral setups — work in all regimes
     "ICT-01":     {"TREND": 1.05, "CHOP": 0.90, "NORMAL": 1.0, "REVERSAL": 0.95},
     "ICT-02":     {"TREND": 1.00, "CHOP": 0.90, "NORMAL": 1.0, "REVERSAL": 0.95},
-    "ICT-03":     {"TREND": 1.00, "CHOP": 0.85, "NORMAL": 1.0, "REVERSAL": 1.05},
+    "ICT-03":     {"TREND": 0.90, "CHOP": 1.00, "NORMAL": 1.0, "REVERSAL": 1.15},
     "VWAP-01":    {"TREND": 1.10, "CHOP": 0.95, "NORMAL": 1.0, "REVERSAL": 0.90},
     "VWAP-02":    {"TREND": 1.10, "CHOP": 0.95, "NORMAL": 1.0, "REVERSAL": 0.90},
     "LVL-01":     {"TREND": 1.00, "CHOP": 1.00, "NORMAL": 1.0, "REVERSAL": 1.00},
     "GAP-01":     {"TREND": 0.85, "CHOP": 0.90, "NORMAL": 1.0, "REVERSAL": 1.10},
     "SES-01":     {"TREND": 1.00, "CHOP": 1.00, "NORMAL": 1.0, "REVERSAL": 1.00},
     "GOLD-CORR-01": {"TREND": 1.0, "CHOP": 1.0, "NORMAL": 1.0, "REVERSAL": 1.0},
+    # DISABLED setups — regime mults don't matter but keep for reference
+    "MID-01":     {"TREND": 0.80, "CHOP": 1.15, "NORMAL": 1.0, "REVERSAL": 1.10},
+    "PWR-01":     {"TREND": 1.10, "CHOP": 0.80, "NORMAL": 1.0, "REVERSAL": 0.85},
+    "PWR-02":     {"TREND": 1.10, "CHOP": 0.75, "NORMAL": 1.0, "REVERSAL": 0.85},
+    "PWR-03":     {"TREND": 0.80, "CHOP": 0.90, "NORMAL": 0.90, "REVERSAL": 1.10},
 }
 
 

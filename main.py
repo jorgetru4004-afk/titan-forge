@@ -79,49 +79,49 @@ SETUP_CONFIG = {
     # ═══ EXISTING 8 (reviewed & retained) ════════════════════════════════════
     "ORD-02": {
         "name": "Opening Range Breakout", "instrument": "NAS100", "signal_fn": "orb",
-        "base_win_rate": 0.58, "avg_rr": 2.2, "rr_ratio": 2.0,
-        "catalyst_stack": 3, "base_size": 0.10,
+        "base_win_rate": 0.53, "avg_rr": 2.2, "rr_ratio": 2.0,
+        "catalyst_stack": 3, "base_size": 0.15,
         "window_start": dtime(9, 45), "window_end": dtime(11, 30),
         "expected_hold_min": 45, "atr_default": 150,
     },
     "ICT-01": {
         "name": "VWAP Reclaim", "instrument": "NAS100", "signal_fn": "vwap_reclaim",
-        "base_win_rate": 0.68, "avg_rr": 2.0, "rr_ratio": 2.0,
-        "catalyst_stack": 3, "base_size": 0.10,
+        "base_win_rate": 0.56, "avg_rr": 2.0, "rr_ratio": 2.0,
+        "catalyst_stack": 3, "base_size": 0.15,
         "window_start": dtime(10, 0), "window_end": dtime(14, 0),
         "expected_hold_min": 60, "atr_default": 150,
     },
     "ICT-02": {
         "name": "Fair Value Gap", "instrument": "NAS100", "signal_fn": "fair_value_gap",
-        "base_win_rate": 0.62, "avg_rr": 1.8, "rr_ratio": 1.8,
+        "base_win_rate": 0.53, "avg_rr": 1.8, "rr_ratio": 1.8,
         "catalyst_stack": 3, "base_size": 0.10,
         "window_start": dtime(9, 45), "window_end": dtime(13, 0),
         "expected_hold_min": 30, "atr_default": 150,
     },
     "ICT-03": {
         "name": "Liquidity Sweep + Reclaim", "instrument": "NAS100", "signal_fn": "liquidity_sweep",
-        "base_win_rate": 0.67, "avg_rr": 2.0, "rr_ratio": 2.0,
-        "catalyst_stack": 4, "base_size": 0.10,
+        "base_win_rate": 0.51, "avg_rr": 2.0, "rr_ratio": 2.0,
+        "catalyst_stack": 4, "base_size": 0.12,
         "window_start": dtime(9, 30), "window_end": dtime(12, 30),
         "expected_hold_min": 40, "atr_default": 150,
     },
     "VOL-03": {
         "name": "Trend Day Momentum", "instrument": "NAS100", "signal_fn": "trend_momentum",
-        "base_win_rate": 0.55, "avg_rr": 2.5, "rr_ratio": 2.0,
-        "catalyst_stack": 2, "base_size": 0.10,
+        "base_win_rate": 0.48, "avg_rr": 2.5, "rr_ratio": 2.0,
+        "catalyst_stack": 2, "base_size": 0.12,
         "window_start": dtime(10, 30), "window_end": dtime(15, 0),
         "expected_hold_min": 60, "atr_default": 150,
     },
     "VOL-05": {
         "name": "Mean Reversion", "instrument": "NAS100", "signal_fn": "mean_reversion",
-        "base_win_rate": 0.52, "avg_rr": 1.8, "rr_ratio": 1.8,
+        "base_win_rate": 0.50, "avg_rr": 1.8, "rr_ratio": 1.8,
         "catalyst_stack": 2, "base_size": 0.10,
         "window_start": dtime(11, 0), "window_end": dtime(15, 30),
         "expected_hold_min": 45, "atr_default": 150,
     },
     "VOL-06": {
         "name": "Noon Curve Reversal", "instrument": "NAS100", "signal_fn": "noon_curve",
-        "base_win_rate": 0.52, "avg_rr": 1.6, "rr_ratio": 1.6,
+        "base_win_rate": 0.54, "avg_rr": 1.6, "rr_ratio": 1.6,
         "catalyst_stack": 3, "base_size": 0.10,
         "window_start": dtime(11, 45), "window_end": dtime(12, 45),
         "expected_hold_min": 30, "atr_default": 150,
@@ -137,7 +137,7 @@ SETUP_CONFIG = {
     # ═══ V20 NEW: OPENING PHASE ═════════════════════════════════════════════
     "OD-01": {
         "name": "Opening Drive Momentum", "instrument": "NAS100", "signal_fn": "opening_drive",
-        "base_win_rate": 0.58, "avg_rr": 1.5, "rr_ratio": 1.5,
+        "base_win_rate": 0.50, "avg_rr": 1.5, "rr_ratio": 1.5,
         "catalyst_stack": 2, "base_size": 0.10,
         "window_start": dtime(9, 30), "window_end": dtime(9, 40),
         "expected_hold_min": 30, "atr_default": 150,
@@ -151,7 +151,7 @@ SETUP_CONFIG = {
     },
     "GAP-02": {
         "name": "Gap and Go", "instrument": "NAS100", "signal_fn": "gap_go",
-        "base_win_rate": 0.55, "avg_rr": 2.0, "rr_ratio": 2.0,
+        "base_win_rate": 0.44, "avg_rr": 2.0, "rr_ratio": 2.0,
         "catalyst_stack": 2, "base_size": 0.10,
         "window_start": dtime(9, 30), "window_end": dtime(10, 0),
         "expected_hold_min": 30, "atr_default": 150,
@@ -160,14 +160,14 @@ SETUP_CONFIG = {
     # ═══ V20 NEW: IB PHASE ═══════════════════════════════════════════════════
     "IB-01": {
         "name": "IB Breakout", "instrument": "NAS100", "signal_fn": "ib_breakout",
-        "base_win_rate": 0.62, "avg_rr": 2.0, "rr_ratio": 2.0,
-        "catalyst_stack": 3, "base_size": 0.10,
+        "base_win_rate": 0.58, "avg_rr": 2.0, "rr_ratio": 2.0,
+        "catalyst_stack": 3, "base_size": 0.15,
         "window_start": dtime(10, 30), "window_end": dtime(14, 0),
         "expected_hold_min": 60, "atr_default": 150,
     },
     "IB-02": {
         "name": "IB Range Scalp", "instrument": "NAS100", "signal_fn": "ib_range_scalp",
-        "base_win_rate": 0.55, "avg_rr": 1.2, "rr_ratio": 1.2,
+        "base_win_rate": 0.48, "avg_rr": 1.2, "rr_ratio": 1.2,
         "catalyst_stack": 2, "base_size": 0.10,
         "window_start": dtime(10, 30), "window_end": dtime(14, 0),
         "expected_hold_min": 20, "atr_default": 150,
@@ -176,14 +176,14 @@ SETUP_CONFIG = {
     # ═══ V20 NEW: VWAP SETUPS ════════════════════════════════════════════════
     "VWAP-01": {
         "name": "VWAP Bounce Long", "instrument": "NAS100", "signal_fn": "vwap_bounce_long",
-        "base_win_rate": 0.60, "avg_rr": 2.0, "rr_ratio": 2.0,
+        "base_win_rate": 0.38, "avg_rr": 2.0, "rr_ratio": 2.0,
         "catalyst_stack": 3, "base_size": 0.10,
         "window_start": dtime(10, 0), "window_end": dtime(15, 30),
         "expected_hold_min": 45, "atr_default": 150,
     },
     "VWAP-02": {
         "name": "VWAP Reject Short", "instrument": "NAS100", "signal_fn": "vwap_reject_short",
-        "base_win_rate": 0.58, "avg_rr": 2.0, "rr_ratio": 2.0,
+        "base_win_rate": 0.36, "avg_rr": 2.0, "rr_ratio": 2.0,
         "catalyst_stack": 3, "base_size": 0.10,
         "window_start": dtime(10, 0), "window_end": dtime(15, 30),
         "expected_hold_min": 45, "atr_default": 150,
@@ -199,14 +199,14 @@ SETUP_CONFIG = {
     # ═══ V20 NEW: LEVEL TESTS ════════════════════════════════════════════════
     "LVL-01": {
         "name": "PDH/PDL Test", "instrument": "NAS100", "signal_fn": "pdh_pdl_test",
-        "base_win_rate": 0.56, "avg_rr": 2.0, "rr_ratio": 2.0,
+        "base_win_rate": 0.42, "avg_rr": 2.0, "rr_ratio": 2.0,
         "catalyst_stack": 3, "base_size": 0.10,
         "window_start": dtime(9, 30), "window_end": dtime(15, 0),
         "expected_hold_min": 45, "atr_default": 150,
     },
     "LVL-02": {
         "name": "Round Number Scalp", "instrument": "NAS100", "signal_fn": "round_number",
-        "base_win_rate": 0.52, "avg_rr": 1.5, "rr_ratio": 1.67,
+        "base_win_rate": 0.41, "avg_rr": 1.5, "rr_ratio": 1.67,
         "catalyst_stack": 2, "base_size": 0.10,
         "window_start": dtime(9, 30), "window_end": dtime(16, 0),
         "expected_hold_min": 15, "atr_default": 150,
@@ -214,15 +214,15 @@ SETUP_CONFIG = {
 
     # ═══ V20 NEW: MIDDAY ═════════════════════════════════════════════════════
     "MID-01": {
-        "name": "Range Fade", "instrument": "NAS100", "signal_fn": "range_fade",
-        "base_win_rate": 0.58, "avg_rr": 1.5, "rr_ratio": 1.5,
+        "name": "Range Fade [DISABLED by GENESIS]", "instrument": "NAS100", "signal_fn": "disabled",
+        "base_win_rate": 0.40, "avg_rr": 1.5, "rr_ratio": 1.5,
         "catalyst_stack": 2, "base_size": 0.10,
         "window_start": dtime(11, 30), "window_end": dtime(13, 0),
         "expected_hold_min": 30, "atr_default": 150,
     },
     "MID-02": {
-        "name": "Afternoon Breakout", "instrument": "NAS100", "signal_fn": "afternoon_breakout",
-        "base_win_rate": 0.55, "avg_rr": 1.5, "rr_ratio": 1.5,
+        "name": "Afternoon Breakout [DISABLED by GENESIS]", "instrument": "NAS100", "signal_fn": "disabled",
+        "base_win_rate": 0.33, "avg_rr": 1.5, "rr_ratio": 1.5,
         "catalyst_stack": 2, "base_size": 0.10,
         "window_start": dtime(13, 0), "window_end": dtime(15, 0),
         "expected_hold_min": 40, "atr_default": 150,
@@ -230,22 +230,22 @@ SETUP_CONFIG = {
 
     # ═══ V20 NEW: POWER HOUR ═════════════════════════════════════════════════
     "PWR-01": {
-        "name": "Power Hour Momentum", "instrument": "NAS100", "signal_fn": "power_hour",
-        "base_win_rate": 0.57, "avg_rr": 1.6, "rr_ratio": 1.6,
+        "name": "Power Hour Momentum [DISABLED by GENESIS]", "instrument": "NAS100", "signal_fn": "disabled",
+        "base_win_rate": 0.38, "avg_rr": 1.6, "rr_ratio": 1.6,
         "catalyst_stack": 2, "base_size": 0.10,
         "window_start": dtime(15, 0), "window_end": dtime(15, 50),
         "expected_hold_min": 30, "atr_default": 150,
     },
     "PWR-02": {
-        "name": "Closing Drive", "instrument": "NAS100", "signal_fn": "closing_drive",
-        "base_win_rate": 0.54, "avg_rr": 1.3, "rr_ratio": 1.3,
+        "name": "Closing Drive [DISABLED by GENESIS]", "instrument": "NAS100", "signal_fn": "disabled",
+        "base_win_rate": 0.20, "avg_rr": 1.3, "rr_ratio": 1.3,
         "catalyst_stack": 2, "base_size": 0.10,
         "window_start": dtime(15, 30), "window_end": dtime(15, 55),
         "expected_hold_min": 20, "atr_default": 150,
     },
     "PWR-03": {
-        "name": "End of Day Fade", "instrument": "NAS100", "signal_fn": "eod_fade",
-        "base_win_rate": 0.53, "avg_rr": 1.3, "rr_ratio": 1.3,
+        "name": "End of Day Fade [DISABLED by GENESIS]", "instrument": "NAS100", "signal_fn": "disabled",
+        "base_win_rate": 0.20, "avg_rr": 1.3, "rr_ratio": 1.3,
         "catalyst_stack": 2, "base_size": 0.10,
         "window_start": dtime(15, 40), "window_end": dtime(15, 55),
         "expected_hold_min": 15, "atr_default": 150,
