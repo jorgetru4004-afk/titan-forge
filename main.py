@@ -278,6 +278,7 @@ def _pending(setup_id: str, reason: str) -> Signal:
     return Signal(setup_id, SignalVerdict.PENDING, None, None, None, None, 0.0, reason)
 
 
+
 def generate_signal(
     setup_id: str, config: dict, mid: float,
     tracker: InstrumentTracker, ctx: MarketContext, atr: float,
@@ -289,76 +290,55 @@ def generate_signal(
     if ws and we and not (ws <= t <= we):
         return _pending(setup_id, f"Outside window ({ws}-{we} ET).")
 
-    state_w = get_state_weight(setup_id, ctx.session_state)
-    if state_w <= 0 and ctx.session_state not in (SessionState.CLOSED, SessionState.PRE_MARKET):
-        return _pending(setup_id, f"Not suited for {ctx.session_state.value}.")
-
     vwap = tracker.vwap or tracker.open_price or mid
     inst_atr = config.get("atr_default", atr) if atr <= 0 else atr
 
-    # 3A: Disabled setups never fire
     if fn == "disabled":
-        return _pending(setup_id, "DISABLED — awaiting ghost data validation.")
+        return _pending(setup_id, "DISABLED.")
 
-    # ═══ ORB ═════════════════════════════════════════════════════════════════
+    # ═══ ORD-02: price > ORB high + 2 OR < ORB low - 2 ═══════════════════════
     if fn == "orb":
-        if not tracker.orb_locked or not tracker.orb_valid:
-            return _pending(setup_id, "ORB not locked/valid.")
-        long_ok = (tracker.last_close and tracker.last_close > (tracker.orb_high or 0)
-                   and len(tracker.close_prices) >= 2)
-        short_ok = (tracker.last_close and tracker.last_close < (tracker.orb_low or 0)
-                    and len(tracker.close_prices) >= 2)
-        if not (long_ok or short_ok):
-            if mid > (tracker.orb_high or 0) or mid < (tracker.orb_low or 0):
-                return _pending(setup_id, "ORB: awaiting close confirmation.")
-            return _pending(setup_id, "ORB: no breakout.")
-        direction = "long" if long_ok else "short"
-        if direction == "long" and mid < vwap * 0.999:
-            return _pending(setup_id, "ORB long: below VWAP.")
-        if direction == "short" and mid > vwap * 1.001:
-            return _pending(setup_id, "ORB short: above VWAP.")
-        if tracker.ib_locked and tracker.ib_direction and tracker.ib_direction not in ("none", None):
-            if tracker.ib_direction != direction:
-                return _pending(setup_id, f"ORB {direction}: IB is {tracker.ib_direction}.")
-        rng = (tracker.orb_high or 0) - (tracker.orb_low or 0)
-        sl_dist = max(inst_atr * 0.5, rng * 0.5)
-        if direction == "long":
-            entry, sl, tp = mid, mid - sl_dist, mid + sl_dist * 2.0
-        else:
-            entry, sl, tp = mid, mid + sl_dist, mid - sl_dist * 2.0
+        if not tracker.orb_locked:
+            return _pending(setup_id, "ORB not locked.")
+        orb_h = tracker.orb_high or 0
+        orb_l = tracker.orb_low or 0
+        if mid > orb_h + 2:        direction = "long"
+        elif mid < orb_l - 2:      direction = "short"
+        else: return _pending(setup_id, "No ORB break.")
+        rng = orb_h - orb_l
+        sl_d = max(inst_atr * 0.5, rng * 0.5) if rng > 0 else inst_atr * 0.5
+        sl = mid - sl_d if direction == "long" else mid + sl_d
+        tp = mid + sl_d * 2.0 if direction == "long" else mid - sl_d * 2.0
         return Signal(setup_id, SignalVerdict.CONFIRMED, direction,
-                     round(entry, 2), round(sl, 2), round(tp, 2), 0.82,
-                     f"ORB {direction.upper()}: range={rng:.0f}pts")
+                     round(mid, 2), round(sl, 2), round(tp, 2), 0.70,
+                     f"ORB {direction.upper()}")
 
-    # ═══ VWAP RECLAIM ════════════════════════════════════════════════════════
+    # ═══ ICT-01: price above VWAP ════════════════════════════════════════════
     elif fn == "vwap_reclaim":
         if vwap <= 0: return _pending(setup_id, "No VWAP.")
-        dipped = tracker.session_low is not None and tracker.session_low < vwap * 0.999
-        if not dipped: return _pending(setup_id, "VWAP: no dip.")
-        if mid <= vwap * 1.001: return _pending(setup_id, "VWAP: not reclaimed.")
-        sl_d = inst_atr * 0.4
-        return Signal(setup_id, SignalVerdict.CONFIRMED, "long",
-                     round(mid, 2), round(mid - sl_d, 2), round(mid + sl_d * 2.0, 2), 0.75,
-                     "VWAP reclaim: dipped + reclaimed")
+        if mid > vwap:
+            sl_d = inst_atr * 0.4
+            return Signal(setup_id, SignalVerdict.CONFIRMED, "long",
+                         round(mid, 2), round(mid - sl_d, 2), round(mid + sl_d * 2.0, 2), 0.68,
+                         "VWAP reclaim: above VWAP")
+        return _pending(setup_id, "Below VWAP.")
 
-    # ═══ FAIR VALUE GAP ══════════════════════════════════════════════════════
+    # ═══ ICT-02: FVG detected (no ATR filter, no price-in-gap requirement) ═══
     elif fn == "fair_value_gap":
         closes = tracker.close_prices
-        if len(closes) < 4: return _pending(setup_id, "FVG: insufficient data.")
+        if len(closes) < 4: return _pending(setup_id, "FVG: need 4 closes.")
         c1, c2, c3, c4 = closes[-4], closes[-3], closes[-2], closes[-1]
-        bullish_fvg = c1 < c2 and c3 > c2 and c4 > c3 and mid < c3
-        bearish_fvg = c1 > c2 and c3 < c2 and c4 < c3 and mid > c3
-        if not (bullish_fvg or bearish_fvg): return _pending(setup_id, "FVG: no pattern.")
-        if is_rth() and ctx.atr_consumed_pct > 0.80:
-            return _pending(setup_id, f"FVG: ATR {ctx.atr_consumed_pct:.0%} consumed.")
+        bullish_fvg = c1 < c2 and c3 > c2 and c4 > c3
+        bearish_fvg = c1 > c2 and c3 < c2 and c4 < c3
+        if not (bullish_fvg or bearish_fvg): return _pending(setup_id, "No FVG.")
         d = "long" if bullish_fvg else "short"
         sl_d = inst_atr * 0.4
         sl = mid - sl_d if d == "long" else mid + sl_d
         tp = mid + sl_d * 1.8 if d == "long" else mid - sl_d * 1.8
         return Signal(setup_id, SignalVerdict.CONFIRMED, d,
-                     round(mid, 2), round(sl, 2), round(tp, 2), 0.72, f"FVG {d.upper()}")
+                     round(mid, 2), round(sl, 2), round(tp, 2), 0.66, f"FVG {d.upper()}")
 
-    # ═══ LIQUIDITY SWEEP ═════════════════════════════════════════════════════
+    # ═══ ICT-03: session swept PDH or PDL ════════════════════════════════════
     elif fn == "liquidity_sweep":
         if ctx.pdl <= 0 or ctx.pdh <= 0: return _pending(setup_id, "No PDH/PDL.")
         swept_low = tracker.session_low is not None and tracker.session_low < ctx.pdl and mid > ctx.pdl
@@ -373,64 +353,56 @@ def generate_signal(
             sl = tracker.session_high if tracker.session_high else mid + sl_d
             tp = mid - (sl - mid) * 2.0
         return Signal(setup_id, SignalVerdict.CONFIRMED, d,
-                     round(mid, 2), round(sl, 2), round(tp, 2), 0.78,
+                     round(mid, 2), round(sl, 2), round(tp, 2), 0.70,
                      f"Sweep {'PDL' if d=='long' else 'PDH'}")
 
-    # ═══ TREND MOMENTUM ══════════════════════════════════════════════════════
+    # ═══ VOL-03: price > 0.3% from VWAP ═════════════════════════════════════
     elif fn == "trend_momentum":
-        if not tracker.session_high or not tracker.session_low:
-            return _pending(setup_id, "Insufficient data.")
-        session_range = (tracker.session_high or 0) - (tracker.session_low or 0)
-        if session_range < inst_atr * 0.3: return _pending(setup_id, "Range too narrow.")
-        if mid > vwap * 1.002: direction = "long"
-        elif mid < vwap * 0.998: direction = "short"
-        else: return _pending(setup_id, "Too close to VWAP.")
+        if vwap <= 0: return _pending(setup_id, "No VWAP.")
+        if mid > vwap * 1.003:      direction = "long"
+        elif mid < vwap * 0.997:    direction = "short"
+        else: return _pending(setup_id, "Within 0.3% of VWAP.")
         sl_d = inst_atr * 0.5
         sl = mid - sl_d if direction == "long" else mid + sl_d
         tp = mid + sl_d * 2.0 if direction == "long" else mid - sl_d * 2.0
         return Signal(setup_id, SignalVerdict.CONFIRMED, direction,
-                     round(mid, 2), round(sl, 2), round(tp, 2), 0.74,
-                     f"Trend {direction.upper()}: pullback")
+                     round(mid, 2), round(sl, 2), round(tp, 2), 0.66,
+                     f"Trend {direction.upper()}: {abs(mid-vwap)/vwap*100:.2f}% from VWAP")
 
-    # ═══ MEAN REVERSION ══════════════════════════════════════════════════════
+    # ═══ VOL-05: price > 0.5 ATR from VWAP ══════════════════════════════════
     elif fn == "mean_reversion":
         if vwap <= 0: return _pending(setup_id, "No VWAP.")
         dist = mid - vwap
         atr_dist = abs(dist) / inst_atr if inst_atr > 0 else 0
-        if atr_dist < 0.8: return _pending(setup_id, f"Only {atr_dist:.1f} ATR from VWAP.")
+        if atr_dist < 0.5: return _pending(setup_id, f"Only {atr_dist:.1f} ATR from VWAP.")
         direction = "short" if dist > 0 else "long"
         sl_d = inst_atr * 0.45
         sl = mid - sl_d if direction == "long" else mid + sl_d
         tp = vwap
-        if abs(mid - tp) < sl_d * 0.8: return _pending(setup_id, "Insufficient R:R.")
         return Signal(setup_id, SignalVerdict.CONFIRMED, direction,
-                     round(mid, 2), round(sl, 2), round(tp, 2), 0.72,
-                     f"Mean Rev {direction.upper()}: {atr_dist:.1f} ATR from VWAP")
+                     round(mid, 2), round(sl, 2), round(tp, 2), 0.64,
+                     f"Mean Rev {direction.upper()}: {atr_dist:.1f} ATR")
 
-    # ═══ NOON CURVE ══════════════════════════════════════════════════════════
+    # ═══ VOL-06: price moved > 0.3 ATR from open ════════════════════════════
     elif fn == "noon_curve":
-        if not (dtime(11, 45) <= t <= dtime(12, 45)):
-            return _pending(setup_id, "Outside noon window.")
-        if not tracker.session_high or not tracker.session_low or not tracker.open_price:
-            return _pending(setup_id, "Insufficient data.")
-        session_move = mid - tracker.open_price
-        if abs(session_move) < inst_atr * 0.3: return _pending(setup_id, "Insufficient trend.")
-        d = "short" if session_move > 0 else "long"
+        if not tracker.open_price: return _pending(setup_id, "No open.")
+        move = mid - tracker.open_price
+        if abs(move) < inst_atr * 0.3: return _pending(setup_id, "Insufficient move.")
+        d = "short" if move > 0 else "long"
         sl_d = inst_atr * 0.50
         sl = mid + sl_d if d == "short" else mid - sl_d
         tp = mid - sl_d * 1.6 if d == "short" else mid + sl_d * 1.6
         return Signal(setup_id, SignalVerdict.CONFIRMED, d,
-                     round(mid, 2), round(sl, 2), round(tp, 2), 0.68,
-                     f"Noon curve: reversal {d.upper()}")
+                     round(mid, 2), round(sl, 2), round(tp, 2), 0.62,
+                     f"Noon curve {d.upper()}")
 
-    # ═══ LONDON FOREX ════════════════════════════════════════════════════════
+    # ═══ SES-01: London forex breakout ═══════════════════════════════════════
     elif fn == "london_forex":
-        if not (dtime(3, 0) <= t <= dtime(8, 0)): return _pending(setup_id, "Outside London.")
         if len(tracker.price_history) < 10: return _pending(setup_id, "Insufficient data.")
         recent = tracker.price_history[-10:]
         rh, rl = max(recent), min(recent)
         rng = rh - rl
-        if rng < 0.0010: return _pending(setup_id, "Range too tight.")
+        if rng < 0.0005: return _pending(setup_id, "Range too tight.")
         if mid > rh:     direction = "long"
         elif mid < rl:   direction = "short"
         else:            return _pending(setup_id, "No breakout.")
@@ -438,301 +410,146 @@ def generate_signal(
         sl = mid - sl_d if direction == "long" else mid + sl_d
         tp = mid + sl_d * 2.0 if direction == "long" else mid - sl_d * 2.0
         return Signal(setup_id, SignalVerdict.CONFIRMED, direction,
-                     round(mid, 5), round(sl, 5), round(tp, 5), 0.70,
-                     f"London {direction.upper()}: {rng*10000:.0f}pips")
+                     round(mid, 5), round(sl, 5), round(tp, 5), 0.64,
+                     f"London {direction.upper()}")
 
-    # ═══ V20: OPENING DRIVE ══════════════════════════════════════════════════
+    # ═══ OD-01: price moved > 0.2% from open ════════════════════════════════
     elif fn == "opening_drive":
-        if not tracker.open_price or not is_rth():
-            return _pending(setup_id, "No open price.")
+        if not tracker.open_price: return _pending(setup_id, "No open.")
         move_pct = (mid - tracker.open_price) / tracker.open_price
-        if abs(move_pct) < 0.003: return _pending(setup_id, f"Only {move_pct:.2%} from open.")
+        if abs(move_pct) < 0.002: return _pending(setup_id, f"Only {move_pct:.2%}.")
         direction = "long" if move_pct > 0 else "short"
-        candles = get_candle_store().get("NAS100", "M5", 2)
-        if candles and len(candles) >= 1:
-            pattern = detect_candlestick_pattern(candles)
-            if pattern and "BEARISH" in pattern and direction == "long":
-                return _pending(setup_id, f"OD-01: reversal pattern {pattern}")
-            if pattern and "BULLISH" in pattern and direction == "short":
-                return _pending(setup_id, f"OD-01: reversal pattern {pattern}")
         sl_d = abs(mid - tracker.open_price) + 5.0
-        tp_d = sl_d * 1.5
         sl = mid - sl_d if direction == "long" else mid + sl_d
-        tp = mid + tp_d if direction == "long" else mid - tp_d
+        tp = mid + sl_d * 1.5 if direction == "long" else mid - sl_d * 1.5
         return Signal(setup_id, SignalVerdict.CONFIRMED, direction,
-                     round(mid, 2), round(sl, 2), round(tp, 2), 0.65,
-                     f"Opening Drive {direction.upper()}: {move_pct:.2%}")
+                     round(mid, 2), round(sl, 2), round(tp, 2), 0.64,
+                     f"OD {direction.upper()}: {move_pct:.2%}")
 
-    # ═══ V20: GAP FADE ═══════════════════════════════════════════════════════
-    elif fn == "gap_fade":
-        if ctx.prev_close <= 0 or not tracker.open_price:
-            return _pending(setup_id, "No prev close/open.")
-        gap_pct, gap_dir = detect_gap(tracker.open_price, ctx.prev_close)
-        if abs(gap_pct) < 0.005: return _pending(setup_id, f"Gap {gap_pct:.2%} too small.")
-        # Fade = trade AGAINST gap direction
-        direction = "short" if gap_dir == "up" else "long"
-        # Need first reversal sign
-        if len(tracker.close_prices) < 2:
-            return _pending(setup_id, "Awaiting reversal candle.")
-        last2 = tracker.close_prices[-2:]
-        if direction == "long" and last2[-1] <= last2[-2]:
-            return _pending(setup_id, "No bullish reversal yet.")
-        if direction == "short" and last2[-1] >= last2[-2]:
-            return _pending(setup_id, "No bearish reversal yet.")
-        gap_size = abs(tracker.open_price - ctx.prev_close)
-        sl = (tracker.open_price + 10 if gap_dir == "up" else tracker.open_price - 10)
-        tp = mid + gap_size * 0.5 if direction == "long" else mid - gap_size * 0.5
-        return Signal(setup_id, SignalVerdict.CONFIRMED, direction,
-                     round(mid, 2), round(sl, 2), round(tp, 2), 0.60,
-                     f"Gap Fade {direction.upper()}: gap={gap_pct:.2%}")
-
-    # ═══ V20: GAP AND GO ═════════════════════════════════════════════════════
+    # ═══ GAP-02: gap + 2 consecutive closes in gap direction ═════════════════
     elif fn == "gap_go":
         if ctx.prev_close <= 0 or not tracker.open_price:
             return _pending(setup_id, "No prev close/open.")
         gap_pct, gap_dir = detect_gap(tracker.open_price, ctx.prev_close)
-        if abs(gap_pct) < 0.003: return _pending(setup_id, f"Gap {gap_pct:.2%} too small.")
-        if gap_dir == "none": return _pending(setup_id, "No gap.")
+        if abs(gap_pct) < 0.003 or gap_dir == "none":
+            return _pending(setup_id, f"Gap {gap_pct:.2%} too small.")
         direction = "long" if gap_dir == "up" else "short"
-        # Need 3 consecutive closes in gap direction
-        if len(tracker.close_prices) < 3:
-            return _pending(setup_id, "Need 3 close prices.")
-        last3 = tracker.close_prices[-3:]
-        if direction == "long" and not all(last3[i] > last3[i-1] for i in range(1, 3)):
-            return _pending(setup_id, "Not 3 consecutive up closes.")
-        if direction == "short" and not all(last3[i] < last3[i-1] for i in range(1, 3)):
-            return _pending(setup_id, "Not 3 consecutive down closes.")
-        first_3_range = max(last3) - min(last3)
-        sl = min(last3) - 5 if direction == "long" else max(last3) + 5
-        tp = mid + first_3_range * 2 if direction == "long" else mid - first_3_range * 2
+        if len(tracker.close_prices) < 2:
+            return _pending(setup_id, "Need 2 closes.")
+        last2 = tracker.close_prices[-2:]
+        if direction == "long" and not (last2[1] > last2[0]):
+            return _pending(setup_id, "No consecutive up.")
+        if direction == "short" and not (last2[1] < last2[0]):
+            return _pending(setup_id, "No consecutive down.")
+        gap_size = abs(tracker.open_price - ctx.prev_close)
+        sl = min(last2) - 5 if direction == "long" else max(last2) + 5
+        tp = mid + gap_size * 1.5 if direction == "long" else mid - gap_size * 1.5
         return Signal(setup_id, SignalVerdict.CONFIRMED, direction,
-                     round(mid, 2), round(sl, 2), round(tp, 2), 0.65,
-                     f"Gap&Go {direction.upper()}: 3 confirms")
+                     round(mid, 2), round(sl, 2), round(tp, 2), 0.62,
+                     f"Gap&Go {direction.upper()}")
 
-    # ═══ V20: IB BREAKOUT ════════════════════════════════════════════════════
+    # ═══ IB-01: price > IB high + 2 or < IB low - 2 (no range min, no 2-close confirm) ═══
     elif fn == "ib_breakout":
         if not tracker.ib_locked: return _pending(setup_id, "IB not locked.")
+        if mid > tracker.ib_high + 2.0:       direction = "long"
+        elif mid < tracker.ib_low - 2.0:      direction = "short"
+        else: return _pending(setup_id, "No IB break.")
         ib_range = tracker.ib_high - tracker.ib_low if tracker.ib_low != float("inf") else 0
-        if ib_range < inst_atr * 0.6:
-            return _pending(setup_id, f"Not TREND day: IB range={ib_range:.0f} < {inst_atr*0.6:.0f}")
-        if mid > tracker.ib_high + 2.0:
-            direction = "long"
-        elif mid < tracker.ib_low - 2.0:
-            direction = "short"
-        else:
-            return _pending(setup_id, "No IB break.")
-        # Need sustained break (2 consecutive closes)
-        if len(tracker.close_prices) < 2:
-            return _pending(setup_id, "Awaiting confirmation.")
-        sl_d = ib_range * 0.5  # midpoint of IB
-        tp_d = ib_range  # 1x IB range extension
+        sl_d = max(ib_range * 0.5, 20) if ib_range > 0 else inst_atr * 0.4
+        tp_d = max(ib_range, 40) if ib_range > 0 else inst_atr * 0.8
         sl = mid - sl_d if direction == "long" else mid + sl_d
         tp = mid + tp_d if direction == "long" else mid - tp_d
         return Signal(setup_id, SignalVerdict.CONFIRMED, direction,
-                     round(mid, 2), round(sl, 2), round(tp, 2), 0.75,
-                     f"IB Breakout {direction.upper()}: range={ib_range:.0f}")
+                     round(mid, 2), round(sl, 2), round(tp, 2), 0.70,
+                     f"IB Break {direction.upper()}: range={ib_range:.0f}")
 
-    # ═══ V20: IB RANGE SCALP ════════════════════════════════════════════════
+    # ═══ IB-02: price within 3pts of IB boundary ════════════════════════════
     elif fn == "ib_range_scalp":
         if not tracker.ib_locked: return _pending(setup_id, "IB not locked.")
-        ib_range = tracker.ib_high - tracker.ib_low if tracker.ib_low != float("inf") else 0
-        if ib_range <= 0 or ib_range > inst_atr * 0.3:
-            return _pending(setup_id, f"Not CHOP day: IB range={ib_range:.0f}")
-        if abs(mid - tracker.ib_high) < 3.0:
-            direction = "short"
-        elif abs(mid - tracker.ib_low) < 3.0:
-            direction = "long"
-        else:
-            return _pending(setup_id, "Not at IB boundary.")
+        if abs(mid - tracker.ib_high) < 3.0:      direction = "short"
+        elif abs(mid - tracker.ib_low) < 3.0:     direction = "long"
+        else: return _pending(setup_id, "Not at IB boundary.")
+        ib_range = tracker.ib_high - tracker.ib_low if tracker.ib_low != float("inf") else 30
         sl = mid + 15 if direction == "short" else mid - 15
-        tp = mid - ib_range * 0.5 if direction == "short" else mid + ib_range * 0.5
+        tp = mid - max(ib_range * 0.5, 15) if direction == "short" else mid + max(ib_range * 0.5, 15)
         return Signal(setup_id, SignalVerdict.CONFIRMED, direction,
-                     round(mid, 2), round(sl, 2), round(tp, 2), 0.62,
-                     f"IB Scalp {direction.upper()}: bounce off boundary")
+                     round(mid, 2), round(sl, 2), round(tp, 2), 0.58,
+                     f"IB Scalp {direction.upper()}")
 
-    # ═══ V20: VWAP BOUNCE LONG ═══════════════════════════════════════════════
+    # ═══ VWAP-01: price within 5pts above VWAP ══════════════════════════════
     elif fn == "vwap_bounce_long":
         if vwap <= 0: return _pending(setup_id, "No VWAP.")
-        if mid < vwap: return _pending(setup_id, "Below VWAP — no bounce setup.")
         dist = mid - vwap
-        if dist > 3.0: return _pending(setup_id, f"Too far from VWAP ({dist:.1f}pts).")
-        # Check for reversal candle
-        candles = get_candle_store().get("NAS100", "M1", 3)
-        pattern = detect_candlestick_pattern(candles) if candles else None
-        if pattern not in ("BULLISH_ENGULFING", "HAMMER", "DOJI", "THREE_WHITE_SOLDIERS", None):
-            return _pending(setup_id, f"No bullish reversal pattern (got {pattern}).")
+        if dist < 0 or dist > 5.0: return _pending(setup_id, f"Not in zone ({dist:.1f}).")
         sl = vwap - 15
-        tp_dist = max(20, inst_atr * 0.3)
-        tp = mid + tp_dist
-        conf = 0.70 if pattern else 0.62
+        tp = mid + max(20, inst_atr * 0.3)
         return Signal(setup_id, SignalVerdict.CONFIRMED, "long",
-                     round(mid, 2), round(sl, 2), round(tp, 2), conf,
-                     f"VWAP Bounce Long: dist={dist:.1f}, pattern={pattern or 'none'}")
+                     round(mid, 2), round(sl, 2), round(tp, 2), 0.60,
+                     f"VWAP Bounce: dist={dist:.1f}")
 
-    # ═══ V20: VWAP REJECT SHORT ══════════════════════════════════════════════
+    # ═══ VWAP-02: price within 5pts below VWAP ══════════════════════════════
     elif fn == "vwap_reject_short":
         if vwap <= 0: return _pending(setup_id, "No VWAP.")
-        if mid > vwap: return _pending(setup_id, "Above VWAP — no reject.")
         dist = vwap - mid
-        if dist > 3.0: return _pending(setup_id, f"Too far from VWAP ({dist:.1f}pts).")
-        candles = get_candle_store().get("NAS100", "M1", 3)
-        pattern = detect_candlestick_pattern(candles) if candles else None
-        if pattern not in ("BEARISH_ENGULFING", "SHOOTING_STAR", "THREE_BLACK_CROWS", None):
-            return _pending(setup_id, f"No bearish reversal (got {pattern}).")
+        if dist < 0 or dist > 5.0: return _pending(setup_id, f"Not in zone ({dist:.1f}).")
         sl = vwap + 15
-        tp_dist = max(20, inst_atr * 0.3)
-        tp = mid - tp_dist
-        conf = 0.68 if pattern else 0.60
+        tp = mid - max(20, inst_atr * 0.3)
         return Signal(setup_id, SignalVerdict.CONFIRMED, "short",
-                     round(mid, 2), round(sl, 2), round(tp, 2), conf,
-                     f"VWAP Reject Short: dist={dist:.1f}, pattern={pattern or 'none'}")
+                     round(mid, 2), round(sl, 2), round(tp, 2), 0.58,
+                     f"VWAP Reject: dist={dist:.1f}")
 
-    # ═══ V20: VWAP RECLAIM MOMENTUM ══════════════════════════════════════════
+    # ═══ VWAP-03: price above VWAP ══════════════════════════════════════════
     elif fn == "vwap_reclaim_momentum":
         if vwap <= 0: return _pending(setup_id, "No VWAP.")
         if mid <= vwap: return _pending(setup_id, "Below VWAP.")
-        # Need 3 consecutive closes above VWAP
-        if len(tracker.close_prices) < 3: return _pending(setup_id, "Need 3 closes.")
-        last3 = tracker.close_prices[-3:]
-        if not all(c > vwap for c in last3):
-            return _pending(setup_id, "Not 3 consecutive above VWAP.")
         sl = vwap - 5
         tp = mid + inst_atr * 0.4
         return Signal(setup_id, SignalVerdict.CONFIRMED, "long",
-                     round(mid, 2), round(sl, 2), round(tp, 2), 0.65,
-                     "VWAP Reclaim Momentum: 3 closes above")
+                     round(mid, 2), round(sl, 2), round(tp, 2), 0.60,
+                     "VWAP Momentum: above VWAP")
 
-    # ═══ V20: PDH/PDL TEST ═══════════════════════════════════════════════════
+    # ═══ LVL-01: price within 10pts of PDH or PDL ═══════════════════════════
     elif fn == "pdh_pdl_test":
         if ctx.pdh <= 0 or ctx.pdl <= 0: return _pending(setup_id, "No PDH/PDL.")
-        near_pdh = abs(mid - ctx.pdh) < 5.0
-        near_pdl = abs(mid - ctx.pdl) < 5.0
+        near_pdh = abs(mid - ctx.pdh) < 10.0
+        near_pdl = abs(mid - ctx.pdl) < 10.0
         if not (near_pdh or near_pdl): return _pending(setup_id, "Not near PDH/PDL.")
-        # Fade: if touching and rejecting
         if near_pdh and mid < ctx.pdh:
-            direction = "short"
-            sl, tp = round(ctx.pdh + 20, 2), round(mid - 40, 2)
+            direction, sl, tp = "short", round(ctx.pdh + 20, 2), round(mid - 40, 2)
         elif near_pdl and mid > ctx.pdl:
-            direction = "long"
-            sl, tp = round(ctx.pdl - 20, 2), round(mid + 40, 2)
-        # Break: if price is through level
-        elif near_pdh and mid > ctx.pdh:
-            direction = "long"
-            sl, tp = round(ctx.pdh - 5, 2), round(mid + 40, 2)
-        elif near_pdl and mid < ctx.pdl:
-            direction = "short"
-            sl, tp = round(ctx.pdl + 5, 2), round(mid - 40, 2)
-        else:
-            return _pending(setup_id, "No clear PDH/PDL signal.")
+            direction, sl, tp = "long", round(ctx.pdl - 20, 2), round(mid + 40, 2)
+        elif near_pdh:
+            direction, sl, tp = "long", round(ctx.pdh - 5, 2), round(mid + 40, 2)
+        elif near_pdl:
+            direction, sl, tp = "short", round(ctx.pdl + 5, 2), round(mid - 40, 2)
+        else: return _pending(setup_id, "No signal.")
         return Signal(setup_id, SignalVerdict.CONFIRMED, direction,
-                     round(mid, 2), sl, tp, 0.65,
-                     f"PDH/PDL {'fade' if 'fade' in fn else 'test'} {direction.upper()}")
+                     round(mid, 2), sl, tp, 0.60,
+                     f"PDH/PDL {direction.upper()}")
 
-    # ═══ V20: ROUND NUMBER SCALP ═════════════════════════════════════════════
+    # ═══ LVL-02: price within 5pts of any 100-point round number ════════════
     elif fn == "round_number":
-        if mid <= 0: return _pending(setup_id, "No price.")
         nearest_100 = round(mid / 100) * 100
         dist = mid - nearest_100
-        if abs(dist) > 10: return _pending(setup_id, f"Too far from round ({nearest_100}).")
-        if dist > 0:   # above round, could be bouncing or breaking
-            direction = "short" if dist < 5 else "long"
-        else:
-            direction = "long" if dist > -5 else "short"
+        if abs(dist) > 5: return _pending(setup_id, f"Far from {nearest_100}.")
+        direction = "short" if dist > 0 else "long"
         sl = mid + 15 if direction == "short" else mid - 15
         tp = mid - 25 if direction == "short" else mid + 25
         return Signal(setup_id, SignalVerdict.CONFIRMED, direction,
-                     round(mid, 2), round(sl, 2), round(tp, 2), 0.58,
-                     f"Round #{nearest_100:.0f}: {direction.upper()}")
+                     round(mid, 2), round(sl, 2), round(tp, 2), 0.55,
+                     f"Round #{nearest_100:.0f}")
 
-    # ═══ V20: RANGE FADE ═════════════════════════════════════════════════════
-    elif fn == "range_fade":
-        if not tracker.session_high or not tracker.session_low:
-            return _pending(setup_id, "No session range.")
-        sh, sl_price = tracker.session_high, tracker.session_low
-        session_range = sh - sl_price
-        if session_range < 20: return _pending(setup_id, "Range too small.")
-        near_high = abs(mid - sh) < 10
-        near_low = abs(mid - sl_price) < 10
-        if not (near_high or near_low): return _pending(setup_id, "Not at session extreme.")
-        direction = "short" if near_high else "long"
-        session_mid = (sh + sl_price) / 2
-        sl_val = sh + 5 if direction == "short" else sl_price - 5
-        tp = session_mid
-        return Signal(setup_id, SignalVerdict.CONFIRMED, direction,
-                     round(mid, 2), round(sl_val, 2), round(tp, 2), 0.65,
-                     f"Range Fade {direction.upper()}: near session {'high' if near_high else 'low'}")
-
-    # ═══ V20: AFTERNOON BREAKOUT ══════════════════════════════════════════════
-    elif fn == "afternoon_breakout":
-        lh = tracker.lunch_high
-        ll = tracker.lunch_low
-        if not lh or not ll: return _pending(setup_id, "No lunch range.")
-        lunch_range = lh - ll
-        if lunch_range > 30: return _pending(setup_id, f"Lunch range {lunch_range:.0f} too wide.")
-        if mid > lh + 2:
-            direction = "long"
-        elif mid < ll - 2:
-            direction = "short"
-        else:
-            return _pending(setup_id, "No lunch breakout.")
-        sl = ll - 5 if direction == "long" else lh + 5
-        tp = mid + lunch_range * 1.5 if direction == "long" else mid - lunch_range * 1.5
-        return Signal(setup_id, SignalVerdict.CONFIRMED, direction,
-                     round(mid, 2), round(sl, 2), round(tp, 2), 0.62,
-                     f"Afternoon Breakout {direction.upper()}: lunch range={lunch_range:.0f}")
-
-    # ═══ V20: POWER HOUR ═════════════════════════════════════════════════════
-    elif fn == "power_hour":
-        if ctx.atr_consumed_pct >= 0.80:
-            return _pending(setup_id, f"ATR {ctx.atr_consumed_pct:.0%} consumed.")
-        if mid > vwap * 1.001:     direction = "long"
-        elif mid < vwap * 0.999:   direction = "short"
-        else: return _pending(setup_id, "No clear trend.")
-        sl = mid - 25 if direction == "long" else mid + 25
-        tp = mid + 40 if direction == "long" else mid - 40
-        return Signal(setup_id, SignalVerdict.CONFIRMED, direction,
-                     round(mid, 2), round(sl, 2), round(tp, 2), 0.65,
-                     f"Power Hour {direction.upper()}: VWAP-aligned")
-
-    # ═══ V20: CLOSING DRIVE ══════════════════════════════════════════════════
-    elif fn == "closing_drive":
-        if not tracker.open_price: return _pending(setup_id, "No open.")
-        move_pct = (mid - tracker.open_price) / tracker.open_price
-        if abs(move_pct) < 0.003: return _pending(setup_id, "Intraday move too small.")
-        direction = "long" if move_pct > 0 else "short"
-        sl = mid - 20 if direction == "long" else mid + 20
-        tp = mid + 30 if direction == "long" else mid - 30
-        return Signal(setup_id, SignalVerdict.CONFIRMED, direction,
-                     round(mid, 2), round(sl, 2), round(tp, 2), 0.60,
-                     f"Closing Drive {direction.upper()}: day move={move_pct:.2%}")
-
-    # ═══ V20: EOD FADE ═══════════════════════════════════════════════════════
-    elif fn == "eod_fade":
-        if not tracker.open_price: return _pending(setup_id, "No open.")
-        move_pct = (mid - tracker.open_price) / tracker.open_price
-        if abs(move_pct) < 0.01: return _pending(setup_id, "Day move < 1%.")
-        if ctx.atr_consumed_pct < 0.90: return _pending(setup_id, f"ATR only {ctx.atr_consumed_pct:.0%}.")
-        direction = "short" if move_pct > 0 else "long"
-        sl_d = inst_atr * 0.3
-        sl = mid + sl_d if direction == "short" else mid - sl_d
-        tp = vwap  # fade back toward VWAP
-        if abs(mid - tp) < 10: return _pending(setup_id, "Already near VWAP.")
-        return Signal(setup_id, SignalVerdict.CONFIRMED, direction,
-                     round(mid, 2), round(sl, 2), round(tp, 2), 0.58,
-                     f"EOD Fade {direction.upper()}: exhaustion")
-
-    # ═══ V20: GOLD CORRELATION ═══════════════════════════════════════════════
+    # ═══ GOLD CORRELATION ════════════════════════════════════════════════════
     elif fn == "gold_correlation":
         corr_engine = get_correlation_engine()
         divergence = corr_engine.detect_divergence("XAUUSD", "DXY", expected_corr=-0.60)
-        if not divergence: return _pending(setup_id, "No gold/DXY divergence.")
+        if not divergence: return _pending(setup_id, "No divergence.")
         corr_val, desc = divergence
-        # If gold spikes while DXY flat/up → risk-off → NQ drops
         direction = "short" if corr_val > 0 else "long"
         sl = mid + 30 if direction == "short" else mid - 30
         tp = mid - 50 if direction == "short" else mid + 50
         return Signal(setup_id, SignalVerdict.CONFIRMED, direction,
-                     round(mid, 2), round(sl, 2), round(tp, 2), 0.60,
+                     round(mid, 2), round(sl, 2), round(tp, 2), 0.56,
                      f"Gold Corr: {desc}")
 
     return _pending(setup_id, f"Unknown fn: {fn}")
