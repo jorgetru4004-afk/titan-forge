@@ -14,7 +14,8 @@ from __future__ import annotations
 import logging, math, random, time
 from dataclasses import dataclass, field
 from typing import Optional
-from forge_core import MarketContext, SessionState, InstrumentTracker
+from forge_core import MarketContext, SessionState, InstrumentTracker, now_et_time
+from datetime import time as dtime
 
 logger = logging.getLogger("titan_forge.brain")
 
@@ -248,11 +249,20 @@ def compute_bayesian_conviction(
     if regime_m <= 0.0:
         posterior = 0.0  # SUPPRESSED
     else:
-        # Apply as posterior adjustment (multiplicative on odds scale)
         if regime_m != 1.0:
             adjusted_odds = posterior_odds * regime_m
             posterior = adjusted_odds / (1.0 + adjusted_odds)
             posterior = max(0.05, min(0.98, posterior))
+
+    # 3B: Time-of-day multiplier (from ghost data analysis)
+    _tod = now_et_time()
+    if dtime(9, 30) <= _tod < dtime(10, 0):      tod_mult = 0.95  # opening noise
+    elif dtime(10, 0) <= _tod < dtime(11, 30):    tod_mult = 1.05  # institutional setup
+    elif dtime(11, 30) <= _tod < dtime(13, 0):    tod_mult = 0.90  # lunch chop
+    elif dtime(13, 0) <= _tod < dtime(14, 0):     tod_mult = 0.95  # early afternoon
+    elif dtime(14, 0) <= _tod < dtime(15, 30):    tod_mult = 1.05  # afternoon trend
+    else:                                          tod_mult = 1.00  # closing
+    posterior = max(0.05, min(0.98, posterior * tod_mult))
 
     confirming = sum(1 for d in dimensions if d.confirms and d.weight > 0)
     contradicting = sum(1 for d in dimensions if not d.confirms and d.weight > 0)

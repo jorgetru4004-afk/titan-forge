@@ -271,7 +271,15 @@ class SessionMemory:
 
     @property
     def size_multiplier(self) -> float:
-        return self._session_size_mult
+        """Session size multiplier — accounts for losses AND PnL protection."""
+        mult = self._session_size_mult
+        pnl = self.session_pnl
+        # 4B: Protect green days, limit red days
+        if pnl > 300:
+            mult *= 0.80  # up $300+ → protect gains, reduce 20%
+        elif pnl < -200:
+            mult *= 0.70  # down $200+ → limit damage, reduce 30%
+        return max(0.30, mult)  # never below 30%
 
     def get_setup_conviction_adj(self, setup_id: str) -> float:
         """

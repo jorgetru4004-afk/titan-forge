@@ -338,10 +338,11 @@ class InstrumentTracker:
         self._last_close_time: Optional[datetime] = None
         self._close_interval_sec: float = 300
 
-        # V20: VWAP from candle data (replaces open_price proxy)
+        # VWAP — calculated from FORGE's own NQ price data (Bug 1 fix)
+        # Uses spread as volume proxy. NEVER fed from QQQ/Polygon candle prices.
         self.vwap: Optional[float] = None
-        self._cumulative_tpv: float = 0.0   # sum(typical_price * volume)
-        self._cumulative_vol: float = 0.0   # sum(volume)
+        self._cumulative_tpv: float = 0.0   # sum(price * spread_volume)
+        self._cumulative_vol: float = 0.0   # sum(spread_volume)
 
         # V20: Lunch range tracking for MID-02
         self.lunch_high: Optional[float] = None
@@ -350,15 +351,6 @@ class InstrumentTracker:
         # V20: 3-min candle tracking for GAP-02
         self._first_3m_candles: list[dict] = []  # {open, close, high, low}
         self._3m_start: Optional[datetime] = None
-
-    def update_vwap(self, typical_price: float, volume: float) -> None:
-        """Update VWAP from candle data. Called by CandleStore on each M1 close."""
-        if volume <= 0 or typical_price <= 0:
-            return
-        self._cumulative_tpv += typical_price * volume
-        self._cumulative_vol += volume
-        if self._cumulative_vol > 0:
-            self.vwap = self._cumulative_tpv / self._cumulative_vol
 
     def update(self, bid: float, ask: float, ctx: "MarketContext") -> None:
         mid = (bid + ask) / 2.0
@@ -376,6 +368,15 @@ class InstrumentTracker:
                 self.session_high = mid
             if self.session_low is None or mid < self.session_low:
                 self.session_low = mid
+
+            # Bug 1 FIX: Calculate VWAP from FORGE's own NQ prices
+            # spread as volume proxy — wider spread = less liquidity = less weight
+            # invert spread so tight spreads get MORE weight
+            vol_proxy = max(0.01, 1.0 / max(spread, 0.01))
+            self._cumulative_tpv += mid * vol_proxy
+            self._cumulative_vol += vol_proxy
+            if self._cumulative_vol > 0:
+                self.vwap = self._cumulative_tpv / self._cumulative_vol
 
         # V20: Track lunch range for MID-02
         if dtime(12, 0) <= t < dtime(13, 0):

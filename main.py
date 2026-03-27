@@ -79,7 +79,7 @@ SETUP_CONFIG = {
     # ═══ EXISTING 8 (reviewed & retained) ════════════════════════════════════
     "ORD-02": {
         "name": "Opening Range Breakout", "instrument": "NAS100", "signal_fn": "orb",
-        "base_win_rate": 0.72, "avg_rr": 2.2, "rr_ratio": 2.0,
+        "base_win_rate": 0.58, "avg_rr": 2.2, "rr_ratio": 2.0,
         "catalyst_stack": 3, "base_size": 0.10,
         "window_start": dtime(9, 45), "window_end": dtime(11, 30),
         "expected_hold_min": 45, "atr_default": 150,
@@ -107,21 +107,21 @@ SETUP_CONFIG = {
     },
     "VOL-03": {
         "name": "Trend Day Momentum", "instrument": "NAS100", "signal_fn": "trend_momentum",
-        "base_win_rate": 0.66, "avg_rr": 2.5, "rr_ratio": 2.0,
+        "base_win_rate": 0.55, "avg_rr": 2.5, "rr_ratio": 2.0,
         "catalyst_stack": 2, "base_size": 0.10,
         "window_start": dtime(10, 30), "window_end": dtime(15, 0),
         "expected_hold_min": 60, "atr_default": 150,
     },
     "VOL-05": {
         "name": "Mean Reversion", "instrument": "NAS100", "signal_fn": "mean_reversion",
-        "base_win_rate": 0.68, "avg_rr": 1.8, "rr_ratio": 1.8,
+        "base_win_rate": 0.52, "avg_rr": 1.8, "rr_ratio": 1.8,
         "catalyst_stack": 2, "base_size": 0.10,
         "window_start": dtime(11, 0), "window_end": dtime(15, 30),
         "expected_hold_min": 45, "atr_default": 150,
     },
     "VOL-06": {
         "name": "Noon Curve Reversal", "instrument": "NAS100", "signal_fn": "noon_curve",
-        "base_win_rate": 0.61, "avg_rr": 1.6, "rr_ratio": 1.6,
+        "base_win_rate": 0.52, "avg_rr": 1.6, "rr_ratio": 1.6,
         "catalyst_stack": 3, "base_size": 0.10,
         "window_start": dtime(11, 45), "window_end": dtime(12, 45),
         "expected_hold_min": 30, "atr_default": 150,
@@ -143,7 +143,7 @@ SETUP_CONFIG = {
         "expected_hold_min": 30, "atr_default": 150,
     },
     "GAP-01": {
-        "name": "Gap Fade", "instrument": "NAS100", "signal_fn": "gap_fade",
+        "name": "Gap Fade [DISABLED]", "instrument": "NAS100", "signal_fn": "disabled",
         "base_win_rate": 0.52, "avg_rr": 1.5, "rr_ratio": 1.5,
         "catalyst_stack": 2, "base_size": 0.10,
         "window_start": dtime(9, 30), "window_end": dtime(10, 15),
@@ -295,6 +295,10 @@ def generate_signal(
 
     vwap = tracker.vwap or tracker.open_price or mid
     inst_atr = config.get("atr_default", atr) if atr <= 0 else atr
+
+    # 3A: Disabled setups never fire
+    if fn == "disabled":
+        return _pending(setup_id, "DISABLED — awaiting ghost data validation.")
 
     # ═══ ORB ═════════════════════════════════════════════════════════════════
     if fn == "orb":
@@ -776,40 +780,53 @@ async def manage_open_positions(adapter: MT5Adapter, account, ctx: MarketContext
             risk = abs(pos.entry_price - pos.stop_loss)
             if risk <= 0:
                 continue
-            if pos.direction.value == "long":
+            _is_long = pos.direction.value == "long"
+            if _is_long:
                 current_r = ((pos.current_price or pos.entry_price) - pos.entry_price) / risk
             else:
                 current_r = (pos.entry_price - (pos.current_price or pos.entry_price)) / risk
 
-            if current_r >= 1.0 and pos.stop_loss != pos.entry_price:
-                try:
-                    await adapter.modify_position(pos.position_id, new_stop_loss=pos.entry_price)
-                    logger.info("[FORGE-64] %s 1R → BE", pos.position_id)
-                except Exception as e:
-                    logger.error("[FORGE-64] Modify: %s", e)
+            # Compute trail targets
+            _be = pos.entry_price
+            _trail_05r = pos.entry_price + risk * 0.5 if _is_long else pos.entry_price - risk * 0.5
+            _trail_1r = pos.entry_price + risk * 1.0 if _is_long else pos.entry_price - risk * 1.0
+            _trail_2r = pos.entry_price + risk * 2.0 if _is_long else pos.entry_price - risk * 2.0
 
-            if current_r >= 1.5 and pos.size > 0.15:
-                close_lots = round(pos.size * 0.5, 2)
-                if close_lots >= 0.10:
-                    try:
-                        await adapter.close_position(pos.position_id, size=close_lots)
-                        logger.info("[FORGE-64] %s 1.5R → 50%%", pos.position_id)
-                        send_telegram(f"💰 <b>PARTIAL</b>\n{pos.position_id} at 1.5R")
-                    except Exception as e:
-                        logger.error("[FORGE-64] Partial: %s", e)
-
-            if current_r >= 3.0:
-                if pos.direction.value == "long":
-                    trail = pos.entry_price + risk * 2.0
+            # Only modify if new SL is BETTER than current SL
+            _current_sl = pos.stop_loss
+            def _sl_is_better(new_sl: float) -> bool:
+                if _is_long:
+                    return new_sl > _current_sl + 0.5  # at least 0.5pt improvement
                 else:
-                    trail = pos.entry_price - risk * 2.0
+                    return new_sl < _current_sl - 0.5
+
+            new_sl = None
+
+            # Stage 1: 1R → breakeven
+            if current_r >= 1.0 and _sl_is_better(_be):
+                new_sl = _be
+
+            # Stage 2: 1.5R → trail to +0.5R
+            if current_r >= 1.5 and _sl_is_better(_trail_05r):
+                new_sl = _trail_05r
+
+            # Stage 3: 2R → trail to +1R
+            if current_r >= 2.0 and _sl_is_better(_trail_1r):
+                new_sl = _trail_1r
+
+            # Stage 4: 3R → trail to +2R
+            if current_r >= 3.0 and _sl_is_better(_trail_2r):
+                new_sl = _trail_2r
+
+            if new_sl is not None:
                 try:
-                    await adapter.modify_position(pos.position_id, new_stop_loss=round(trail, 2))
-                    logger.info("[FORGE-64] %s 3R → trail", pos.position_id)
+                    await adapter.modify_position(pos.position_id, new_stop_loss=round(new_sl, 2))
+                    logger.info("[TRAIL] %s %.1fR → SL=%.2f (was %.2f)",
+                               pos.position_id, current_r, new_sl, _current_sl)
                 except Exception as e:
-                    logger.error("[FORGE-64] Trail: %s", e)
+                    logger.error("[TRAIL] %s modify failed: %s", pos.position_id, e)
         except Exception as e:
-            logger.error("[FORGE-64] Pos %s: %s", pos.position_id, e)
+            logger.error("[TRAIL] Pos %s: %s", pos.position_id, e)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1068,10 +1085,8 @@ async def live_trading_loop(adapter: MT5Adapter) -> None:
                         fetch_polygon_candles("NAS100", ["M5"])
                         _last_m5_fetch = now_utc
                         _fetched_any = True
-                        # Update VWAP from M5 candle volume data
-                        m5_candles = candle_store.get("NAS100", "M5", 10)
-                        for c in m5_candles:
-                            tracker.update_vwap(c.typical_price, c.volume)
+                        # NOTE: VWAP calculated from NQ prices in tracker.update()
+                        # QQQ candles used ONLY for trend direction, never price levels
                     except Exception as e:
                         logger.warning("[POLYGON] M5 fetch failed: %s", e)
 
@@ -1393,12 +1408,21 @@ async def live_trading_loop(adapter: MT5Adapter) -> None:
 
             setup_id, config, signal, conviction, ev_result, _size_mult, _is_scalp = best_action
 
-            # Bug 2 FIX: Block opposite direction on same instrument
-            _direction_conflict = False
+            # ═══ PRE-EXECUTION SAFETY GATES (Bugs 3/4/5/4C) ═══════════════
+
+            # Bug 3: REJECT hard block — NEVER execute REJECT trades
+            if conviction.conviction_level == "REJECT":
+                logger.info("[SAFETY] %s REJECT — hard blocked from execution", setup_id)
+                await asyncio.sleep(60); continue
+
             _target_inst = await resolve_instrument(adapter, config["instrument"])
+
+            # Bug 5: Block opposite direction on same instrument
+            _direction_conflict = False
             if _target_inst and account.open_positions:
                 for pos in account.open_positions:
-                    if hasattr(pos, 'instrument') and pos.instrument == _target_inst:
+                    _pos_inst = getattr(pos, 'instrument', None) or getattr(pos, 'symbol', None)
+                    if _pos_inst == _target_inst:
                         pos_dir = pos.direction.value if hasattr(pos.direction, 'value') else str(pos.direction)
                         if pos_dir != signal.direction:
                             logger.info("[CONFLICT] %s %s blocked — already %s %s open",
@@ -1406,6 +1430,40 @@ async def live_trading_loop(adapter: MT5Adapter) -> None:
                             _direction_conflict = True
                             break
             if _direction_conflict:
+                await asyncio.sleep(60); continue
+
+            # Bug 4: Max exposure 1.0 lots per instrument per direction
+            _current_exposure = 0.0
+            if _target_inst and account.open_positions:
+                for pos in account.open_positions:
+                    _pos_inst = getattr(pos, 'instrument', None) or getattr(pos, 'symbol', None)
+                    if _pos_inst == _target_inst:
+                        pos_dir = pos.direction.value if hasattr(pos.direction, 'value') else str(pos.direction)
+                        if pos_dir == signal.direction:
+                            _current_exposure += getattr(pos, 'size', 0) or getattr(pos, 'volume', 0) or 0
+
+            # 4C: Pre-trade sanity checks
+            _entry = signal.entry_price or 0
+            _sl = signal.stop_loss or 0
+            _tp = signal.take_profit or 0
+            _sl_dist = abs(_entry - _sl)
+            _tp_dist = abs(_entry - _tp)
+            _inst_atr = config.get("atr_default", 100)
+
+            _sanity_fail = None
+            if _tp_dist > _inst_atr * 2:
+                _sanity_fail = f"TP unreachable: {_tp_dist:.0f}pts > {_inst_atr*2:.0f} (2×ATR)"
+            elif _sl_dist < 5.0:
+                _sanity_fail = f"SL too tight: {_sl_dist:.1f}pts < 5pt min"
+            elif _sl_dist > _inst_atr * 1.0:
+                _sanity_fail = f"SL too wide: {_sl_dist:.0f}pts > {_inst_atr:.0f} (1×ATR)"
+            elif ev_result.ev_dollars > 500:
+                _sanity_fail = f"EV suspicious: ${ev_result.ev_dollars:.0f} > $500 cap"
+            elif ev_result.ev_dollars < 0:
+                _sanity_fail = f"EV negative: ${ev_result.ev_dollars:.0f}"
+
+            if _sanity_fail:
+                logger.warning("[SANITY] %s %s: %s", setup_id, signal.direction, _sanity_fail)
                 await asyncio.sleep(60); continue
 
             risk_decision = risk_fortress.evaluate(
@@ -1445,6 +1503,22 @@ async def live_trading_loop(adapter: MT5Adapter) -> None:
             # FTMO requires 0.10 lot increments on indices
             lot_size = max(0.10, round(round(lot_size / 0.10) * 0.10, 2))
             lot_size = min(lot_size, 2.0)
+
+            # Bug 4: Max 1.0 lots per instrument per direction
+            _max_inst_exposure = 1.0
+            _remaining_exposure = _max_inst_exposure - _current_exposure
+            if _remaining_exposure <= 0:
+                logger.info("[EXPOSURE] %s %s blocked — already %.2f lots %s on %s",
+                           setup_id, signal.direction, _current_exposure, signal.direction,
+                           config["instrument"])
+                await asyncio.sleep(60); continue
+            if lot_size > _remaining_exposure:
+                lot_size = round(round(_remaining_exposure / 0.10) * 0.10, 2)
+                if lot_size < 0.10:
+                    logger.info("[EXPOSURE] %s capped to 0 — skipping", setup_id)
+                    await asyncio.sleep(60); continue
+                logger.info("[EXPOSURE] %s capped to %.2f lots (%.2f already open)",
+                           setup_id, lot_size, _current_exposure)
 
             _trade_mode = "SCALP" if _is_scalp else conviction.conviction_level
 
