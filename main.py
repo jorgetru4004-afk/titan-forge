@@ -95,6 +95,7 @@ from forge_target import (
     SETUP_TRADE_TYPE, STRATEGY_TYPES,
 )
 from forge_genesis import auto_evolve, get_calibrated_wr
+from forge_router import SmartOrderRouter, get_order_type
 
 FORGE_VERSION = "v21"
 
@@ -278,6 +279,7 @@ async def live_trading_loop(adapter: MT5Adapter) -> None:
     perf_monitor = PerformanceMonitor()
     session_risk = SessionRiskTracker()
     cross_exploit = CrossMarketExploit()
+    order_router = SmartOrderRouter()
 
     firm_id = os.environ.get("ACTIVE_FIRM", "FTMO")
     firm_state = PropFirmState(firm_id=firm_id, initial_balance=100_000,
@@ -795,7 +797,7 @@ async def live_trading_loop(adapter: MT5Adapter) -> None:
                     max_position_pct=0.02, minutes_remaining=ctx.minutes_remaining,
                 )
 
-                if ev_result.ev_dollars < 0:
+                if ev_result.ev_dollars < order_router.get_ev_threshold():
                     continue
 
                 tier_weight = {"ELITE": 4.0, "HIGH": 3.0, "STANDARD": 2.0,
@@ -1023,15 +1025,24 @@ async def live_trading_loop(adapter: MT5Adapter) -> None:
                 comment=f"{setup_id}|{trade_id}|{conviction.posterior:.0%}",
             )
 
-            logger.info("🔫 [%s][%s][%s] %s %s %.2f lots | E=%.2f SL=%.2f TP=%.2f | "
+            _order_type_str = get_order_type(setup_id)
+            logger.info("🔫 [%s][%s][%s][%s] %s %s %.2f lots | E=%.2f SL=%.2f TP=%.2f | "
                          "P=%.0f%% EV=$%.0f | R=%s | SA=%.2f TE=%.2f",
-                         setup_id, _trade_mode, _24h_session,
+                         setup_id, _trade_mode, _24h_session, _order_type_str,
                          (signal.direction or "").upper(), _target_inst, lot_size,
                          signal.entry_price or 0, signal.stop_loss or 0, signal.take_profit or 0,
                          conviction.posterior * 100, ev_result.ev_dollars,
                          _regime, _sa_mult, _te_mult)
 
-            result = await adapter.place_order(order)
+            result = await order_router.execute(
+                adapter=adapter,
+                order_request=order,
+                setup_id=setup_id,
+                conviction_level=cl_level,
+                conviction_posterior=conviction.posterior,
+                instrument_key=inst_key,
+                signal_entry=signal.entry_price or mid,
+            )
 
             if result.status.value == "filled":
                 logger.info("✅ FILLED: %s @ %.5f", result.order_id, result.fill_price)
