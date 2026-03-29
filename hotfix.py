@@ -1,55 +1,84 @@
 """
-FORGE v21 HOTFIX — Run this once to fix the VWAP crash
+FORGE HOTFIX v2 — Fixes ALL None comparison crashes in forge_target.py
+and adds cycle_speed default to main.py
 """
-import os
+import re
 
-# Fix 1: forge_target.py — add None guard on vwap
+# Fix forge_target.py — guard ALL bare comparisons with > or < 
 target_file = "forge_target.py"
-if os.path.exists(target_file):
-    with open(target_file, "r") as f:
-        content = f.read()
+try:
+    with open(target_file, "rb") as f:
+        content = f.read().decode("utf-8", errors="replace")
     
-    # Replace all instances of "if vwap > 0:" with null-safe version
-    old = "if vwap > 0:"
-    new = "if vwap is not None and vwap > 0:"
+    # Find all "if VARIABLE > 0:" patterns and add None guard
+    # Match: "if somevar > 0:" or "if somevar < 0:" etc
+    patterns = [
+        (r'if (\w+) > (\d+):', r'if \1 is not None and \1 > \2:'),
+        (r'if (\w+) < (\d+):', r'if \1 is not None and \1 < \2:'),
+        (r'if (\w+) > (\d+\.\d+):', r'if \1 is not None and \1 > \2:'),
+        (r'if (\w+) < (\d+\.\d+):', r'if \1 is not None and \1 < \2:'),
+        (r'if (\w+) >= (\d+):', r'if \1 is not None and \1 >= \2:'),
+        (r'if (\w+) <= (\d+):', r'if \1 is not None and \1 <= \2:'),
+    ]
     
-    if old in content:
-        content = content.replace(old, new)
-        with open(target_file, "w") as f:
-            f.write(content)
-        print(f"FIXED: {target_file} — added None guard on vwap")
+    changed = False
+    for old_pat, new_pat in patterns:
+        new_content = re.sub(old_pat, new_pat, content)
+        if new_content != content:
+            changed = True
+            content = new_content
+    
+    # Also handle "if VARIABLE is not None and VARIABLE is not None and" (double guard)
+    content = content.replace("is not None and is not None and", "is not None and")
+    
+    if changed:
+        with open(target_file, "wb") as f:
+            f.write(content.encode("utf-8"))
+        print(f"FIXED: {target_file} — added None guards to ALL comparisons")
     else:
-        print(f"SKIP: {target_file} — already patched or pattern not found")
-else:
-    print(f"ERROR: {target_file} not found")
+        print(f"SKIP: {target_file} — already patched")
+        
+except Exception as e:
+    print(f"ERROR on {target_file}: {e}")
 
-# Fix 2: main.py — add default cycle_speed
+# Fix main.py — add cycle_speed default
 main_file = "main.py"
-if os.path.exists(main_file):
-    with open(main_file, "r") as f:
-        content = f.read()
+try:
+    with open(main_file, "rb") as f:
+        content = f.read().decode("utf-8", errors="replace")
     
-    # Add cycle_speed default at the start of live_trading_loop
-    old_func = "async def live_trading_loop("
-    if old_func in content and "cycle_speed = 60" not in content:
-        # Find the function and add default after its first line
-        idx = content.index(old_func)
-        # Find the next newline after the function def line (after the ":")
-        colon_idx = content.index(":", idx + len(old_func))
-        newline_idx = content.index("\n", colon_idx)
-        
-        # Insert cycle_speed default
-        content = content[:newline_idx + 1] + "    cycle_speed = 60  # default fallback\n" + content[newline_idx + 1:]
-        
-        with open(main_file, "w") as f:
-            f.write(content)
-        print(f"FIXED: {main_file} — added cycle_speed default")
+    if "cycle_speed = 60" not in content:
+        # Add cycle_speed default right after the function definition
+        old = "async def live_trading_loop("
+        if old in content:
+            idx = content.index(old)
+            # Find the closing ")" and then ":"
+            paren_count = 0
+            i = idx + len(old)
+            while i < len(content):
+                if content[i] == '(':
+                    paren_count += 1
+                elif content[i] == ')':
+                    if paren_count == 0:
+                        break
+                    paren_count -= 1
+                i += 1
+            # Find the ":" after ")"
+            colon_idx = content.index(":", i)
+            newline_idx = content.index("\n", colon_idx)
+            
+            content = content[:newline_idx + 1] + "    cycle_speed = 60  # hotfix default\n" + content[newline_idx + 1:]
+            
+            with open(main_file, "wb") as f:
+                f.write(content.encode("utf-8"))
+            print(f"FIXED: {main_file} — added cycle_speed default")
+        else:
+            print(f"SKIP: {main_file} — function not found")
     else:
-        print(f"SKIP: {main_file} — already patched or pattern not found")
-else:
-    print(f"ERROR: {main_file} not found")
+        print(f"SKIP: {main_file} — already patched")
+        
+except Exception as e:
+    print(f"ERROR on {main_file}: {e}")
 
-print("\nDone! Now run:")
-print("  git add -A")
-print('  git commit -m "hotfix: VWAP None guard + cycle_speed default"')
-print("  git push origin main")
+print("\nDone! Push with:")
+print('  git add -A && git commit -m "hotfix v2: all None guards + cycle_speed" && git push origin main')

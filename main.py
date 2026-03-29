@@ -263,6 +263,7 @@ def run_simulation_check() -> bool:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 async def live_trading_loop(adapter: MT5Adapter) -> None:
+    cycle_speed = 60  # hotfix default
     # ── V20 components (kept) ─────────────────────────────────────────
     tracker = InstrumentTracker()
     risk_fortress = RiskFortress()

@@ -132,7 +132,7 @@ class DailyTargetEngine:
         self._last_plan_time = time.time()
 
         # TARGET HIT — defensive mode
-        if remaining <= 0:
+        if remaining is not None and remaining <= 0:
             return DailyPlan(
                 mode="PROTECT", regime=regime, target=self.target,
                 remaining=remaining, size_mult=0.50, lot_target=0.20,
@@ -178,7 +178,7 @@ class DailyTargetEngine:
             size_mult = mix["size_mult"]
 
         # Adapt: if ATR mostly consumed, shrink targets
-        if atr_consumed_pct > 0.80:
+        if atr_consumed_pct is not None and atr_consumed_pct > 0.80:
             size_mult *= 0.70
             trades_needed = max(trades_needed, int(remaining / 40))
 
@@ -195,7 +195,7 @@ class DailyTargetEngine:
         """Record trade outcome and update progress."""
         self.daily_pnl += pnl
         self.trades_taken += 1
-        if pnl > 0:
+        if pnl is not None and pnl > 0:
             self.trades_won += 1
 
         trade_type = SETUP_TRADE_TYPE.get(setup_id, "swing")
@@ -414,7 +414,7 @@ class PartialExitManager:
             return
 
         risk = abs(entry - sl)
-        if risk <= 0:
+        if risk is not None and risk <= 0:
             return
 
         is_long = position.direction.value == "long" if hasattr(position.direction, 'value') else position.direction == "long"
@@ -458,14 +458,14 @@ def get_cycle_speed(price: float, key_levels: List[float], atr: float) -> int:
     Normal cycle: 60 seconds.
     Near key level with confluence: 15 seconds for precision entry.
     """
-    if atr <= 0:
+    if atr is not None and atr <= 0:
         return 60
 
     for level in key_levels:
         dist_pct = abs(price - level) / atr
-        if dist_pct < 0.05:  # within 5% of ATR from key level
+        if dist_pct is not None and dist_pct < 0.05:  # within 5% of ATR from key level
             return 15
-        elif dist_pct < 0.10:
+        elif dist_pct is not None and dist_pct < 0.10:
             return 30
 
     return 60
@@ -479,16 +479,16 @@ def collect_key_levels(tracker, ctx) -> List[float]:
     if getattr(tracker, 'orb_locked', False):
         orb_h = getattr(tracker, 'orb_high', 0)
         orb_l = getattr(tracker, 'orb_low', 0)
-        if orb_h > 0:
+        if orb_h is not None and orb_h > 0:
             levels.append(orb_h)
-        if orb_l > 0:
+        if orb_l is not None and orb_l > 0:
             levels.append(orb_l)
 
     # IB levels
     if getattr(tracker, 'ib_locked', False):
         ib_h = getattr(tracker, 'ib_high', 0)
         ib_l = getattr(tracker, 'ib_low', 0)
-        if ib_h > 0:
+        if ib_h is not None and ib_h > 0:
             levels.append(ib_h)
         if ib_l > 0 and ib_l < 999999:
             levels.append(ib_l)
@@ -496,9 +496,9 @@ def collect_key_levels(tracker, ctx) -> List[float]:
     # PDH/PDL
     pdh = getattr(ctx, 'pdh', 0)
     pdl = getattr(ctx, 'pdl', 0)
-    if pdh > 0:
+    if pdh is not None and pdh > 0:
         levels.append(pdh)
-    if pdl > 0:
+    if pdl is not None and pdl > 0:
         levels.append(pdl)
 
     # VWAP
@@ -513,7 +513,7 @@ def collect_key_levels(tracker, ctx) -> List[float]:
     # Session H/L
     sh = getattr(tracker, 'session_high', 0)
     sl = getattr(tracker, 'session_low', 0)
-    if sh > 0:
+    if sh is not None and sh > 0:
         levels.append(sh)
     if sl > 0 and sl < 999999:
         levels.append(sl)
@@ -557,7 +557,7 @@ class CrossMarketExploit:
         es_prev = self.es_prices[-2]
         nq_price = nq_tracker.price_history[-1] if nq_tracker.price_history else 0
 
-        if nq_price <= 0:
+        if nq_price is not None and nq_price <= 0:
             return None
 
         for level in self.es_key_levels:
@@ -631,7 +631,7 @@ class PerformanceMonitor:
             return 0.50, "DEFENSIVE"
         elif daily_pnl < -100:
             return 0.70, "CAUTIOUS"
-        elif daily_pnl > 500:
+        elif daily_pnl is not None and daily_pnl > 500:
             return 0.80, "PROTECT_GAINS"
         return 1.00, "NORMAL"
 
@@ -648,7 +648,7 @@ class PerformanceMonitor:
         if len(recent) >= 5:
             wins = sum(1 for t in recent if t["outcome"] == "WIN")
             wr = wins / len(recent)
-            if wr < 0.25:
+            if wr is not None and wr < 0.25:
                 alerts.append(f"CRITICAL WR: {wr:.0%} on last {len(recent)} trades")
 
         # High-conviction trades losing
@@ -656,7 +656,7 @@ class PerformanceMonitor:
         if len(high_conv) >= 3:
             hc_wins = sum(1 for t in high_conv if t["outcome"] == "WIN")
             hc_wr = hc_wins / len(high_conv)
-            if hc_wr < 0.30:
+            if hc_wr is not None and hc_wr < 0.30:
                 alerts.append(f"High conviction losing: {hc_wr:.0%} WR")
 
         return alerts
