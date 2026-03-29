@@ -1,0 +1,1499 @@
+NEXUS CAPITAL -- FORGE V22B REPLAY (TREND FILTER)
+5 setups | TREND FOLLOWING added | Don't fight the trend
+
+[DATA] 115173 M1 candles
+
+[REPLAY] 125 trading days
+[SYSTEM] 5 setups | TREND FILTER | 1 trade at a time | Don't fight the trend
+==========================================================================================
+
+==========================================================================================
+  2025-09-29 (Monday) | PDH:0 PDL:0
+==========================================================================================
+  + 09:36 LEVEL-01     LONG  @24709 0.15L trend:FLAT WIN  $+35 (+0.5R) 7bars | Round 24700 bounce (trend:FLAT)
+  X 10:37 TREND-01     LONG  @24767 0.30L trend:UP   LOSS $-209 (-1.1R) 34bars | Trend pullback long (trend:UP, near VWAP)
+  + 11:23 EXHAUST-01   SHORT @24722 0.15L trend:DOWN WIN  $+127 (+1.4R) 13bars | Exhaust 3bar up, trend:DOWN, vol declining
+  + 12:42 LEVEL-01     SHORT @24692 0.15L trend:FLAT WIN  $+98 (+1.4R) 15bars | Round 24700 reject (trend:FLAT)
+  X 14:09 EXHAUST-01   LONG  @24676 0.15L trend:FLAT LOSS $-8 (-0.1R) 45bars | Exhaust 4bar down, trend:FLAT, vol declining
+
+  DAY: 5 trades | 3W 2L | WR: 60% | P&L: $+44
+
+==========================================================================================
+  2025-09-30 (Tuesday) | PDH:24804 PDL:24613
+==========================================================================================
+  X 09:38 LEVEL-01     SHORT @24586 0.15L trend:FLAT LOSS $-94 (-1.1R) 6bars | Round 24600 reject (trend:FLAT)
+  X 10:29 TREND-01     LONG  @24618 0.30L trend:UP   LOSS $-160 (-1.1R) 10bars | Trend pullback long (trend:UP, near VWAP)
+  + 11:25 TREND-01     SHORT @24621 0.30L trend:DOWN WIN  $+10 (+0.1R) 2bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 12:19 TREND-01     LONG  @24642 0.30L trend:UP   LOSS $-223 (-1.1R) 39bars | Trend pullback long (trend:UP, near VWAP)
+  + 13:04 TREND-01     SHORT @24611 0.30L trend:DOWN WIN  $+18 (+0.1R) 43bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 13:51 TREND-01     LONG  @24628 0.30L trend:UP   LOSS $-166 (-1.1R) 8bars | Trend pullback long (trend:UP, near VWAP)
+
+  DAY: 6 trades | 2W 4L | WR: 33% | P&L: $-616
+
+==========================================================================================
+  2025-10-01 (Wednesday) | PDH:24749 PDL:24559
+==========================================================================================
+  + 10:00 LEVEL-01     LONG  @24626 0.15L trend:FLAT WIN  $+98 (+0.8R) 3bars | Round 24600 bounce (trend:FLAT)
+  + 11:11 EXHAUST-01   LONG  @24736 0.15L trend:UP   WIN  $+116 (+0.8R) 45bars | Exhaust 4bar down, trend:UP, vol declining
+  + 12:39 EXHAUST-01   LONG  @24785 0.15L trend:UP   WIN  $+99 (+0.6R) 45bars | Exhaust 3bar down, trend:UP, vol declining
+  + 13:39 EXHAUST-01   LONG  @24817 0.15L trend:UP   WIN  $+109 (+0.6R) 45bars | Exhaust 3bar down, trend:UP, vol declining
+  X 15:10 EXHAUST-01   LONG  @24870 0.15L trend:UP   LOSS $-29 (-0.1R) 45bars | Exhaust 3bar down, trend:UP, vol declining
+
+  DAY: 5 trades | 4W 1L | WR: 80% | P&L: $+393
+
+==========================================================================================
+  2025-10-02 (Thursday) | PDH:24876 PDL:24569
+==========================================================================================
+  + 09:31 LEVEL-01     SHORT @24991 0.15L trend:FLAT WIN  $+12 (+0.2R) 3bars | Round 25000 reject (trend:FLAT)
+  X 10:23 TREND-01     LONG  @24929 0.30L trend:UP   LOSS $-198 (-1.1R) 23bars | Trend pullback long (trend:UP, near VWAP)
+  X 11:09 LEVEL-01     SHORT @24879 0.15L trend:DOWN LOSS $-44 (-1.2R) 1bars | PDH reject (trend:DOWN)
+  X 11:55 TREND-01     LONG  @24915 0.30L trend:UP   LOSS $-116 (-0.6R) 45bars | Trend pullback long (trend:UP, near VWAP)
+  X 12:40 TREND-01     SHORT @24898 0.30L trend:DOWN LOSS $-227 (-1.1R) 43bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 13:26 TREND-01     LONG  @24934 0.30L trend:UP   WIN  $+66 (+0.2R) 45bars | Trend pullback long (trend:UP, near VWAP)
+
+  DAY: 6 trades | 2W 4L | WR: 33% | P&L: $-507
+
+==========================================================================================
+  2025-10-03 (Friday) | PDH:25015 PDL:24841
+==========================================================================================
+  + 09:33 LEVEL-01     SHORT @25001 0.15L trend:FLAT WIN  $+98 (+1.1R) 23bars | PDH reject (trend:FLAT)
+  X 10:35 TREND-01     SHORT @24949 0.30L trend:DOWN LOSS $-219 (-1.1R) 40bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 11:20 TREND-01     LONG  @24983 0.30L trend:UP   WIN  $+104 (+0.5R) 45bars | Trend pullback long (trend:UP, near VWAP)
+  + 12:13 LEVEL-01     SHORT @24996 0.15L trend:FLAT WIN  $+54 (+0.9R) 45bars | Round 25000 reject (trend:FLAT)
+  + 13:23 LEVEL-01     SHORT @24900 0.15L trend:DOWN WIN  $+9 (+0.2R) 2bars | Round 24900 reject (trend:DOWN)
+  + 14:26 TREND-01     SHORT @24891 0.30L trend:DOWN WIN  $+39 (+0.1R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+
+  DAY: 6 trades | 5W 1L | WR: 83% | P&L: $+85
+
+==========================================================================================
+  2025-10-06 (Monday) | PDH:25022 PDL:24777
+==========================================================================================
+  + 09:47 LEVEL-01     SHORT @25022 0.15L trend:FLAT WIN  $+22 (+0.5R) 3bars | PDH reject (trend:FLAT)
+  X 10:48 TREND-01     SHORT @25006 0.30L trend:DOWN LOSS $-147 (-1.1R) 39bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 11:33 TREND-01     LONG  @25026 0.30L trend:UP   WIN  $+68 (+0.4R) 38bars | Trend pullback long (trend:UP, near VWAP)
+  X 13:23 BREAK-01     LONG  @25078 0.25L trend:UP   LOSS $-16 (-0.1R) 45bars | Fresh IB break long (trend:UP)
+  X 14:34 LEVEL-01     LONG  @25099 0.15L trend:UP   LOSS $-51 (-1.2R) 6bars | Round 25100 bounce (trend:UP)
+
+  DAY: 5 trades | 2W 3L | WR: 40% | P&L: $-123
+
+==========================================================================================
+  2025-10-07 (Tuesday) | PDH:25106 PDL:24966
+==========================================================================================
+  X 09:35 EXHAUST-01   SHORT @25100 0.15L trend:FLAT LOSS $-67 (-1.1R) 21bars | Exhaust 3bar up, trend:FLAT, vol declining
+  + 11:43 EXHAUST-01   SHORT @24917 0.15L trend:DOWN WIN  $+27 (+0.1R) 17bars | Exhaust 5bar up, trend:DOWN, vol declining
+  X 13:07 LEVEL-01     SHORT @24897 0.15L trend:DOWN LOSS $-62 (-1.1R) 3bars | Round 24900 reject (trend:DOWN)
+  X 14:23 LEVEL-01     SHORT @24901 0.15L trend:DOWN LOSS $-51 (-1.2R) 37bars | Round 24900 reject (trend:DOWN)
+
+  DAY: 4 trades | 1W 3L | WR: 25% | P&L: $-152
+
+==========================================================================================
+  2025-10-08 (Wednesday) | PDH:25120 PDL:24845
+==========================================================================================
+  + 09:43 EXHAUST-01   LONG  @24982 0.15L trend:FLAT WIN  $+79 (+1.4R) 4bars | Exhaust 4bar down, trend:FLAT, vol declining
+  + 10:44 TREND-01     LONG  @25055 0.30L trend:UP   WIN  $+220 (+0.8R) 45bars | Trend pullback long (trend:UP, near VWAP)
+  + 11:49 LEVEL-01     LONG  @25104 0.15L trend:UP   WIN  $+28 (+0.5R) 36bars | Round 25100 bounce (trend:UP)
+  + 13:12 LEVEL-01     LONG  @25103 0.15L trend:UP   WIN  $+97 (+1.8R) 36bars | Round 25100 bounce (trend:UP)
+
+  DAY: 4 trades | 4W 0L | WR: 100% | P&L: $+424
+
+==========================================================================================
+  2025-10-09 (Thursday) | PDH:25204 PDL:24937
+==========================================================================================
+  + 09:31 LEVEL-01     SHORT @25189 0.15L trend:FLAT WIN  $+99 (+1.1R) 9bars | PDH reject (trend:FLAT)
+  X 10:31 BREAK-01     SHORT @25094 0.25L trend:DOWN LOSS $-210 (-1.1R) 44bars | Fresh IB break short (trend:DOWN)
+  X 11:39 LEVEL-01     SHORT @25092 0.15L trend:DOWN LOSS $-75 (-1.1R) 10bars | Round 25100 reject (trend:DOWN)
+  + 12:39 TREND-01     SHORT @25116 0.30L trend:DOWN WIN  $+4 (+0.0R) 6bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 13:40 EXHAUST-01   SHORT @25078 0.15L trend:DOWN LOSS $-64 (-0.5R) 45bars | Exhaust 5bar up, trend:DOWN, vol declining
+  X 14:40 TREND-01     SHORT @25087 0.30L trend:DOWN LOSS $-294 (-1.0R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+
+  DAY: 6 trades | 2W 4L | WR: 33% | P&L: $-539
+
+==========================================================================================
+  2025-10-10 (Friday) | PDH:25198 PDL:25028
+==========================================================================================
+  X 10:00 TREND-01     LONG  @25234 0.30L trend:UP   LOSS $-134 (-1.1R) 1bars | Trend pullback long (trend:UP, near VWAP)
+  + 10:57 BREAK-01     SHORT @25139 0.25L trend:DOWN WIN  $+150 (+0.7R) 1bars | Fresh IB break short (trend:DOWN)
+  + 12:09 LEVEL-01     SHORT @24679 0.15L trend:DOWN WIN  $+98 (+0.9R) 1bars | Round 24700 reject (trend:DOWN)
+  X 13:10 LEVEL-01     SHORT @24493 0.15L trend:DOWN LOSS $-72 (-1.1R) 1bars | Round 24500 reject (trend:DOWN)
+  + 14:14 EXHAUST-01   SHORT @24571 0.15L trend:DOWN WIN  $+288 (+0.5R) 45bars | Exhaust 3bar up, trend:DOWN, vol declining
+
+  DAY: 5 trades | 3W 2L | WR: 60% | P&L: $+329
+
+==========================================================================================
+  2025-10-13 (Monday) | PDH:25263 PDL:24269
+==========================================================================================
+  X 10:05 BREAK-01     LONG  @24788 0.25L trend:UP   LOSS $-460 (-1.0R) 17bars | Fresh IB break long (trend:UP)
+  X 11:09 TREND-01     SHORT @24678 0.30L trend:DOWN LOSS $-328 (-1.1R) 7bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 12:35 LEVEL-01     LONG  @24803 0.15L trend:UP   LOSS $-61 (-1.1R) 3bars | Round 24800 bounce (trend:UP)
+  + 14:00 LEVEL-01     LONG  @24805 0.15L trend:UP   WIN  $+97 (+1.6R) 30bars | Round 24800 bounce (trend:UP)
+  + 15:01 TREND-01     LONG  @24765 0.30L trend:UP   WIN  $+217 (+0.6R) 45bars | Trend pullback long (trend:UP, near VWAP)
+
+  DAY: 5 trades | 2W 3L | WR: 40% | P&L: $-535
+
+==========================================================================================
+  2025-10-14 (Tuesday) | PDH:24842 PDL:24606
+==========================================================================================
+  X 09:35 EXHAUST-01   LONG  @24429 0.15L trend:FLAT LOSS $-85 (-1.1R) 1bars | Exhaust 3bar down, trend:FLAT, vol declining
+  X 10:40 LEVEL-01     LONG  @24615 0.15L trend:UP   LOSS $-79 (-1.1R) 7bars | PDL reject (trend:UP)
+  X 11:52 LEVEL-01     LONG  @24705 0.15L trend:UP   LOSS $-66 (-1.1R) 6bars | Round 24700 bounce (trend:UP)
+  X 13:17 LEVEL-01     LONG  @24801 0.15L trend:UP   LOSS $-58 (-1.2R) 2bars | Round 24800 bounce (trend:UP)
+  X 14:31 LEVEL-01     LONG  @24802 0.15L trend:UP   LOSS $-60 (-1.1R) 6bars | Round 24800 bounce (trend:UP)
+
+  DAY: 5 trades | 0W 5L | WR: 0% | P&L: $-349
+
+==========================================================================================
+  2025-10-15 (Wednesday) | PDH:24831 PDL:24313
+==========================================================================================
+  X 09:40 LEVEL-01     SHORT @24825 0.15L trend:FLAT LOSS $-69 (-1.1R) 1bars | PDH reject (trend:FLAT)
+  X 11:11 TREND-01     LONG  @24949 0.30L trend:UP   LOSS $-388 (-1.0R) 23bars | Trend pullback long (trend:UP, near VWAP)
+  X 11:57 LEVEL-01     SHORT @24816 0.15L trend:DOWN LOSS $-97 (-1.1R) 4bars | PDH reject (trend:DOWN)
+  + 13:00 BREAK-01     SHORT @24721 0.25L trend:DOWN WIN  $+493 (+1.5R) 17bars | Fresh IB break short (trend:DOWN)
+  X 14:00 TREND-01     SHORT @24790 0.30L trend:DOWN LOSS $-134 (-0.2R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 14:56 TREND-01     LONG  @24837 0.30L trend:UP   LOSS $-382 (-0.8R) 45bars | Trend pullback long (trend:UP, near VWAP)
+
+  DAY: 6 trades | 1W 5L | WR: 17% | P&L: $-577
+
+==========================================================================================
+  2025-10-16 (Thursday) | PDH:24996 PDL:24552
+==========================================================================================
+  + 10:00 TREND-01     SHORT @24947 0.30L trend:DOWN WIN  $+8 (+0.1R) 11bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 10:53 BREAK-01     LONG  @25012 0.25L trend:UP   LOSS $-254 (-1.1R) 13bars | Fresh IB break long (trend:UP)
+  + 11:40 BREAK-01     SHORT @24889 0.25L trend:DOWN WIN  $+88 (+0.4R) 25bars | Fresh IB break short (trend:DOWN)
+  X 12:49 EXHAUST-01   SHORT @24696 0.15L trend:DOWN LOSS $-325 (-1.0R) 9bars | Exhaust 3bar up, trend:DOWN, vol declining
+  + 13:49 EXHAUST-01   SHORT @24766 0.15L trend:DOWN WIN  $+466 (+1.5R) 23bars | Exhaust 4bar up, trend:DOWN, vol declining
+
+  DAY: 5 trades | 3W 2L | WR: 60% | P&L: $-18
+
+==========================================================================================
+  2025-10-17 (Friday) | PDH:25062 PDL:24535
+==========================================================================================
+  X 09:35 LEVEL-01     SHORT @24681 0.15L trend:FLAT LOSS $-109 (-1.1R) 2bars | Round 24700 reject (trend:FLAT)
+  X 10:24 BREAK-01     LONG  @24814 0.25L trend:UP   LOSS $-553 (-1.0R) 15bars | Fresh IB break long (trend:UP)
+  + 11:11 TREND-01     SHORT @24688 0.30L trend:DOWN WIN  $+263 (+0.6R) 28bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 12:19 LEVEL-01     LONG  @24807 0.15L trend:UP   WIN  $+96 (+1.5R) 6bars | Round 24800 bounce (trend:UP)
+  + 13:19 TREND-01     LONG  @24741 0.30L trend:UP   WIN  $+26 (+0.1R) 24bars | Trend pullback long (trend:UP, near VWAP)
+  X 14:25 LEVEL-01     LONG  @24907 0.15L trend:UP   LOSS $-72 (-1.1R) 16bars | Round 24900 bounce (trend:UP)
+
+  DAY: 6 trades | 3W 3L | WR: 50% | P&L: $-349
+
+==========================================================================================
+  2025-10-20 (Monday) | PDH:24947 PDL:24570
+==========================================================================================
+  X 09:38 LEVEL-01     LONG  @25110 0.15L trend:FLAT LOSS $-81 (-1.1R) 3bars | Round 25100 bounce (trend:FLAT)
+  X 10:47 LEVEL-01     LONG  @25200 0.15L trend:UP   LOSS $-54 (-1.2R) 27bars | Round 25200 bounce (trend:UP)
+  X 11:52 LEVEL-01     LONG  @25220 0.15L trend:UP   LOSS $-112 (-1.1R) 44bars | Round 25200 bounce (trend:UP)
+  + 12:54 LEVEL-01     LONG  @25205 0.15L trend:UP   WIN  $+97 (+1.6R) 25bars | Round 25200 bounce (trend:UP)
+  X 14:36 EXHAUST-01   LONG  @25227 0.15L trend:UP   LOSS $-95 (-0.6R) 45bars | Exhaust 3bar down, trend:UP, vol declining
+
+  DAY: 5 trades | 1W 4L | WR: 20% | P&L: $-244
+
+==========================================================================================
+  2025-10-21 (Tuesday) | PDH:25247 PDL:25011
+==========================================================================================
+  + 09:35 EXHAUST-01   SHORT @25185 0.15L trend:FLAT WIN  $+38 (+0.7R) 6bars | Exhaust 3bar up, trend:FLAT, vol declining
+  X 10:23 TREND-01     LONG  @25162 0.30L trend:UP   LOSS $-155 (-1.1R) 3bars | Trend pullback long (trend:UP, near VWAP)
+  X 11:37 TREND-01     SHORT @25159 0.30L trend:DOWN LOSS $-108 (-1.2R) 2bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 12:55 LEVEL-01     SHORT @25191 0.15L trend:FLAT WIN  $+97 (+1.4R) 6bars | Round 25200 reject (trend:FLAT)
+  + 13:40 TREND-01     LONG  @25188 0.30L trend:UP   WIN  $+133 (+0.7R) 45bars | Trend pullback long (trend:UP, near VWAP)
+  + 14:41 LEVEL-01     LONG  @25202 0.15L trend:FLAT WIN  $+22 (+0.4R) 45bars | Round 25200 bounce (trend:FLAT)
+
+  DAY: 6 trades | 4W 2L | WR: 67% | P&L: $+29
+
+==========================================================================================
+  2025-10-22 (Wednesday) | PDH:25244 PDL:25104
+==========================================================================================
+  X 09:36 LEVEL-01     SHORT @25089 0.15L trend:FLAT LOSS $-85 (-1.1R) 3bars | Round 25100 reject (trend:FLAT)
+  X 10:45 LEVEL-01     SHORT @24982 0.15L trend:DOWN LOSS $-108 (-1.1R) 5bars | Round 25000 reject (trend:DOWN)
+  X 11:48 LEVEL-01     SHORT @25001 0.15L trend:DOWN LOSS $-52 (-1.2R) 3bars | Round 25000 reject (trend:DOWN)
+  X 12:53 LEVEL-01     SHORT @24899 0.15L trend:DOWN LOSS $-55 (-1.1R) 1bars | Round 24900 reject (trend:DOWN)
+  X 14:06 EXHAUST-01   SHORT @24809 0.15L trend:DOWN LOSS $-38 (-0.1R) 45bars | Exhaust 3bar up, trend:DOWN, vol declining
+  X 15:06 TREND-01     SHORT @24880 0.30L trend:DOWN LOSS $-358 (-0.4R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+
+  DAY: 6 trades | 0W 6L | WR: 0% | P&L: $-695
+
+==========================================================================================
+  2025-10-23 (Thursday) | PDH:25190 PDL:24709
+==========================================================================================
+  X 10:07 TREND-01     LONG  @25031 0.30L trend:UP   LOSS $-271 (-1.1R) 14bars | Trend pullback long (trend:UP, near VWAP)
+  + 11:17 TREND-01     LONG  @25061 0.30L trend:UP   WIN  $+227 (+0.7R) 45bars | Trend pullback long (trend:UP, near VWAP)
+  + 13:28 LEVEL-01     LONG  @25112 0.15L trend:UP   WIN  $+96 (+1.2R) 8bars | Round 25100 bounce (trend:UP)
+  + 14:39 EXHAUST-01   LONG  @25163 0.15L trend:UP   WIN  $+40 (+0.2R) 45bars | Exhaust 3bar down, trend:UP, vol declining
+
+  DAY: 4 trades | 3W 1L | WR: 75% | P&L: $+92
+
+==========================================================================================
+  2025-10-24 (Friday) | PDH:25188 PDL:24906
+==========================================================================================
+  + 09:42 EXHAUST-01   SHORT @25424 0.15L trend:FLAT WIN  $+101 (+1.4R) 8bars | Exhaust 3bar up, trend:FLAT, vol declining
+  X 10:28 TREND-01     LONG  @25424 0.30L trend:UP   LOSS $-168 (-1.1R) 2bars | Trend pullback long (trend:UP, near VWAP)
+  + 11:45 TREND-01     LONG  @25428 0.30L trend:UP   WIN  $+115 (+0.6R) 45bars | Trend pullback long (trend:UP, near VWAP)
+  + 12:55 EXHAUST-01   LONG  @25462 0.15L trend:UP   WIN  $+16 (+0.2R) 45bars | Exhaust 3bar down, trend:UP, vol declining
+  + 14:25 EXHAUST-01   LONG  @25457 0.15L trend:UP   WIN  $+34 (+0.3R) 45bars | Exhaust 3bar down, trend:UP, vol declining
+
+  DAY: 5 trades | 4W 1L | WR: 80% | P&L: $+98
+
+==========================================================================================
+  2025-10-27 (Monday) | PDH:25479 PDL:25343
+==========================================================================================
+  + 09:38 EXHAUST-01   SHORT @25752 0.15L trend:FLAT WIN  $+5 (+0.1R) 3bars | Exhaust 3bar up, trend:FLAT, vol declining
+  + 10:28 BREAK-01     LONG  @25775 0.25L trend:UP   WIN  $+119 (+0.8R) 45bars | Fresh IB break long (trend:UP)
+  + 11:55 LEVEL-01     LONG  @25808 0.15L trend:UP   WIN  $+21 (+0.3R) 45bars | Round 25800 bounce (trend:UP)
+  + 14:07 EXHAUST-01   LONG  @25838 0.15L trend:UP   WIN  $+20 (+0.2R) 45bars | Exhaust 3bar down, trend:UP, vol declining
+
+  DAY: 4 trades | 4W 0L | WR: 100% | P&L: $+165
+
+==========================================================================================
+  2025-10-28 (Tuesday) | PDH:25896 PDL:25710
+==========================================================================================
+  X 10:00 TREND-01     LONG  @25982 0.30L trend:UP   LOSS $-101 (-1.2R) 20bars | Trend pullback long (trend:UP, near VWAP)
+  + 10:54 EXHAUST-01   SHORT @25957 0.15L trend:DOWN WIN  $+26 (+0.4R) 41bars | Exhaust 4bar up, trend:DOWN, vol declining
+  X 11:56 EXHAUST-01   SHORT @25974 0.15L trend:FLAT LOSS $-69 (-1.1R) 6bars | Exhaust 3bar up, trend:FLAT, vol declining
+  + 13:20 EXHAUST-01   LONG  @26044 0.15L trend:UP   WIN  $+82 (+0.8R) 45bars | Exhaust 3bar down, trend:UP, vol declining
+  + 14:21 LEVEL-01     LONG  @26097 0.15L trend:UP   WIN  $+3 (+0.1R) 40bars | Round 26100 bounce (trend:UP)
+
+  DAY: 5 trades | 3W 2L | WR: 60% | P&L: $-58
+
+==========================================================================================
+  2025-10-29 (Wednesday) | PDH:26149 PDL:25925
+==========================================================================================
+  X 09:39 LEVEL-01     SHORT @26192 0.15L trend:FLAT LOSS $-76 (-1.1R) 13bars | Round 26200 reject (trend:FLAT)
+  + 10:26 EXHAUST-01   LONG  @26200 0.15L trend:FLAT WIN  $+15 (+0.3R) 16bars | Exhaust 5bar down, trend:FLAT, vol declining
+  + 11:11 BREAK-01     SHORT @26164 0.25L trend:DOWN WIN  $+61 (+0.3R) 45bars | Fresh IB break short (trend:DOWN)
+  X 12:16 LEVEL-01     SHORT @26145 0.15L trend:DOWN LOSS $-65 (-1.1R) 8bars | PDH reject (trend:DOWN)
+  X 13:18 TREND-01     SHORT @26171 0.30L trend:DOWN LOSS $-213 (-1.1R) 42bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 14:18 TREND-01     SHORT @26171 0.30L trend:DOWN WIN  $+9 (+0.1R) 12bars | Trend pullback short (trend:DOWN, near VWAP)
+
+  DAY: 6 trades | 3W 3L | WR: 50% | P&L: $-269
+
+==========================================================================================
+  2025-10-30 (Thursday) | PDH:26245 PDL:25966
+==========================================================================================
+  X 09:38 LEVEL-01     SHORT @25887 0.15L trend:FLAT LOSS $-92 (-1.1R) 5bars | Round 25900 reject (trend:FLAT)
+  X 10:31 TREND-01     LONG  @25981 0.30L trend:UP   LOSS $-264 (-1.1R) 6bars | Trend pullback long (trend:UP, near VWAP)
+  + 11:26 TREND-01     SHORT @25970 0.30L trend:DOWN WIN  $+212 (+0.9R) 19bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 12:11 TREND-01     LONG  @25997 0.30L trend:UP   LOSS $-8 (-0.0R) 45bars | Trend pullback long (trend:UP, near VWAP)
+  + 13:02 TREND-01     SHORT @25966 0.30L trend:DOWN WIN  $+26 (+0.1R) 21bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 13:47 TREND-01     LONG  @25984 0.30L trend:UP   LOSS $-323 (-1.1R) 27bars | Trend pullback long (trend:UP, near VWAP)
+  + 14:47 TREND-01     SHORT @25933 0.30L trend:DOWN WIN  $+351 (+0.9R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+
+  DAY: 7 trades | 3W 4L | WR: 43% | P&L: $-96
+
+==========================================================================================
+  2025-10-31 (Friday) | PDH:26100 PDL:25791
+==========================================================================================
+  + 09:35 LEVEL-01     SHORT @26089 0.15L trend:FLAT WIN  $+96 (+1.2R) 7bars | PDH reject (trend:FLAT)
+  + 10:31 TREND-01     LONG  @26053 0.30L trend:UP   WIN  $+146 (+0.8R) 25bars | Trend pullback long (trend:UP, near VWAP)
+  + 11:36 TREND-01     SHORT @26057 0.30L trend:DOWN WIN  $+16 (+0.1R) 1bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 12:53 LEVEL-01     SHORT @25897 0.15L trend:DOWN WIN  $+46 (+0.8R) 5bars | Round 25900 reject (trend:DOWN)
+  + 13:53 LEVEL-01     SHORT @25898 0.15L trend:DOWN WIN  $+17 (+0.3R) 7bars | Round 25900 reject (trend:DOWN)
+  X 14:58 TREND-01     SHORT @25937 0.30L trend:DOWN LOSS $-545 (-1.0R) 33bars | Trend pullback short (trend:DOWN, near VWAP)
+
+  DAY: 6 trades | 5W 1L | WR: 83% | P&L: $-225
+
+==========================================================================================
+  2025-11-03 (Monday) | PDH:26129 PDL:25820
+==========================================================================================
+  + 09:36 LEVEL-01     LONG  @26106 0.15L trend:FLAT WIN  $+161 (+2.6R) 24bars | Round 26100 bounce (trend:FLAT)
+  + 10:44 LEVEL-01     SHORT @26098 0.15L trend:DOWN WIN  $+47 (+0.9R) 6bars | Round 26100 reject (trend:DOWN)
+  + 11:57 TREND-01     SHORT @26034 0.30L trend:DOWN WIN  $+109 (+0.2R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 12:57 TREND-01     SHORT @26047 0.30L trend:DOWN LOSS $-192 (-0.7R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 13:42 TREND-01     LONG  @26077 0.30L trend:UP   WIN  $+28 (+0.1R) 45bars | Trend pullback long (trend:UP, near VWAP)
+  + 14:29 BREAK-01     SHORT @26073 0.25L trend:FLAT WIN  $+120 (+0.5R) 45bars | Fresh IB break short (trend:FLAT)
+
+  DAY: 6 trades | 5W 1L | WR: 83% | P&L: $+273
+
+==========================================================================================
+  2025-11-04 (Tuesday) | PDH:26196 PDL:25950
+==========================================================================================
+  X 09:57 EXHAUST-01   LONG  @25659 0.15L trend:UP   LOSS $-64 (-1.1R) 4bars | Exhaust 3bar down, trend:UP, vol declining
+  X 11:00 LEVEL-01     LONG  @25809 0.15L trend:UP   LOSS $-80 (-1.1R) 8bars | Round 25800 bounce (trend:UP)
+  X 11:56 TREND-01     SHORT @25711 0.30L trend:DOWN LOSS $-47 (-0.1R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 12:43 TREND-01     LONG  @25731 0.30L trend:UP   LOSS $-251 (-1.1R) 3bars | Trend pullback long (trend:UP, near VWAP)
+  X 13:40 BREAK-01     SHORT @25618 0.25L trend:DOWN LOSS $-134 (-1.1R) 7bars | Fresh IB break short (trend:DOWN)
+  X 14:43 EXHAUST-01   SHORT @25577 0.15L trend:DOWN LOSS $-79 (-0.4R) 45bars | Exhaust 4bar up, trend:DOWN, vol declining
+
+  DAY: 6 trades | 0W 6L | WR: 0% | P&L: $-655
+
+==========================================================================================
+  2025-11-05 (Wednesday) | PDH:25830 PDL:25512
+==========================================================================================
+  + 09:42 EXHAUST-01   SHORT @25534 0.15L trend:FLAT WIN  $+80 (+1.4R) 22bars | Exhaust 3bar up, trend:FLAT, vol declining
+  X 10:39 TREND-01     LONG  @25495 0.30L trend:UP   LOSS $-145 (-1.1R) 2bars | Trend pullback long (trend:UP, near VWAP)
+  + 12:08 EXHAUST-01   LONG  @25641 0.15L trend:UP   WIN  $+226 (+1.3R) 45bars | Exhaust 3bar down, trend:UP, vol declining
+  + 13:13 LEVEL-01     LONG  @25705 0.15L trend:UP   WIN  $+98 (+1.7R) 18bars | Round 25700 bounce (trend:UP)
+  + 14:19 EXHAUST-01   LONG  @25760 0.15L trend:UP   WIN  $+62 (+0.2R) 45bars | Exhaust 3bar down, trend:UP, vol declining
+
+  DAY: 5 trades | 4W 1L | WR: 80% | P&L: $+322
+
+==========================================================================================
+  2025-11-06 (Thursday) | PDH:25815 PDL:25429
+==========================================================================================
+  + 10:03 BREAK-01     SHORT @25704 0.25L trend:DOWN WIN  $+165 (+1.1R) 9bars | Fresh IB break short (trend:DOWN)
+  X 10:48 TREND-01     LONG  @25614 0.30L trend:UP   LOSS $-332 (-1.1R) 2bars | Trend pullback long (trend:UP, near VWAP)
+  X 11:42 LEVEL-01     SHORT @25296 0.15L trend:DOWN LOSS $-64 (-1.1R) 1bars | Round 25300 reject (trend:DOWN)
+  + 12:42 LEVEL-01     SHORT @25199 0.15L trend:DOWN WIN  $+31 (+0.6R) 1bars | Round 25200 reject (trend:DOWN)
+  X 13:45 TREND-01     SHORT @25257 0.30L trend:DOWN LOSS $-189 (-0.2R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 14:45 TREND-01     SHORT @25306 0.30L trend:DOWN LOSS $-317 (-0.4R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+
+  DAY: 6 trades | 2W 4L | WR: 33% | P&L: $-707
+
+==========================================================================================
+  2025-11-07 (Friday) | PDH:25765 PDL:25144
+==========================================================================================
+  + 09:35 EXHAUST-01   LONG  @25039 0.15L trend:FLAT WIN  $+79 (+1.4R) 13bars | Exhaust 3bar down, trend:FLAT, vol declining
+  + 10:20 TREND-01     SHORT @25036 0.30L trend:DOWN WIN  $+594 (+1.6R) 23bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 11:11 TREND-01     LONG  @24959 0.30L trend:UP   LOSS $-500 (-1.0R) 23bars | Trend pullback long (trend:UP, near VWAP)
+  + 12:03 LEVEL-01     SHORT @24794 0.15L trend:DOWN WIN  $+3 (+0.0R) 3bars | Round 24800 reject (trend:DOWN)
+  X 13:20 TREND-01     SHORT @24765 0.30L trend:DOWN LOSS $-143 (-0.1R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 14:20 TREND-01     SHORT @24826 0.30L trend:DOWN LOSS $-372 (-0.6R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 15:05 TREND-01     LONG  @24886 0.30L trend:UP   WIN  $+912 (+1.1R) 45bars | Trend pullback long (trend:UP, near VWAP)
+
+  DAY: 7 trades | 4W 3L | WR: 57% | P&L: $+573
+
+==========================================================================================
+  2025-11-10 (Monday) | PDH:25289 PDL:24665
+==========================================================================================
+  X 09:40 LEVEL-01     LONG  @25508 0.15L trend:FLAT LOSS $-77 (-1.1R) 38bars | Round 25500 bounce (trend:FLAT)
+  X 10:29 TREND-01     SHORT @25497 0.30L trend:DOWN LOSS $-120 (-1.2R) 1bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 11:14 TREND-01     LONG  @25585 0.30L trend:UP   WIN  $+17 (+0.1R) 25bars | Trend pullback long (trend:UP, near VWAP)
+  + 11:59 BREAK-01     SHORT @25485 0.25L trend:DOWN WIN  $+65 (+0.9R) 1bars | Fresh IB break short (trend:DOWN)
+  X 13:05 BREAK-01     LONG  @25527 0.25L trend:UP   LOSS $-85 (-1.2R) 4bars | Fresh IB break long (trend:UP)
+  + 14:21 LEVEL-01     LONG  @25606 0.15L trend:UP   WIN  $+98 (+1.6R) 28bars | Round 25600 bounce (trend:UP)
+
+  DAY: 6 trades | 3W 3L | WR: 50% | P&L: $-102
+
+==========================================================================================
+  2025-11-11 (Tuesday) | PDH:25678 PDL:25416
+==========================================================================================
+  X 10:00 TREND-01     LONG  @25568 0.30L trend:UP   LOSS $-127 (-1.1R) 5bars | Trend pullback long (trend:UP, near VWAP)
+  + 10:46 EXHAUST-01   SHORT @25581 0.15L trend:FLAT WIN  $+55 (+0.9R) 3bars | Exhaust 4bar up, trend:FLAT, vol declining
+  X 12:00 EXHAUST-01   SHORT @25484 0.15L trend:DOWN LOSS $-123 (-1.1R) 19bars | Exhaust 5bar up, trend:DOWN, vol declining
+  + 13:06 TREND-01     LONG  @25532 0.30L trend:UP   WIN  $+147 (+0.8R) 45bars | Trend pullback long (trend:UP, near VWAP)
+  X 14:32 LEVEL-01     LONG  @25603 0.15L trend:UP   LOSS $-62 (-1.2R) 4bars | Round 25600 bounce (trend:UP)
+
+  DAY: 5 trades | 2W 3L | WR: 40% | P&L: $-111
+
+==========================================================================================
+  2025-11-12 (Wednesday) | PDH:25656 PDL:25442
+==========================================================================================
+  + 10:00 TREND-01     SHORT @25758 0.30L trend:DOWN WIN  $+223 (+2.0R) 30bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 11:00 TREND-01     SHORT @25579 0.30L trend:DOWN WIN  $+49 (+0.1R) 40bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 12:27 TREND-01     SHORT @25526 0.30L trend:DOWN WIN  $+107 (+0.2R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 13:27 TREND-01     SHORT @25516 0.30L trend:DOWN LOSS $-264 (-0.5R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 14:13 TREND-01     LONG  @25571 0.30L trend:UP   WIN  $+15 (+0.0R) 45bars | Trend pullback long (trend:UP, near VWAP)
+  + 15:14 TREND-01     SHORT @25557 0.30L trend:DOWN WIN  $+52 (+0.2R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+
+  DAY: 6 trades | 5W 1L | WR: 83% | P&L: $+182
+
+==========================================================================================
+  2025-11-13 (Thursday) | PDH:25773 PDL:25454
+==========================================================================================
+  + 09:40 LEVEL-01     SHORT @25483 0.15L trend:FLAT WIN  $+97 (+1.0R) 26bars | Round 25500 reject (trend:FLAT)
+  X 10:47 LEVEL-01     SHORT @25277 0.15L trend:DOWN LOSS $-123 (-1.1R) 4bars | Round 25300 reject (trend:DOWN)
+  + 11:52 LEVEL-01     SHORT @25200 0.15L trend:DOWN WIN  $+30 (+0.7R) 2bars | Round 25200 reject (trend:DOWN)
+  + 13:07 LEVEL-01     SHORT @25185 0.15L trend:DOWN WIN  $+41 (+0.5R) 2bars | Round 25200 reject (trend:DOWN)
+  X 14:10 LEVEL-01     SHORT @25098 0.15L trend:DOWN LOSS $-59 (-1.1R) 2bars | Round 25100 reject (trend:DOWN)
+
+  DAY: 5 trades | 3W 2L | WR: 60% | P&L: $-14
+
+==========================================================================================
+  2025-11-14 (Friday) | PDH:25541 PDL:24970
+==========================================================================================
+  + 09:32 LEVEL-01     SHORT @24695 0.15L trend:FLAT WIN  $+7 (+0.1R) 1bars | Round 24700 reject (trend:FLAT)
+  X 10:19 BREAK-01     LONG  @24737 0.25L trend:UP   LOSS $-216 (-1.1R) 8bars | Fresh IB break long (trend:UP)
+  + 11:33 LEVEL-01     LONG  @24983 0.15L trend:UP   WIN  $+30 (+0.4R) 4bars | PDL reject (trend:UP)
+  + 12:45 EXHAUST-01   LONG  @25174 0.15L trend:UP   WIN  $+127 (+0.3R) 45bars | Exhaust 5bar down, trend:UP, vol declining
+  + 14:23 LEVEL-01     LONG  @25112 0.15L trend:UP   WIN  $+75 (+0.9R) 7bars | Round 25100 bounce (trend:UP)
+
+  DAY: 5 trades | 4W 1L | WR: 80% | P&L: $+23
+
+==========================================================================================
+  2025-11-17 (Monday) | PDH:25270 PDL:24603
+==========================================================================================
+  X 09:54 EXHAUST-01   SHORT @25027 0.15L trend:FLAT LOSS $-66 (-1.1R) 3bars | Exhaust 4bar up, trend:FLAT, vol declining
+  X 10:53 LEVEL-01     LONG  @25217 0.15L trend:UP   LOSS $-104 (-1.1R) 4bars | Round 25200 bounce (trend:UP)
+  + 11:50 TREND-01     SHORT @25069 0.30L trend:DOWN WIN  $+343 (+0.7R) 37bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 12:36 TREND-01     LONG  @25092 0.30L trend:UP   WIN  $+174 (+0.5R) 39bars | Trend pullback long (trend:UP, near VWAP)
+  X 13:36 TREND-01     LONG  @25123 0.30L trend:UP   LOSS $-472 (-1.0R) 9bars | Trend pullback long (trend:UP, near VWAP)
+  + 14:51 BREAK-01     SHORT @24967 0.25L trend:DOWN WIN  $+88 (+0.4R) 4bars | Fresh IB break short (trend:DOWN)
+
+  DAY: 6 trades | 3W 3L | WR: 50% | P&L: $-37
+
+==========================================================================================
+  2025-11-18 (Tuesday) | PDH:25234 PDL:24737
+==========================================================================================
+  + 09:36 EXHAUST-01   LONG  @24705 0.15L trend:FLAT WIN  $+79 (+1.4R) 5bars | Exhaust 4bar down, trend:FLAT, vol declining
+  X 10:31 BREAK-01     SHORT @24654 0.25L trend:DOWN LOSS $-167 (-1.1R) 1bars | Fresh IB break short (trend:DOWN)
+  + 11:32 TREND-01     SHORT @24563 0.30L trend:DOWN WIN  $+220 (+0.4R) 10bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 12:20 TREND-01     LONG  @24566 0.30L trend:UP   WIN  $+214 (+0.4R) 28bars | Trend pullback long (trend:UP, near VWAP)
+  X 13:18 LEVEL-01     SHORT @24580 0.15L trend:DOWN LOSS $-113 (-1.1R) 3bars | Round 24600 reject (trend:DOWN)
+  + 14:04 LEVEL-01     LONG  @24739 0.15L trend:UP   WIN  $+24 (+0.5R) 2bars | PDL reject (trend:UP)
+  + 15:08 LEVEL-01     LONG  @24712 0.15L trend:UP   WIN  $+18 (+0.2R) 5bars | Round 24700 bounce (trend:UP)
+
+  DAY: 7 trades | 5W 2L | WR: 71% | P&L: $+275
+
+==========================================================================================
+  2025-11-19 (Wednesday) | PDH:24815 PDL:24363
+==========================================================================================
+  + 09:46 EXHAUST-01   SHORT @24674 0.15L trend:FLAT WIN  $+80 (+1.4R) 11bars | Exhaust 3bar up, trend:FLAT, vol declining
+  + 10:34 TREND-01     LONG  @24619 0.30L trend:UP   WIN  $+43 (+0.2R) 1bars | Trend pullback long (trend:UP, near VWAP)
+  X 11:35 LEVEL-01     LONG  @24913 0.15L trend:UP   LOSS $-91 (-1.1R) 6bars | Round 24900 bounce (trend:UP)
+  + 13:03 BREAK-01     SHORT @24642 0.25L trend:DOWN WIN  $+33 (+0.3R) 1bars | Fresh IB break short (trend:DOWN)
+  + 14:38 LEVEL-01     SHORT @24678 0.15L trend:FLAT WIN  $+99 (+0.9R) 2bars | Round 24700 reject (trend:FLAT)
+
+  DAY: 5 trades | 4W 1L | WR: 80% | P&L: $+163
+
+==========================================================================================
+  2025-11-20 (Thursday) | PDH:24974 PDL:24497
+==========================================================================================
+  X 09:47 EXHAUST-01   SHORT @25213 0.15L trend:FLAT LOSS $-84 (-1.1R) 4bars | Exhaust 3bar up, trend:FLAT, vol declining
+  X 10:37 TREND-01     LONG  @25198 0.30L trend:UP   LOSS $-216 (-1.1R) 4bars | Trend pullback long (trend:UP, near VWAP)
+  X 11:48 TREND-01     LONG  @25229 0.30L trend:UP   LOSS $-243 (-1.1R) 6bars | Trend pullback long (trend:UP, near VWAP)
+  + 12:57 LEVEL-01     SHORT @24590 0.15L trend:DOWN WIN  $+124 (+1.6R) 1bars | Round 24600 reject (trend:DOWN)
+  X 13:57 LEVEL-01     SHORT @24353 0.15L trend:DOWN LOSS $-194 (-1.0R) 2bars | Round 24400 reject (trend:DOWN)
+
+  DAY: 5 trades | 1W 4L | WR: 20% | P&L: $-613
+
+==========================================================================================
+  2025-11-21 (Friday) | PDH:25298 PDL:24198
+==========================================================================================
+  + 09:42 EXHAUST-01   SHORT @24267 0.15L trend:FLAT WIN  $+16 (+0.2R) 7bars | Exhaust 3bar up, trend:FLAT, vol declining
+  X 10:30 TREND-01     LONG  @24249 0.30L trend:UP   LOSS $-168 (-1.1R) 1bars | Trend pullback long (trend:UP, near VWAP)
+  + 11:24 TREND-01     SHORT @24163 0.30L trend:DOWN WIN  $+63 (+0.2R) 2bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 12:24 TREND-01     LONG  @24125 0.30L trend:UP   WIN  $+1156 (+3.0R) 38bars | Trend pullback long (trend:UP, near VWAP)
+  + 14:10 TREND-01     LONG  @24245 0.30L trend:UP   WIN  $+1539 (+1.9R) 45bars | Trend pullback long (trend:UP, near VWAP)
+
+  DAY: 5 trades | 4W 1L | WR: 80% | P&L: $+2,606
+
+==========================================================================================
+  2025-11-24 (Monday) | PDH:24596 PDL:23926
+==========================================================================================
+  + 09:44 EXHAUST-01   SHORT @24539 0.15L trend:FLAT WIN  $+80 (+1.4R) 13bars | Exhaust 3bar up, trend:FLAT, vol declining
+  + 10:31 BREAK-01     LONG  @24591 0.25L trend:UP   WIN  $+61 (+0.3R) 1bars | Fresh IB break long (trend:UP)
+  X 11:43 LEVEL-01     LONG  @24806 0.15L trend:UP   LOSS $-71 (-1.1R) 9bars | Round 24800 bounce (trend:UP)
+  + 13:43 EXHAUST-01   LONG  @24918 0.15L trend:UP   WIN  $+42 (+0.1R) 45bars | Exhaust 3bar down, trend:UP, vol declining
+
+  DAY: 4 trades | 3W 1L | WR: 75% | P&L: $+111
+
+==========================================================================================
+  2025-11-25 (Tuesday) | PDH:24963 PDL:24494
+==========================================================================================
+  X 09:35 LEVEL-01     LONG  @24912 0.15L trend:FLAT LOSS $-90 (-1.1R) 9bars | Round 24900 bounce (trend:FLAT)
+  X 10:31 TREND-01     SHORT @24842 0.30L trend:DOWN LOSS $-246 (-1.1R) 5bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 11:18 TREND-01     LONG  @24776 0.30L trend:UP   LOSS $-385 (-1.0R) 5bars | Trend pullback long (trend:UP, near VWAP)
+  X 12:10 LEVEL-01     SHORT @24793 0.15L trend:DOWN LOSS $-73 (-1.1R) 2bars | Round 24800 reject (trend:DOWN)
+  + 12:55 LEVEL-01     LONG  @24910 0.15L trend:UP   WIN  $+97 (+1.3R) 10bars | Round 24900 bounce (trend:UP)
+  + 14:02 LEVEL-01     LONG  @25006 0.15L trend:UP   WIN  $+19 (+0.3R) 35bars | Round 25000 bounce (trend:UP)
+
+  DAY: 6 trades | 2W 4L | WR: 33% | P&L: $-677
+
+==========================================================================================
+  2025-11-26 (Wednesday) | PDH:25067 PDL:24610
+==========================================================================================
+  + 09:48 LEVEL-01     LONG  @25206 0.15L trend:FLAT WIN  $+7 (+0.1R) 13bars | Round 25200 bounce (trend:FLAT)
+  + 10:40 TREND-01     SHORT @25234 0.30L trend:DOWN WIN  $+1 (+0.0R) 2bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 11:27 LEVEL-01     LONG  @25214 0.15L trend:FLAT WIN  $+99 (+1.1R) 8bars | Round 25200 bounce (trend:FLAT)
+  + 13:03 EXHAUST-01   LONG  @25363 0.15L trend:UP   WIN  $+12 (+0.1R) 45bars | Exhaust 3bar down, trend:UP, vol declining
+  X 14:05 EXHAUST-01   LONG  @25359 0.15L trend:UP   LOSS $-180 (-1.1R) 4bars | Exhaust 3bar down, trend:UP, vol declining
+  + 15:05 TREND-01     LONG  @25322 0.30L trend:UP   WIN  $+48 (+0.1R) 45bars | Trend pullback long (trend:UP, near VWAP)
+
+  DAY: 6 trades | 5W 1L | WR: 83% | P&L: $-13
+
+==========================================================================================
+  2025-11-28 (Friday) | PDH:25387 PDL:25148
+==========================================================================================
+  X 09:31 LEVEL-01     SHORT @25391 0.15L trend:FLAT LOSS $-78 (-1.1R) 5bars | Round 25400 reject (trend:FLAT)
+  X 10:31 TREND-01     SHORT @25388 0.30L trend:DOWN LOSS $-119 (-1.1R) 1bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 11:17 TREND-01     LONG  @25413 0.30L trend:UP   LOSS $-176 (-1.1R) 10bars | Trend pullback long (trend:UP, near VWAP)
+  X 12:18 EXHAUST-01   LONG  @25450 0.15L trend:UP   LOSS $-82 (-1.1R) 5bars | Exhaust 3bar down, trend:UP, vol declining
+  X 13:28 EXHAUST-01   LONG  @25447 0.15L trend:UP   LOSS $-84 (-1.1R) 13bars | Exhaust 3bar down, trend:UP, vol declining
+
+  DAY: 5 trades | 0W 5L | WR: 0% | P&L: $-539
+
+==========================================================================================
+  2025-12-01 (Monday) | PDH:25516 PDL:25355
+==========================================================================================
+  + 10:01 TREND-01     LONG  @25287 0.30L trend:UP   WIN  $+76 (+0.6R) 17bars | Trend pullback long (trend:UP, near VWAP)
+  + 11:05 LEVEL-01     LONG  @25376 0.15L trend:UP   WIN  $+98 (+0.9R) 8bars | PDL reject (trend:UP)
+  + 12:11 TREND-01     LONG  @25380 0.30L trend:UP   WIN  $+476 (+1.3R) 45bars | Trend pullback long (trend:UP, near VWAP)
+  + 13:20 EXHAUST-01   LONG  @25460 0.15L trend:UP   WIN  $+79 (+0.4R) 45bars | Exhaust 3bar down, trend:UP, vol declining
+  X 14:47 LEVEL-01     LONG  @25500 0.15L trend:UP   LOSS $-55 (-1.2R) 15bars | Round 25500 bounce (trend:UP)
+
+  DAY: 5 trades | 4W 1L | WR: 80% | P&L: $+675
+
+==========================================================================================
+  2025-12-02 (Tuesday) | PDH:25521 PDL:25236
+==========================================================================================
+  X 09:33 LEVEL-01     SHORT @25517 0.15L trend:FLAT LOSS $-64 (-1.1R) 7bars | PDH reject (trend:FLAT)
+  X 10:18 TREND-01     LONG  @25541 0.30L trend:UP   LOSS $-127 (-1.1R) 11bars | Trend pullback long (trend:UP, near VWAP)
+  X 11:20 TREND-01     LONG  @25636 0.30L trend:UP   LOSS $-299 (-1.1R) 10bars | Trend pullback long (trend:UP, near VWAP)
+  + 12:10 TREND-01     SHORT @25612 0.30L trend:DOWN WIN  $+733 (+2.9R) 25bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 12:55 BREAK-01     LONG  @25554 0.25L trend:UP   LOSS $-95 (-1.2R) 3bars | Fresh IB break long (trend:UP)
+  + 13:54 LEVEL-01     SHORT @25591 0.15L trend:FLAT WIN  $+98 (+1.4R) 3bars | Round 25600 reject (trend:FLAT)
+  + 14:51 TREND-01     LONG  @25597 0.30L trend:UP   WIN  $+209 (+0.8R) 45bars | Trend pullback long (trend:UP, near VWAP)
+
+  DAY: 7 trades | 3W 4L | WR: 43% | P&L: $+456
+
+==========================================================================================
+  2025-12-03 (Wednesday) | PDH:25698 PDL:25445
+==========================================================================================
+  + 09:31 LEVEL-01     SHORT @25686 0.15L trend:FLAT WIN  $+144 (+1.7R) 18bars | PDH reject (trend:FLAT)
+  X 10:31 TREND-01     SHORT @25527 0.30L trend:DOWN LOSS $-273 (-1.1R) 2bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 11:16 TREND-01     LONG  @25563 0.30L trend:UP   WIN  $+315 (+0.8R) 45bars | Trend pullback long (trend:UP, near VWAP)
+  X 12:08 BREAK-01     SHORT @25605 0.25L trend:DOWN LOSS $-251 (-1.1R) 30bars | Fresh IB break short (trend:DOWN)
+  + 13:03 LEVEL-01     LONG  @25614 0.15L trend:FLAT WIN  $+96 (+1.1R) 18bars | Round 25600 bounce (trend:FLAT)
+  + 14:09 EXHAUST-01   LONG  @25654 0.15L trend:FLAT WIN  $+70 (+0.4R) 45bars | Exhaust 3bar down, trend:FLAT, vol declining
+
+  DAY: 6 trades | 4W 2L | WR: 67% | P&L: $+101
+
+==========================================================================================
+  2025-12-04 (Thursday) | PDH:25705 PDL:25453
+==========================================================================================
+  + 10:00 TREND-01     LONG  @25684 0.30L trend:UP   WIN  $+209 (+1.6R) 8bars | Trend pullback long (trend:UP, near VWAP)
+  + 10:50 TREND-01     SHORT @25636 0.30L trend:DOWN WIN  $+24 (+0.1R) 32bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 11:36 TREND-01     LONG  @25643 0.30L trend:UP   LOSS $-257 (-1.1R) 16bars | Trend pullback long (trend:UP, near VWAP)
+  X 12:21 TREND-01     SHORT @25621 0.30L trend:DOWN LOSS $-256 (-1.1R) 30bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 13:31 TREND-01     SHORT @25630 0.30L trend:DOWN LOSS $-129 (-0.6R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 14:16 TREND-01     LONG  @25649 0.30L trend:UP   LOSS $-61 (-0.2R) 45bars | Trend pullback long (trend:UP, near VWAP)
+  + 15:08 TREND-01     SHORT @25633 0.30L trend:DOWN WIN  $+431 (+2.1R) 17bars | Trend pullback short (trend:DOWN, near VWAP)
+
+  DAY: 7 trades | 3W 4L | WR: 43% | P&L: $-38
+
+==========================================================================================
+  2025-12-05 (Friday) | PDH:25768 PDL:25525
+==========================================================================================
+  X 09:53 EXHAUST-01   SHORT @25651 0.15L trend:DOWN LOSS $-86 (-1.1R) 14bars | Exhaust 4bar up, trend:DOWN, vol declining
+  X 10:38 LEVEL-01     LONG  @25809 0.15L trend:UP   LOSS $-79 (-1.1R) 1bars | Round 25800 bounce (trend:UP)
+  X 11:41 TREND-01     LONG  @25866 0.30L trend:UP   LOSS $-521 (-1.0R) 15bars | Trend pullback long (trend:UP, near VWAP)
+  + 12:42 BREAK-01     LONG  @25737 0.25L trend:FLAT WIN  $+60 (+0.2R) 20bars | Fresh IB break long (trend:FLAT)
+  X 13:43 EXHAUST-01   SHORT @25736 0.15L trend:FLAT LOSS $-155 (-0.8R) 45bars | Exhaust 3bar up, trend:FLAT, vol declining
+  X 14:30 TREND-01     LONG  @25797 0.30L trend:UP   LOSS $-113 (-0.4R) 45bars | Trend pullback long (trend:UP, near VWAP)
+
+  DAY: 6 trades | 1W 5L | WR: 17% | P&L: $-892
+
+==========================================================================================
+  2025-12-08 (Monday) | PDH:25912 PDL:25626
+==========================================================================================
+  X 09:37 EXHAUST-01   SHORT @25844 0.15L trend:FLAT LOSS $-66 (-1.1R) 26bars | Exhaust 3bar up, trend:FLAT, vol declining
+  + 10:30 BREAK-01     LONG  @25872 0.25L trend:UP   WIN  $+50 (+0.7R) 1bars | Fresh IB break long (trend:UP)
+  X 12:02 LEVEL-01     SHORT @25680 0.15L trend:DOWN LOSS $-114 (-1.1R) 21bars | Round 25700 reject (trend:DOWN)
+  X 13:07 EXHAUST-01   SHORT @25688 0.15L trend:DOWN LOSS $-22 (-0.1R) 45bars | Exhaust 3bar up, trend:DOWN, vol declining
+  + 14:07 TREND-01     SHORT @25723 0.30L trend:DOWN WIN  $+284 (+0.7R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+
+  DAY: 5 trades | 2W 3L | WR: 40% | P&L: $+131
+
+==========================================================================================
+  2025-12-09 (Tuesday) | PDH:25908 PDL:25614
+==========================================================================================
+  + 09:39 EXHAUST-01   SHORT @25682 0.15L trend:FLAT WIN  $+80 (+1.4R) 31bars | Exhaust 3bar up, trend:FLAT, vol declining
+  + 10:41 TREND-01     LONG  @25673 0.30L trend:UP   WIN  $+53 (+0.2R) 21bars | Trend pullback long (trend:UP, near VWAP)
+  X 11:33 LEVEL-01     SHORT @25698 0.15L trend:FLAT LOSS $-57 (-1.1R) 8bars | Round 25700 reject (trend:FLAT)
+  X 14:22 EXHAUST-01   LONG  @25768 0.15L trend:UP   LOSS $-53 (-0.4R) 45bars | Exhaust 3bar down, trend:UP, vol declining
+
+  DAY: 4 trades | 2W 2L | WR: 50% | P&L: $+23
+
+==========================================================================================
+  2025-12-10 (Wednesday) | PDH:25786 PDL:25585
+==========================================================================================
+  X 09:35 EXHAUST-01   LONG  @25736 0.15L trend:FLAT LOSS $-65 (-1.1R) 26bars | Exhaust 5bar down, trend:FLAT, vol declining
+  + 10:21 EXHAUST-01   SHORT @25705 0.15L trend:DOWN WIN  $+22 (+0.4R) 10bars | Exhaust 3bar up, trend:DOWN, vol declining
+  X 11:06 TREND-01     LONG  @25703 0.30L trend:UP   LOSS $-265 (-1.1R) 28bars | Trend pullback long (trend:UP, near VWAP)
+  + 11:51 TREND-01     SHORT @25660 0.30L trend:DOWN WIN  $+193 (+0.8R) 16bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 12:53 LEVEL-01     LONG  @25703 0.15L trend:UP   LOSS $-62 (-1.1R) 17bars | Round 25700 bounce (trend:UP)
+  + 14:17 LEVEL-01     SHORT @25699 0.15L trend:DOWN WIN  $+72 (+1.5R) 9bars | Round 25700 reject (trend:DOWN)
+  + 15:02 TREND-01     LONG  @25702 0.30L trend:UP   WIN  $+65 (+0.2R) 4bars | Trend pullback long (trend:UP, near VWAP)
+
+  DAY: 7 trades | 4W 3L | WR: 57% | P&L: $-41
+
+==========================================================================================
+  2025-12-11 (Thursday) | PDH:25889 PDL:25585
+==========================================================================================
+  X 09:43 LEVEL-01     SHORT @25696 0.15L trend:FLAT LOSS $-65 (-1.1R) 10bars | Round 25700 reject (trend:FLAT)
+  + 10:44 TREND-01     SHORT @25646 0.30L trend:DOWN WIN  $+40 (+0.2R) 1bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 11:47 TREND-01     SHORT @25576 0.30L trend:DOWN WIN  $+198 (+0.5R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 12:40 TREND-01     LONG  @25600 0.30L trend:UP   LOSS $-345 (-1.0R) 15bars | Trend pullback long (trend:UP, near VWAP)
+  X 14:02 EXHAUST-01   SHORT @25670 0.15L trend:FLAT LOSS $-214 (-1.0R) 41bars | Exhaust 5bar up, trend:FLAT, vol declining
+  X 15:02 EXHAUST-01   SHORT @25717 0.15L trend:FLAT LOSS $-179 (-0.8R) 45bars | Exhaust 3bar up, trend:FLAT, vol declining
+
+  DAY: 6 trades | 2W 4L | WR: 33% | P&L: $-565
+
+==========================================================================================
+  2025-12-12 (Friday) | PDH:25782 PDL:25450
+==========================================================================================
+  X 09:40 EXHAUST-01   SHORT @25658 0.15L trend:FLAT LOSS $-66 (-1.1R) 12bars | Exhaust 3bar up, trend:FLAT, vol declining
+  + 10:42 TREND-01     SHORT @25644 0.30L trend:DOWN WIN  $+69 (+0.5R) 4bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 11:44 EXHAUST-01   SHORT @25454 0.15L trend:DOWN WIN  $+256 (+1.1R) 14bars | Exhaust 4bar up, trend:DOWN, vol declining
+  X 13:03 LEVEL-01     SHORT @25287 0.15L trend:DOWN LOSS $-92 (-1.1R) 4bars | Round 25300 reject (trend:DOWN)
+  X 14:03 TREND-01     SHORT @25353 0.30L trend:DOWN LOSS $-148 (-0.2R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 15:03 TREND-01     SHORT @25343 0.30L trend:DOWN WIN  $+191 (+0.2R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+
+  DAY: 6 trades | 3W 3L | WR: 50% | P&L: $+211
+
+==========================================================================================
+  2025-12-15 (Monday) | PDH:25701 PDL:25188
+==========================================================================================
+  + 09:52 EXHAUST-01   LONG  @25445 0.15L trend:UP   WIN  $+0 (+0.0R) 31bars | Exhaust 3bar down, trend:UP, vol declining
+  X 10:39 BREAK-01     SHORT @25363 0.25L trend:DOWN LOSS $-113 (-1.1R) 1bars | Fresh IB break short (trend:DOWN)
+  X 11:44 TREND-01     SHORT @25245 0.30L trend:DOWN LOSS $-482 (-0.8R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 12:29 TREND-01     LONG  @25323 0.30L trend:UP   LOSS $-590 (-1.0R) 7bars | Trend pullback long (trend:UP, near VWAP)
+  + 13:14 TREND-01     SHORT @25225 0.30L trend:DOWN WIN  $+129 (+0.2R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 14:14 TREND-01     SHORT @25221 0.30L trend:DOWN LOSS $-18 (-0.0R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 15:14 TREND-01     SHORT @25210 0.30L trend:DOWN LOSS $-67 (-0.1R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+
+  DAY: 7 trades | 2W 5L | WR: 29% | P&L: $-1,141
+
+==========================================================================================
+  2025-12-16 (Tuesday) | PDH:25479 PDL:25104
+==========================================================================================
+  X 09:36 EXHAUST-01   LONG  @25149 0.15L trend:FLAT LOSS $-75 (-1.1R) 2bars | Exhaust 3bar down, trend:FLAT, vol declining
+  + 10:22 TREND-01     SHORT @25106 0.30L trend:DOWN WIN  $+165 (+0.7R) 8bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 11:07 BREAK-01     LONG  @25224 0.25L trend:UP   LOSS $-374 (-1.0R) 3bars | Fresh IB break long (trend:UP)
+  + 12:07 TREND-01     SHORT @25119 0.30L trend:DOWN WIN  $+192 (+0.8R) 11bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 12:52 TREND-01     LONG  @25127 0.30L trend:UP   WIN  $+21 (+0.1R) 17bars | Trend pullback long (trend:UP, near VWAP)
+  + 13:37 TREND-01     SHORT @25107 0.30L trend:DOWN WIN  $+318 (+1.1R) 28bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 14:39 TREND-01     LONG  @25114 0.30L trend:UP   WIN  $+135 (+0.6R) 15bars | Trend pullback long (trend:UP, near VWAP)
+
+  DAY: 7 trades | 5W 2L | WR: 71% | P&L: $+383
+
+==========================================================================================
+  2025-12-17 (Wednesday) | PDH:25235 PDL:25005
+==========================================================================================
+  X 10:00 LEVEL-01     LONG  @25303 0.15L trend:UP   LOSS $-59 (-1.1R) 12bars | Round 25300 bounce (trend:UP)
+  + 10:56 TREND-01     SHORT @25157 0.30L trend:DOWN WIN  $+752 (+1.9R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 12:13 LEVEL-01     SHORT @24887 0.15L trend:DOWN WIN  $+4 (+0.0R) 2bars | Round 24900 reject (trend:DOWN)
+  X 13:29 LEVEL-01     SHORT @24891 0.15L trend:DOWN LOSS $-81 (-1.1R) 2bars | Round 24900 reject (trend:DOWN)
+  X 14:54 LEVEL-01     SHORT @24795 0.15L trend:DOWN LOSS $-68 (-1.1R) 6bars | Round 24800 reject (trend:DOWN)
+
+  DAY: 5 trades | 2W 3L | WR: 40% | P&L: $+547
+
+==========================================================================================
+  2025-12-18 (Thursday) | PDH:25327 PDL:24774
+==========================================================================================
+  + 09:35 EXHAUST-01   LONG  @25010 0.15L trend:FLAT WIN  $+89 (+1.3R) 3bars | Exhaust 3bar down, trend:FLAT, vol declining
+  + 10:35 TREND-01     SHORT @25085 0.30L trend:DOWN WIN  $+30 (+0.1R) 12bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 11:23 TREND-01     LONG  @25105 0.30L trend:UP   WIN  $+526 (+1.7R) 37bars | Trend pullback long (trend:UP, near VWAP)
+  X 13:02 LEVEL-01     LONG  @25212 0.15L trend:UP   LOSS $-89 (-1.1R) 3bars | Round 25200 bounce (trend:UP)
+  + 14:02 TREND-01     LONG  @25164 0.30L trend:UP   WIN  $+189 (+0.5R) 45bars | Trend pullback long (trend:UP, near VWAP)
+  + 15:03 TREND-01     SHORT @25124 0.30L trend:DOWN WIN  $+141 (+0.4R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+
+  DAY: 6 trades | 5W 1L | WR: 83% | P&L: $+885
+
+==========================================================================================
+  2025-12-19 (Friday) | PDH:25253 PDL:24953
+==========================================================================================
+  + 09:42 EXHAUST-01   LONG  @25166 0.15L trend:FLAT WIN  $+78 (+1.4R) 33bars | Exhaust 4bar down, trend:FLAT, vol declining
+  X 11:09 LEVEL-01     LONG  @25399 0.15L trend:UP   LOSS $-49 (-1.1R) 3bars | Round 25400 bounce (trend:UP)
+  + 11:54 TREND-01     SHORT @25338 0.30L trend:DOWN WIN  $+395 (+1.2R) 12bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 12:39 TREND-01     LONG  @25391 0.30L trend:UP   WIN  $+166 (+0.3R) 45bars | Trend pullback long (trend:UP, near VWAP)
+  X 14:13 EXHAUST-01   LONG  @25424 0.15L trend:UP   LOSS $-85 (-0.4R) 45bars | Exhaust 3bar down, trend:UP, vol declining
+
+  DAY: 5 trades | 3W 2L | WR: 60% | P&L: $+504
+
+==========================================================================================
+  2025-12-22 (Monday) | PDH:25446 PDL:25148
+==========================================================================================
+  X 09:43 EXHAUST-01   SHORT @25561 0.15L trend:FLAT LOSS $-66 (-1.1R) 21bars | Exhaust 3bar up, trend:FLAT, vol declining
+  X 10:29 LEVEL-01     LONG  @25600 0.15L trend:UP   LOSS $-54 (-1.2R) 1bars | Round 25600 bounce (trend:UP)
+  + 11:20 TREND-01     SHORT @25531 0.30L trend:DOWN WIN  $+283 (+1.6R) 16bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 12:16 TREND-01     LONG  @25536 0.30L trend:UP   LOSS $-26 (-0.1R) 45bars | Trend pullback long (trend:UP, near VWAP)
+  X 13:07 TREND-01     SHORT @25521 0.30L trend:DOWN LOSS $-108 (-0.6R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 13:52 TREND-01     LONG  @25536 0.30L trend:UP   LOSS $-226 (-1.1R) 33bars | Trend pullback long (trend:UP, near VWAP)
+  X 14:37 TREND-01     SHORT @25507 0.30L trend:DOWN LOSS $-62 (-0.2R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+
+  DAY: 7 trades | 1W 6L | WR: 14% | P&L: $-259
+
+==========================================================================================
+  2025-12-23 (Tuesday) | PDH:25612 PDL:25452
+==========================================================================================
+  X 09:43 EXHAUST-01   SHORT @25456 0.15L trend:FLAT LOSS $-48 (-0.8R) 45bars | Exhaust 3bar up, trend:FLAT, vol declining
+  + 10:28 TREND-01     LONG  @25469 0.30L trend:UP   WIN  $+299 (+2.1R) 2bars | Trend pullback long (trend:UP, near VWAP)
+  X 11:14 EXHAUST-01   SHORT @25474 0.15L trend:DOWN LOSS $-108 (-1.1R) 6bars | Exhaust 3bar up, trend:DOWN, vol declining
+  X 13:05 EXHAUST-01   LONG  @25592 0.15L trend:UP   LOSS $-54 (-0.5R) 45bars | Exhaust 3bar down, trend:UP, vol declining
+  + 14:11 EXHAUST-01   LONG  @25588 0.15L trend:UP   WIN  $+15 (+0.1R) 45bars | Exhaust 3bar down, trend:UP, vol declining
+
+  DAY: 5 trades | 2W 3L | WR: 40% | P&L: $+104
+
+==========================================================================================
+  2025-12-24 (Wednesday) | PDH:25621 PDL:25435
+==========================================================================================
+  X 09:57 EXHAUST-01   LONG  @25654 0.15L trend:FLAT LOSS $-66 (-1.1R) 31bars | Exhaust 4bar down, trend:FLAT, vol declining
+  X 10:43 TREND-01     SHORT @25631 0.30L trend:DOWN LOSS $-123 (-1.1R) 22bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 11:38 TREND-01     LONG  @25652 0.30L trend:UP   WIN  $+182 (+1.4R) 45bars | Trend pullback long (trend:UP, near VWAP)
+  X 12:38 LEVEL-01     LONG  @25706 0.15L trend:UP   LOSS $-24 (-0.4R) 45bars | Round 25700 bounce (trend:UP)
+  X 13:39 LEVEL-01     LONG  @25705 0.15L trend:UP   LOSS $-67 (-1.1R) 22bars | Round 25700 bounce (trend:UP)
+
+  DAY: 5 trades | 1W 4L | WR: 20% | P&L: $-98
+
+==========================================================================================
+  2025-12-26 (Friday) | PDH:25720 PDL:25615
+==========================================================================================
+  + 10:00 TREND-01     SHORT @25735 0.30L trend:DOWN WIN  $+17 (+0.1R) 30bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 10:45 BREAK-01     LONG  @25765 0.25L trend:UP   LOSS $-93 (-1.2R) 3bars | Fresh IB break long (trend:UP)
+  X 11:30 EXHAUST-01   SHORT @25725 0.15L trend:FLAT LOSS $-77 (-1.1R) 32bars | Exhaust 5bar up, trend:FLAT, vol declining
+  + 12:30 LEVEL-01     SHORT @25721 0.15L trend:FLAT WIN  $+66 (+1.5R) 45bars | PDH reject (trend:FLAT)
+  + 13:31 TREND-01     SHORT @25715 0.30L trend:DOWN WIN  $+31 (+0.2R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 14:32 TREND-01     SHORT @25708 0.30L trend:DOWN LOSS $-181 (-1.1R) 35bars | Trend pullback short (trend:DOWN, near VWAP)
+
+  DAY: 6 trades | 3W 3L | WR: 50% | P&L: $-237
+
+==========================================================================================
+  2025-12-29 (Monday) | PDH:25771 PDL:25673
+==========================================================================================
+  + 10:00 TREND-01     SHORT @25532 0.30L trend:DOWN WIN  $+28 (+0.2R) 19bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 10:46 TREND-01     LONG  @25612 0.30L trend:UP   LOSS $-301 (-1.1R) 5bars | Trend pullback long (trend:UP, near VWAP)
+  + 11:47 TREND-01     SHORT @25571 0.30L trend:DOWN WIN  $+131 (+0.7R) 8bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 12:50 TREND-01     SHORT @25546 0.30L trend:DOWN WIN  $+177 (+0.6R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 13:50 TREND-01     SHORT @25538 0.30L trend:DOWN LOSS $-182 (-0.7R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 14:35 TREND-01     LONG  @25566 0.30L trend:UP   LOSS $-220 (-1.1R) 27bars | Trend pullback long (trend:UP, near VWAP)
+
+  DAY: 6 trades | 3W 3L | WR: 50% | P&L: $-366
+
+==========================================================================================
+  2025-12-30 (Tuesday) | PDH:25659 PDL:25492
+==========================================================================================
+  + 09:36 EXHAUST-01   LONG  @25551 0.15L trend:FLAT WIN  $+27 (+0.5R) 45bars | Exhaust 3bar down, trend:FLAT, vol declining
+  + 10:23 TREND-01     SHORT @25552 0.30L trend:DOWN WIN  $+29 (+0.4R) 7bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 11:24 TREND-01     SHORT @25547 0.30L trend:DOWN LOSS $-187 (-1.1R) 28bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 12:15 LEVEL-01     LONG  @25600 0.15L trend:UP   WIN  $+47 (+1.0R) 6bars | Round 25600 bounce (trend:UP)
+  X 13:00 TREND-01     SHORT @25559 0.30L trend:DOWN LOSS $-23 (-0.1R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 14:00 TREND-01     SHORT @25561 0.30L trend:DOWN LOSS $-99 (-0.6R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 14:55 EXHAUST-01   LONG  @25572 0.15L trend:FLAT LOSS $-12 (-0.1R) 45bars | Exhaust 3bar down, trend:FLAT, vol declining
+
+  DAY: 7 trades | 3W 4L | WR: 43% | P&L: $-219
+
+==========================================================================================
+  2025-12-31 (Wednesday) | PDH:25634 PDL:25518
+==========================================================================================
+  X 09:39 EXHAUST-01   SHORT @25512 0.15L trend:FLAT LOSS $-65 (-1.1R) 8bars | Exhaust 4bar up, trend:FLAT, vol declining
+  X 10:24 EXHAUST-01   LONG  @25544 0.15L trend:FLAT LOSS $-65 (-1.1R) 6bars | Exhaust 3bar down, trend:FLAT, vol declining
+  + 11:15 TREND-01     SHORT @25460 0.30L trend:DOWN WIN  $+234 (+1.0R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 12:19 TREND-01     SHORT @25432 0.30L trend:DOWN LOSS $-127 (-0.4R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 13:19 TREND-01     SHORT @25443 0.30L trend:DOWN WIN  $+28 (+0.1R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 14:19 TREND-01     SHORT @25439 0.30L trend:DOWN LOSS $-239 (-1.1R) 21bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 15:06 EXHAUST-01   LONG  @25472 0.15L trend:FLAT LOSS $-130 (-1.1R) 24bars | Exhaust 3bar down, trend:FLAT, vol declining
+
+  DAY: 7 trades | 2W 5L | WR: 29% | P&L: $-365
+
+==========================================================================================
+  2026-01-02 (Friday) | PDH:25567 PDL:25387
+==========================================================================================
+  + 09:37 LEVEL-01     SHORT @25559 0.15L trend:FLAT WIN  $+97 (+1.4R) 45bars | PDH reject (trend:FLAT)
+  X 10:30 BREAK-01     LONG  @25581 0.25L trend:UP   LOSS $-69 (-1.2R) 1bars | Fresh IB break long (trend:UP)
+  + 11:35 EXHAUST-01   SHORT @25414 0.15L trend:DOWN WIN  $+359 (+1.5R) 22bars | Exhaust 4bar up, trend:DOWN, vol declining
+  X 12:55 LEVEL-01     SHORT @25191 0.15L trend:DOWN LOSS $-81 (-1.1R) 5bars | Round 25200 reject (trend:DOWN)
+  X 14:31 LEVEL-01     SHORT @25200 0.15L trend:DOWN LOSS $-51 (-1.1R) 8bars | Round 25200 reject (trend:DOWN)
+
+  DAY: 5 trades | 2W 3L | WR: 40% | P&L: $+254
+
+==========================================================================================
+  2026-01-05 (Monday) | PDH:25661 PDL:25138
+==========================================================================================
+  + 09:41 EXHAUST-01   LONG  @25417 0.15L trend:FLAT WIN  $+78 (+1.4R) 14bars | Exhaust 4bar down, trend:FLAT, vol declining
+  + 10:33 LEVEL-01     SHORT @25470 0.15L trend:DOWN WIN  $+98 (+0.7R) 3bars | Round 25500 reject (trend:DOWN)
+  + 11:44 TREND-01     LONG  @25511 0.30L trend:UP   WIN  $+243 (+0.9R) 45bars | Trend pullback long (trend:UP, near VWAP)
+  X 12:57 EXHAUST-01   LONG  @25535 0.15L trend:UP   LOSS $-130 (-1.1R) 28bars | Exhaust 4bar down, trend:UP, vol declining
+  + 13:43 TREND-01     SHORT @25484 0.30L trend:DOWN WIN  $+44 (+0.1R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 14:30 BREAK-01     LONG  @25482 0.25L trend:UP   LOSS $-73 (-0.6R) 45bars | Fresh IB break long (trend:UP)
+
+  DAY: 6 trades | 4W 2L | WR: 67% | P&L: $+261
+
+==========================================================================================
+  2026-01-06 (Tuesday) | PDH:25577 PDL:25409
+==========================================================================================
+  + 09:44 LEVEL-01     SHORT @25499 0.15L trend:FLAT WIN  $+33 (+0.7R) 6bars | Round 25500 reject (trend:FLAT)
+  X 10:30 BREAK-01     LONG  @25544 0.25L trend:UP   LOSS $-124 (-1.1R) 1bars | Fresh IB break long (trend:UP)
+  X 11:40 TREND-01     LONG  @25612 0.30L trend:UP   LOSS $-339 (-1.0R) 15bars | Trend pullback long (trend:UP, near VWAP)
+  X 12:42 TREND-01     SHORT @25556 0.30L trend:DOWN LOSS $-307 (-1.1R) 40bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 14:21 EXHAUST-01   LONG  @25647 0.15L trend:UP   WIN  $+65 (+0.5R) 45bars | Exhaust 3bar down, trend:UP, vol declining
+
+  DAY: 5 trades | 2W 3L | WR: 40% | P&L: $-672
+
+==========================================================================================
+  2026-01-07 (Wednesday) | PDH:25693 PDL:25469
+==========================================================================================
+  + 09:38 EXHAUST-01   SHORT @25654 0.15L trend:FLAT WIN  $+16 (+0.3R) 45bars | Exhaust 3bar up, trend:FLAT, vol declining
+  + 10:25 TREND-01     LONG  @25663 0.30L trend:UP   WIN  $+30 (+0.3R) 5bars | Trend pullback long (trend:UP, near VWAP)
+  X 11:17 TREND-01     SHORT @25701 0.30L trend:DOWN LOSS $-166 (-1.1R) 4bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 12:28 TREND-01     LONG  @25757 0.30L trend:UP   WIN  $+526 (+1.8R) 45bars | Trend pullback long (trend:UP, near VWAP)
+  X 13:48 EXHAUST-01   LONG  @25857 0.15L trend:UP   LOSS $-109 (-0.7R) 45bars | Exhaust 4bar down, trend:UP, vol declining
+  X 15:01 EXHAUST-01   LONG  @25825 0.15L trend:UP   LOSS $-173 (-1.0R) 15bars | Exhaust 3bar down, trend:UP, vol declining
+
+  DAY: 6 trades | 3W 3L | WR: 50% | P&L: $+125
+
+==========================================================================================
+  2026-01-08 (Thursday) | PDH:25871 PDL:25641
+==========================================================================================
+  X 09:45 EXHAUST-01   LONG  @25679 0.15L trend:FLAT LOSS $-65 (-1.1R) 28bars | Exhaust 3bar down, trend:FLAT, vol declining
+  + 10:30 BREAK-01     SHORT @25641 0.25L trend:DOWN WIN  $+20 (+0.2R) 1bars | Fresh IB break short (trend:DOWN)
+  X 11:15 TREND-01     LONG  @25563 0.30L trend:UP   LOSS $-321 (-1.0R) 22bars | Trend pullback long (trend:UP, near VWAP)
+  + 12:05 TREND-01     SHORT @25541 0.30L trend:DOWN WIN  $+160 (+0.6R) 34bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 12:59 TREND-01     LONG  @25552 0.30L trend:UP   WIN  $+4 (+0.0R) 45bars | Trend pullback long (trend:UP, near VWAP)
+  X 14:05 TREND-01     SHORT @25540 0.30L trend:DOWN LOSS $-20 (-0.1R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 14:50 EXHAUST-01   LONG  @25540 0.15L trend:FLAT LOSS $-185 (-1.0R) 25bars | Exhaust 3bar down, trend:FLAT, vol declining
+
+  DAY: 7 trades | 3W 4L | WR: 43% | P&L: $-406
+
+==========================================================================================
+  2026-01-09 (Friday) | PDH:25700 PDL:25453
+==========================================================================================
+  X 09:35 EXHAUST-01   SHORT @25688 0.15L trend:FLAT LOSS $-65 (-1.1R) 28bars | Exhaust 3bar up, trend:FLAT, vol declining
+  X 10:35 TREND-01     SHORT @25592 0.30L trend:DOWN LOSS $-191 (-1.1R) 2bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 11:26 BREAK-01     LONG  @25709 0.25L trend:UP   WIN  $+79 (+0.4R) 13bars | Fresh IB break long (trend:UP)
+  X 13:04 LEVEL-01     LONG  @25807 0.15L trend:UP   LOSS $-76 (-1.1R) 12bars | Round 25800 bounce (trend:UP)
+  X 14:06 LEVEL-01     LONG  @25802 0.15L trend:UP   LOSS $-59 (-1.2R) 2bars | Round 25800 bounce (trend:UP)
+
+  DAY: 5 trades | 1W 4L | WR: 20% | P&L: $-312
+
+==========================================================================================
+  2026-01-12 (Monday) | PDH:25856 PDL:25505
+==========================================================================================
+  + 10:01 TREND-01     SHORT @25634 0.30L trend:DOWN WIN  $+6 (+0.1R) 28bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 10:46 TREND-01     LONG  @25746 0.30L trend:UP   WIN  $+126 (+0.5R) 17bars | Trend pullback long (trend:UP, near VWAP)
+  + 11:47 TREND-01     LONG  @25780 0.30L trend:UP   WIN  $+282 (+1.0R) 45bars | Trend pullback long (trend:UP, near VWAP)
+  X 14:26 EXHAUST-01   LONG  @25879 0.15L trend:UP   LOSS $-46 (-0.2R) 45bars | Exhaust 3bar down, trend:UP, vol declining
+
+  DAY: 4 trades | 3W 1L | WR: 75% | P&L: $+367
+
+==========================================================================================
+  2026-01-13 (Tuesday) | PDH:25904 PDL:25613
+==========================================================================================
+  X 09:34 LEVEL-01     SHORT @25908 0.15L trend:FLAT LOSS $-41 (-1.2R) 1bars | PDH reject (trend:FLAT)
+  + 10:34 TREND-01     LONG  @25876 0.30L trend:UP   WIN  $+0 (+0.0R) 5bars | Trend pullback long (trend:UP, near VWAP)
+  X 11:53 EXHAUST-01   SHORT @25751 0.15L trend:DOWN LOSS $-175 (-1.1R) 22bars | Exhaust 4bar up, trend:DOWN, vol declining
+  + 12:38 TREND-01     LONG  @25844 0.30L trend:UP   WIN  $+64 (+0.2R) 38bars | Trend pullback long (trend:UP, near VWAP)
+  X 13:38 TREND-01     LONG  @25847 0.30L trend:UP   LOSS $-309 (-1.1R) 15bars | Trend pullback long (trend:UP, near VWAP)
+  + 14:36 LEVEL-01     SHORT @25789 0.15L trend:DOWN WIN  $+98 (+1.3R) 13bars | Round 25800 reject (trend:DOWN)
+
+  DAY: 6 trades | 3W 3L | WR: 50% | P&L: $-362
+
+==========================================================================================
+  2026-01-14 (Wednesday) | PDH:25936 PDL:25704
+==========================================================================================
+  X 09:39 EXHAUST-01   LONG  @25662 0.15L trend:FLAT LOSS $-64 (-1.1R) 6bars | Exhaust 3bar down, trend:FLAT, vol declining
+  X 10:24 TREND-01     SHORT @25647 0.30L trend:DOWN LOSS $-118 (-1.1R) 1bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 11:13 TREND-01     LONG  @25553 0.30L trend:UP   LOSS $-331 (-1.1R) 17bars | Trend pullback long (trend:UP, near VWAP)
+  X 12:08 LEVEL-01     SHORT @25395 0.15L trend:DOWN LOSS $-68 (-1.1R) 12bars | Round 25400 reject (trend:DOWN)
+  + 13:12 LEVEL-01     SHORT @25396 0.15L trend:DOWN WIN  $+99 (+1.7R) 5bars | Round 25400 reject (trend:DOWN)
+  X 14:40 EXHAUST-01   SHORT @25343 0.15L trend:DOWN LOSS $-215 (-0.8R) 45bars | Exhaust 3bar up, trend:DOWN, vol declining
+
+  DAY: 6 trades | 1W 5L | WR: 17% | P&L: $-697
+
+==========================================================================================
+  2026-01-15 (Thursday) | PDH:25703 PDL:25320
+==========================================================================================
+  + 10:02 TREND-01     LONG  @25792 0.30L trend:UP   WIN  $+162 (+1.3R) 27bars | Trend pullback long (trend:UP, near VWAP)
+  X 10:51 BREAK-01     SHORT @25745 0.25L trend:DOWN LOSS $-163 (-1.1R) 2bars | Fresh IB break short (trend:DOWN)
+  X 11:36 LEVEL-01     LONG  @25806 0.15L trend:UP   LOSS $-70 (-1.1R) 3bars | Round 25800 bounce (trend:UP)
+  X 12:36 TREND-01     LONG  @25791 0.30L trend:UP   LOSS $-5 (-0.0R) 45bars | Trend pullback long (trend:UP, near VWAP)
+  X 13:29 TREND-01     SHORT @25775 0.30L trend:DOWN LOSS $-41 (-0.1R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 14:20 TREND-01     LONG  @25787 0.30L trend:UP   LOSS $-290 (-1.1R) 43bars | Trend pullback long (trend:UP, near VWAP)
+  + 15:09 TREND-01     SHORT @25747 0.30L trend:DOWN WIN  $+463 (+1.1R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+
+  DAY: 7 trades | 2W 5L | WR: 29% | P&L: $+55
+
+==========================================================================================
+  2026-01-16 (Friday) | PDH:25956 PDL:25641
+==========================================================================================
+  + 10:00 TREND-01     LONG  @25737 0.30L trend:UP   WIN  $+10 (+0.1R) 25bars | Trend pullback long (trend:UP, near VWAP)
+  + 10:53 BREAK-01     SHORT @25699 0.25L trend:DOWN WIN  $+6 (+0.1R) 1bars | Fresh IB break short (trend:DOWN)
+  X 12:00 TREND-01     SHORT @25588 0.30L trend:DOWN LOSS $-374 (-0.7R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 12:45 TREND-01     LONG  @25649 0.30L trend:UP   LOSS $-368 (-0.9R) 45bars | Trend pullback long (trend:UP, near VWAP)
+  X 13:30 TREND-01     SHORT @25590 0.30L trend:DOWN LOSS $-97 (-0.2R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 14:25 TREND-01     LONG  @25629 0.30L trend:UP   LOSS $-28 (-0.1R) 45bars | Trend pullback long (trend:UP, near VWAP)
+  X 15:11 TREND-01     SHORT @25620 0.30L trend:DOWN LOSS $-25 (-0.1R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+
+  DAY: 7 trades | 2W 5L | WR: 29% | P&L: $-876
+
+==========================================================================================
+  2026-01-20 (Tuesday) | PDH:25794 PDL:25498
+==========================================================================================
+  + 09:37 LEVEL-01     LONG  @25110 0.15L trend:FLAT WIN  $+194 (+2.6R) 22bars | Round 25100 bounce (trend:FLAT)
+  X 10:22 TREND-01     SHORT @25126 0.30L trend:DOWN LOSS $-112 (-1.1R) 6bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 11:21 BREAK-01     LONG  @25244 0.25L trend:UP   WIN  $+144 (+0.5R) 26bars | Fresh IB break long (trend:UP)
+  X 12:22 LEVEL-01     LONG  @25304 0.15L trend:UP   LOSS $-65 (-1.1R) 2bars | Round 25300 bounce (trend:UP)
+  X 13:22 TREND-01     LONG  @25257 0.30L trend:UP   LOSS $-303 (-1.1R) 13bars | Trend pullback long (trend:UP, near VWAP)
+  + 14:13 LEVEL-01     SHORT @25193 0.15L trend:DOWN WIN  $+97 (+1.5R) 16bars | Round 25200 reject (trend:DOWN)
+
+  DAY: 6 trades | 3W 3L | WR: 50% | P&L: $-44
+
+==========================================================================================
+  2026-01-21 (Wednesday) | PDH:25340 PDL:25041
+==========================================================================================
+  + 10:03 TREND-01     LONG  @25004 0.30L trend:UP   WIN  $+278 (+2.6R) 1bars | Trend pullback long (trend:UP, near VWAP)
+  + 11:20 EXHAUST-01   LONG  @25248 0.15L trend:UP   WIN  $+353 (+1.5R) 21bars | Exhaust 4bar down, trend:UP, vol declining
+  X 12:27 EXHAUST-01   LONG  @25360 0.15L trend:UP   LOSS $-331 (-1.0R) 12bars | Exhaust 3bar down, trend:UP, vol declining
+  + 13:34 LEVEL-01     LONG  @25107 0.15L trend:FLAT WIN  $+4 (+0.1R) 7bars | Round 25100 bounce (trend:FLAT)
+  X 14:44 TREND-01     SHORT @25133 0.30L trend:DOWN LOSS $-805 (-1.0R) 43bars | Trend pullback short (trend:DOWN, near VWAP)
+
+  DAY: 5 trades | 3W 2L | WR: 60% | P&L: $-501
+
+==========================================================================================
+  2026-01-22 (Thursday) | PDH:25556 PDL:24958
+==========================================================================================
+  + 09:34 LEVEL-01     LONG  @25607 0.15L trend:FLAT WIN  $+43 (+0.7R) 13bars | Round 25600 bounce (trend:FLAT)
+  + 10:32 TREND-01     SHORT @25603 0.30L trend:DOWN WIN  $+209 (+1.9R) 3bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 11:32 TREND-01     SHORT @25515 0.30L trend:DOWN LOSS $-317 (-1.1R) 13bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 12:17 TREND-01     LONG  @25557 0.30L trend:UP   WIN  $+170 (+0.6R) 45bars | Trend pullback long (trend:UP, near VWAP)
+  + 13:10 LEVEL-01     SHORT @25596 0.15L trend:FLAT WIN  $+7 (+0.1R) 15bars | Round 25600 reject (trend:FLAT)
+  X 14:15 LEVEL-01     LONG  @25612 0.15L trend:FLAT LOSS $-88 (-1.1R) 42bars | Round 25600 bounce (trend:FLAT)
+
+  DAY: 6 trades | 4W 2L | WR: 67% | P&L: $+24
+
+==========================================================================================
+  2026-01-23 (Friday) | PDH:25652 PDL:25453
+==========================================================================================
+  X 09:35 EXHAUST-01   LONG  @25507 0.15L trend:FLAT LOSS $-65 (-1.1R) 19bars | Exhaust 4bar down, trend:FLAT, vol declining
+  X 10:36 TREND-01     LONG  @25536 0.30L trend:UP   LOSS $-126 (-1.1R) 1bars | Trend pullback long (trend:UP, near VWAP)
+  + 11:36 LEVEL-01     LONG  @25698 0.15L trend:UP   WIN  $+37 (+0.9R) 12bars | Round 25700 bounce (trend:UP)
+  + 13:06 LEVEL-01     LONG  @25701 0.15L trend:UP   WIN  $+28 (+0.6R) 10bars | Round 25700 bounce (trend:UP)
+  X 13:51 TREND-01     SHORT @25630 0.30L trend:DOWN LOSS $-182 (-0.5R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 14:36 TREND-01     LONG  @25658 0.30L trend:UP   WIN  $+210 (+0.7R) 45bars | Trend pullback long (trend:UP, near VWAP)
+
+  DAY: 6 trades | 3W 3L | WR: 50% | P&L: $-99
+
+==========================================================================================
+  2026-01-26 (Monday) | PDH:25766 PDL:25482
+==========================================================================================
+  X 09:38 LEVEL-01     SHORT @25601 0.15L trend:FLAT LOSS $-50 (-1.2R) 8bars | Round 25600 reject (trend:FLAT)
+  + 10:25 BREAK-01     LONG  @25659 0.25L trend:UP   WIN  $+4 (+0.0R) 8bars | Fresh IB break long (trend:UP)
+  + 11:26 EXHAUST-01   LONG  @25785 0.15L trend:UP   WIN  $+78 (+0.5R) 45bars | Exhaust 3bar down, trend:UP, vol declining
+  + 12:40 EXHAUST-01   LONG  @25826 0.15L trend:UP   WIN  $+64 (+0.3R) 45bars | Exhaust 3bar down, trend:UP, vol declining
+  + 13:47 TREND-01     LONG  @25817 0.30L trend:UP   WIN  $+182 (+0.4R) 45bars | Trend pullback long (trend:UP, near VWAP)
+  X 14:47 TREND-01     LONG  @25815 0.30L trend:UP   LOSS $-0 (-0.0R) 45bars | Trend pullback long (trend:UP, near VWAP)
+
+  DAY: 6 trades | 4W 2L | WR: 67% | P&L: $+277
+
+==========================================================================================
+  2026-01-27 (Tuesday) | PDH:25858 PDL:25586
+==========================================================================================
+  X 09:44 EXHAUST-01   LONG  @25926 0.15L trend:FLAT LOSS $-55 (-0.9R) 45bars | Exhaust 3bar down, trend:FLAT, vol declining
+  X 10:30 BREAK-01     SHORT @25909 0.25L trend:DOWN LOSS $-69 (-1.2R) 1bars | Fresh IB break short (trend:DOWN)
+  + 11:37 LEVEL-01     LONG  @26006 0.15L trend:UP   WIN  $+43 (+0.7R) 45bars | Round 26000 bounce (trend:UP)
+  X 13:06 LEVEL-01     LONG  @25998 0.15L trend:UP   LOSS $-48 (-1.2R) 11bars | Round 26000 bounce (trend:UP)
+  + 14:08 TREND-01     LONG  @25985 0.30L trend:UP   WIN  $+149 (+0.6R) 45bars | Trend pullback long (trend:UP, near VWAP)
+  + 15:08 TREND-01     LONG  @26004 0.30L trend:UP   WIN  $+99 (+0.3R) 45bars | Trend pullback long (trend:UP, near VWAP)
+
+  DAY: 6 trades | 3W 3L | WR: 50% | P&L: $+119
+
+==========================================================================================
+  2026-01-28 (Wednesday) | PDH:26031 PDL:25846
+==========================================================================================
+  X 09:32 LEVEL-01     LONG  @26207 0.15L trend:FLAT LOSS $-74 (-1.1R) 9bars | Round 26200 bounce (trend:FLAT)
+  X 10:23 TREND-01     SHORT @26179 0.30L trend:DOWN LOSS $-147 (-1.1R) 9bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 11:37 EXHAUST-01   SHORT @26146 0.15L trend:DOWN WIN  $+110 (+1.4R) 10bars | Exhaust 3bar up, trend:DOWN, vol declining
+  X 13:52 EXHAUST-01   SHORT @26071 0.15L trend:DOWN LOSS $-52 (-0.4R) 45bars | Exhaust 4bar up, trend:DOWN, vol declining
+  X 14:52 LEVEL-01     SHORT @26097 0.15L trend:DOWN LOSS $-60 (-1.1R) 8bars | Round 26100 reject (trend:DOWN)
+
+  DAY: 5 trades | 1W 4L | WR: 20% | P&L: $-224
+
+==========================================================================================
+  2026-01-29 (Thursday) | PDH:26228 PDL:26031
+==========================================================================================
+  X 09:35 LEVEL-01     LONG  @26125 0.15L trend:FLAT LOSS $-128 (-1.1R) 30bars | Round 26100 bounce (trend:FLAT)
+  + 10:30 LEVEL-01     SHORT @26072 0.15L trend:DOWN WIN  $+97 (+0.8R) 4bars | Round 26100 reject (trend:DOWN)
+  X 11:53 LEVEL-01     SHORT @25492 0.15L trend:DOWN LOSS $-76 (-1.1R) 3bars | Round 25500 reject (trend:DOWN)
+  X 12:53 TREND-01     SHORT @25644 0.30L trend:DOWN LOSS $-1013 (-1.0R) 44bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 13:38 TREND-01     LONG  @25803 0.30L trend:UP   LOSS $-209 (-0.2R) 45bars | Trend pullback long (trend:UP, near VWAP)
+  + 14:38 TREND-01     LONG  @25798 0.30L trend:UP   WIN  $+107 (+0.1R) 45bars | Trend pullback long (trend:UP, near VWAP)
+
+  DAY: 6 trades | 2W 4L | WR: 33% | P&L: $-1,222
+
+==========================================================================================
+  2026-01-30 (Friday) | PDH:26136 PDL:25473
+==========================================================================================
+  + 09:37 EXHAUST-01   LONG  @25750 0.15L trend:FLAT WIN  $+41 (+0.6R) 7bars | Exhaust 3bar down, trend:FLAT, vol declining
+  X 10:24 TREND-01     SHORT @25766 0.30L trend:DOWN LOSS $-114 (-1.1R) 6bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 11:09 TREND-01     LONG  @25832 0.30L trend:UP   LOSS $-253 (-1.1R) 17bars | Trend pullback long (trend:UP, near VWAP)
+  + 11:54 TREND-01     SHORT @25807 0.30L trend:DOWN WIN  $+27 (+0.1R) 4bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 13:30 EXHAUST-01   SHORT @25731 0.15L trend:DOWN WIN  $+60 (+0.3R) 16bars | Exhaust 3bar up, trend:DOWN, vol declining
+  X 14:46 LEVEL-01     SHORT @25591 0.15L trend:DOWN LOSS $-81 (-1.1R) 2bars | Round 25600 reject (trend:DOWN)
+
+  DAY: 6 trades | 3W 3L | WR: 50% | P&L: $-320
+
+==========================================================================================
+  2026-02-02 (Monday) | PDH:25884 PDL:25515
+==========================================================================================
+  X 09:38 EXHAUST-01   SHORT @25429 0.15L trend:FLAT LOSS $-66 (-1.1R) 7bars | Exhaust 3bar up, trend:FLAT, vol declining
+  + 10:23 TREND-01     LONG  @25474 0.30L trend:UP   WIN  $+513 (+4.3R) 7bars | Trend pullback long (trend:UP, near VWAP)
+  X 11:46 LEVEL-01     LONG  @25811 0.15L trend:UP   LOSS $-84 (-1.1R) 4bars | Round 25800 bounce (trend:UP)
+  + 12:46 TREND-01     LONG  @25798 0.30L trend:UP   WIN  $+392 (+0.5R) 45bars | Trend pullback long (trend:UP, near VWAP)
+  + 14:38 EXHAUST-01   LONG  @25859 0.15L trend:UP   WIN  $+61 (+0.2R) 45bars | Exhaust 3bar down, trend:UP, vol declining
+
+  DAY: 5 trades | 3W 2L | WR: 60% | P&L: $+816
+
+==========================================================================================
+  2026-02-03 (Tuesday) | PDH:25894 PDL:25407
+==========================================================================================
+  + 10:04 TREND-01     SHORT @25920 0.30L trend:DOWN WIN  $+267 (+2.5R) 26bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 11:28 EXHAUST-01   SHORT @25513 0.15L trend:DOWN LOSS $-63 (-0.2R) 45bars | Exhaust 4bar up, trend:DOWN, vol declining
+  + 13:04 EXHAUST-01   SHORT @25442 0.15L trend:DOWN WIN  $+293 (+0.8R) 45bars | Exhaust 3bar up, trend:DOWN, vol declining
+
+  DAY: 3 trades | 2W 1L | WR: 67% | P&L: $+498
+
+==========================================================================================
+  2026-02-04 (Wednesday) | PDH:25955 PDL:25172
+==========================================================================================
+  X 09:45 EXHAUST-01   LONG  @25330 0.15L trend:FLAT LOSS $-66 (-1.1R) 4bars | Exhaust 3bar down, trend:FLAT, vol declining
+  + 10:30 BREAK-01     SHORT @25265 0.25L trend:DOWN WIN  $+87 (+0.5R) 1bars | Fresh IB break short (trend:DOWN)
+  X 11:23 TREND-01     LONG  @25217 0.30L trend:UP   LOSS $-366 (-1.0R) 8bars | Trend pullback long (trend:UP, near VWAP)
+  + 12:13 LEVEL-01     SHORT @25080 0.15L trend:DOWN WIN  $+26 (+0.2R) 3bars | Round 25100 reject (trend:DOWN)
+  + 13:14 EXHAUST-01   SHORT @24985 0.15L trend:DOWN WIN  $+521 (+1.5R) 22bars | Exhaust 4bar up, trend:DOWN, vol declining
+  X 14:20 LEVEL-01     SHORT @24790 0.15L trend:DOWN LOSS $-84 (-1.1R) 2bars | Round 24800 reject (trend:DOWN)
+
+  DAY: 6 trades | 3W 3L | WR: 50% | P&L: $+119
+
+==========================================================================================
+  2026-02-05 (Thursday) | PDH:25372 PDL:24739
+==========================================================================================
+  X 10:01 TREND-01     LONG  @24780 0.30L trend:UP   LOSS $-243 (-1.1R) 10bars | Trend pullback long (trend:UP, near VWAP)
+  + 10:56 TREND-01     SHORT @24766 0.30L trend:DOWN WIN  $+130 (+0.3R) 4bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 11:56 LEVEL-01     SHORT @24568 0.15L trend:DOWN WIN  $+97 (+0.7R) 1bars | Round 24600 reject (trend:DOWN)
+  X 12:44 LEVEL-01     LONG  @24742 0.15L trend:FLAT LOSS $-60 (-1.1R) 1bars | PDL reject (trend:FLAT)
+  X 13:45 BREAK-01     LONG  @24831 0.25L trend:UP   LOSS $-344 (-1.0R) 4bars | Fresh IB break long (trend:UP)
+  + 14:33 BREAK-01     SHORT @24693 0.25L trend:DOWN WIN  $+19 (+0.1R) 30bars | Fresh IB break short (trend:DOWN)
+
+  DAY: 6 trades | 3W 3L | WR: 50% | P&L: $-401
+
+==========================================================================================
+  2026-02-06 (Friday) | PDH:24918 PDL:24504
+==========================================================================================
+  + 09:42 LEVEL-01     SHORT @24789 0.15L trend:FLAT WIN  $+2 (+0.0R) 8bars | Round 24800 reject (trend:FLAT)
+  X 10:33 BREAK-01     LONG  @24834 0.25L trend:UP   LOSS $-197 (-1.1R) 3bars | Fresh IB break long (trend:UP)
+  X 11:51 TREND-01     LONG  @24839 0.30L trend:UP   LOSS $-324 (-1.1R) 3bars | Trend pullback long (trend:UP, near VWAP)
+  X 12:51 LEVEL-01     LONG  @25001 0.15L trend:UP   LOSS $-55 (-1.1R) 4bars | Round 25000 bounce (trend:UP)
+
+  DAY: 4 trades | 1W 3L | WR: 25% | P&L: $-573
+
+==========================================================================================
+  2026-02-09 (Monday) | PDH:25090 PDL:24669
+==========================================================================================
+  X 09:41 LEVEL-01     SHORT @25078 0.15L trend:FLAT LOSS $-90 (-1.1R) 1bars | PDH reject (trend:FLAT)
+  + 10:36 LEVEL-01     LONG  @25022 0.15L trend:FLAT WIN  $+97 (+0.9R) 1bars | Round 25000 bounce (trend:FLAT)
+  X 12:15 LEVEL-01     LONG  @25302 0.15L trend:UP   LOSS $-59 (-1.1R) 6bars | Round 25300 bounce (trend:UP)
+  + 14:26 EXHAUST-01   LONG  @25312 0.15L trend:UP   WIN  $+138 (+0.4R) 45bars | Exhaust 3bar down, trend:UP, vol declining
+
+  DAY: 4 trades | 2W 2L | WR: 50% | P&L: $+85
+
+==========================================================================================
+  2026-02-10 (Tuesday) | PDH:25398 PDL:24929
+==========================================================================================
+  + 09:32 LEVEL-01     LONG  @25312 0.15L trend:FLAT WIN  $+96 (+1.2R) 26bars | Round 25300 bounce (trend:FLAT)
+  X 10:32 TREND-01     LONG  @25356 0.30L trend:UP   LOSS $-141 (-1.1R) 1bars | Trend pullback long (trend:UP, near VWAP)
+  X 11:35 EXHAUST-01   LONG  @25376 0.15L trend:UP   LOSS $-143 (-1.1R) 21bars | Exhaust 3bar down, trend:UP, vol declining
+  + 12:20 TREND-01     SHORT @25338 0.30L trend:DOWN WIN  $+11 (+0.1R) 27bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 13:06 LEVEL-01     LONG  @25308 0.15L trend:FLAT WIN  $+97 (+1.4R) 10bars | Round 25300 bounce (trend:FLAT)
+  + 14:05 TREND-01     SHORT @25333 0.30L trend:DOWN WIN  $+111 (+0.5R) 18bars | Trend pullback short (trend:DOWN, near VWAP)
+
+  DAY: 6 trades | 4W 2L | WR: 67% | P&L: $+31
+
+==========================================================================================
+  2026-02-11 (Wednesday) | PDH:25421 PDL:25231
+==========================================================================================
+  + 09:41 LEVEL-01     LONG  @25313 0.15L trend:FLAT WIN  $+90 (+1.1R) 5bars | Round 25300 bounce (trend:FLAT)
+  + 10:34 TREND-01     SHORT @25364 0.30L trend:DOWN WIN  $+1503 (+4.3R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 11:40 EXHAUST-01   SHORT @25162 0.15L trend:DOWN LOSS $-204 (-0.7R) 45bars | Exhaust 3bar up, trend:DOWN, vol declining
+  X 12:40 TREND-01     LONG  @25233 0.30L trend:UP   LOSS $-417 (-1.0R) 16bars | Trend pullback long (trend:UP, near VWAP)
+  X 13:40 TREND-01     LONG  @25264 0.30L trend:UP   LOSS $-261 (-0.4R) 45bars | Trend pullback long (trend:UP, near VWAP)
+  + 14:40 TREND-01     LONG  @25243 0.30L trend:UP   WIN  $+514 (+1.1R) 45bars | Trend pullback long (trend:UP, near VWAP)
+
+  DAY: 6 trades | 3W 3L | WR: 50% | P&L: $+1,224
+
+==========================================================================================
+  2026-02-12 (Thursday) | PDH:25442 PDL:25037
+==========================================================================================
+  X 09:45 EXHAUST-01   LONG  @25390 0.15L trend:FLAT LOSS $-94 (-1.1R) 18bars | Exhaust 3bar down, trend:FLAT, vol declining
+  X 10:31 TREND-01     SHORT @25322 0.30L trend:DOWN LOSS $-220 (-1.1R) 2bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 12:00 LEVEL-01     SHORT @24995 0.15L trend:DOWN WIN  $+11 (+0.2R) 4bars | Round 25000 reject (trend:DOWN)
+  X 14:06 EXHAUST-01   SHORT @24831 0.15L trend:DOWN LOSS $-195 (-0.4R) 45bars | Exhaust 3bar up, trend:DOWN, vol declining
+
+  DAY: 4 trades | 1W 3L | WR: 25% | P&L: $-498
+
+==========================================================================================
+  2026-02-13 (Friday) | PDH:25400 PDL:24783
+==========================================================================================
+  X 09:39 EXHAUST-01   SHORT @24765 0.15L trend:FLAT LOSS $-90 (-1.1R) 4bars | Exhaust 3bar up, trend:FLAT, vol declining
+  + 10:31 LEVEL-01     LONG  @24741 0.15L trend:UP   WIN  $+97 (+0.6R) 1bars | Round 24700 bounce (trend:UP)
+  X 11:16 TREND-01     SHORT @24713 0.30L trend:DOWN LOSS $-388 (-1.0R) 4bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 12:01 BREAK-01     LONG  @24826 0.25L trend:UP   LOSS $-300 (-1.1R) 22bars | Fresh IB break long (trend:UP)
+  + 13:09 LEVEL-01     LONG  @24904 0.15L trend:UP   WIN  $+75 (+1.3R) 5bars | Round 24900 bounce (trend:UP)
+
+  DAY: 5 trades | 2W 3L | WR: 40% | P&L: $-606
+
+==========================================================================================
+  2026-02-17 (Tuesday) | PDH:24987 PDL:24573
+==========================================================================================
+  + 09:45 LEVEL-01     SHORT @24597 0.15L trend:FLAT WIN  $+6 (+0.1R) 5bars | Round 24600 reject (trend:FLAT)
+  + 10:32 TREND-01     LONG  @24662 0.30L trend:UP   WIN  $+98 (+0.6R) 1bars | Trend pullback long (trend:UP, near VWAP)
+  + 11:21 TREND-01     SHORT @24575 0.30L trend:DOWN WIN  $+168 (+0.3R) 26bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 12:08 BREAK-01     LONG  @24714 0.25L trend:UP   WIN  $+61 (+0.2R) 21bars | Fresh IB break long (trend:UP)
+  X 13:12 TREND-01     LONG  @24693 0.30L trend:UP   LOSS $-145 (-0.2R) 45bars | Trend pullback long (trend:UP, near VWAP)
+  + 14:12 TREND-01     LONG  @24663 0.30L trend:UP   WIN  $+1112 (+2.5R) 45bars | Trend pullback long (trend:UP, near VWAP)
+
+  DAY: 6 trades | 5W 1L | WR: 83% | P&L: $+1,299
+
+==========================================================================================
+  2026-02-18 (Wednesday) | PDH:24883 PDL:24446
+==========================================================================================
+  + 09:33 LEVEL-01     SHORT @24885 0.15L trend:FLAT WIN  $+101 (+2.7R) 9bars | PDH reject (trend:FLAT)
+  X 10:34 TREND-01     SHORT @24767 0.30L trend:DOWN LOSS $-299 (-1.0R) 4bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 12:06 LEVEL-01     LONG  @25104 0.15L trend:UP   LOSS $-65 (-1.1R) 3bars | Round 25100 bounce (trend:UP)
+  X 13:09 LEVEL-01     LONG  @25102 0.15L trend:UP   LOSS $-58 (-1.2R) 3bars | Round 25100 bounce (trend:UP)
+  X 14:31 TREND-01     LONG  @25048 0.30L trend:UP   LOSS $-281 (-0.4R) 45bars | Trend pullback long (trend:UP, near VWAP)
+
+  DAY: 5 trades | 1W 4L | WR: 20% | P&L: $-602
+
+==========================================================================================
+  2026-02-19 (Thursday) | PDH:25123 PDL:24750
+==========================================================================================
+  X 09:35 EXHAUST-01   SHORT @24851 0.15L trend:FLAT LOSS $-65 (-1.1R) 1bars | Exhaust 5bar up, trend:FLAT, vol declining
+  X 10:25 TREND-01     LONG  @24863 0.30L trend:UP   LOSS $-166 (-1.1R) 2bars | Trend pullback long (trend:UP, near VWAP)
+  + 11:26 TREND-01     LONG  @24881 0.30L trend:UP   WIN  $+81 (+0.3R) 24bars | Trend pullback long (trend:UP, near VWAP)
+  X 12:27 TREND-01     LONG  @24903 0.30L trend:UP   LOSS $-341 (-1.1R) 17bars | Trend pullback long (trend:UP, near VWAP)
+  + 13:27 TREND-01     SHORT @24856 0.30L trend:DOWN WIN  $+238 (+0.8R) 44bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 14:39 EXHAUST-01   SHORT @24788 0.15L trend:DOWN LOSS $-157 (-1.0R) 20bars | Exhaust 3bar up, trend:DOWN, vol declining
+
+  DAY: 6 trades | 2W 4L | WR: 33% | P&L: $-409
+
+==========================================================================================
+  2026-02-20 (Friday) | PDH:24960 PDL:24751
+==========================================================================================
+  + 09:35 EXHAUST-01   SHORT @24798 0.15L trend:FLAT WIN  $+3 (+0.0R) 3bars | Exhaust 3bar up, trend:FLAT, vol declining
+  + 10:34 LEVEL-01     LONG  @24814 0.15L trend:UP   WIN  $+50 (+0.6R) 1bars | Round 24800 bounce (trend:UP)
+  + 11:34 TREND-01     LONG  @24948 0.30L trend:UP   WIN  $+627 (+1.1R) 41bars | Trend pullback long (trend:UP, near VWAP)
+  X 12:35 TREND-01     LONG  @25039 0.30L trend:UP   LOSS $-705 (-0.9R) 45bars | Trend pullback long (trend:UP, near VWAP)
+  X 13:20 TREND-01     SHORT @24924 0.30L trend:DOWN LOSS $-631 (-0.8R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 14:05 TREND-01     LONG  @25026 0.30L trend:UP   WIN  $+329 (+0.5R) 45bars | Trend pullback long (trend:UP, near VWAP)
+
+  DAY: 6 trades | 4W 2L | WR: 67% | P&L: $-327
+
+==========================================================================================
+  2026-02-23 (Monday) | PDH:25146 PDL:24688
+==========================================================================================
+  X 09:39 EXHAUST-01   SHORT @24946 0.15L trend:FLAT LOSS $-65 (-1.1R) 35bars | Exhaust 3bar up, trend:FLAT, vol declining
+  + 10:24 TREND-01     LONG  @24964 0.30L trend:UP   WIN  $+344 (+2.5R) 6bars | Trend pullback long (trend:UP, near VWAP)
+  X 11:14 LEVEL-01     SHORT @24887 0.15L trend:DOWN LOSS $-92 (-1.1R) 6bars | Round 24900 reject (trend:DOWN)
+  + 12:27 EXHAUST-01   SHORT @24773 0.15L trend:DOWN WIN  $+63 (+0.2R) 45bars | Exhaust 3bar up, trend:DOWN, vol declining
+  X 14:06 TREND-01     SHORT @24779 0.30L trend:DOWN LOSS $-99 (-0.2R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+
+  DAY: 5 trades | 2W 3L | WR: 40% | P&L: $+152
+
+==========================================================================================
+  2026-02-24 (Tuesday) | PDH:25050 PDL:24681
+==========================================================================================
+  + 09:36 EXHAUST-01   LONG  @24863 0.15L trend:FLAT WIN  $+78 (+1.4R) 12bars | Exhaust 6bar down, trend:FLAT, vol declining
+  + 10:21 BREAK-01     SHORT @24849 0.25L trend:DOWN WIN  $+89 (+0.7R) 9bars | Fresh IB break short (trend:DOWN)
+  + 11:06 TREND-01     LONG  @24893 0.30L trend:UP   WIN  $+697 (+1.7R) 45bars | Trend pullback long (trend:UP, near VWAP)
+  + 12:17 EXHAUST-01   LONG  @25028 0.15L trend:UP   WIN  $+37 (+0.1R) 45bars | Exhaust 4bar down, trend:UP, vol declining
+  + 13:18 EXHAUST-01   LONG  @25061 0.15L trend:UP   WIN  $+70 (+0.3R) 45bars | Exhaust 3bar down, trend:UP, vol declining
+  + 15:10 TREND-01     LONG  @25025 0.30L trend:UP   WIN  $+25 (+0.0R) 45bars | Trend pullback long (trend:UP, near VWAP)
+
+  DAY: 6 trades | 6W 0L | WR: 100% | P&L: $+995
+
+==========================================================================================
+  2026-02-25 (Wednesday) | PDH:25090 PDL:24709
+==========================================================================================
+  + 09:53 EXHAUST-01   LONG  @25157 0.15L trend:FLAT WIN  $+8 (+0.1R) 14bars | Exhaust 3bar down, trend:FLAT, vol declining
+  X 11:04 EXHAUST-01   LONG  @25349 0.15L trend:UP   LOSS $-104 (-0.6R) 45bars | Exhaust 3bar down, trend:UP, vol declining
+  X 11:52 TREND-01     SHORT @25301 0.30L trend:DOWN LOSS $-107 (-0.4R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 12:37 TREND-01     LONG  @25316 0.30L trend:UP   WIN  $+194 (+0.7R) 45bars | Trend pullback long (trend:UP, near VWAP)
+  + 13:37 TREND-01     LONG  @25347 0.30L trend:UP   WIN  $+48 (+0.1R) 45bars | Trend pullback long (trend:UP, near VWAP)
+
+  DAY: 5 trades | 3W 2L | WR: 60% | P&L: $+40
+
+==========================================================================================
+  2026-02-26 (Thursday) | PDH:25394 PDL:25142
+==========================================================================================
+  + 09:38 EXHAUST-01   SHORT @25418 0.15L trend:FLAT WIN  $+123 (+2.1R) 3bars | Exhaust 3bar up, trend:FLAT, vol declining
+  + 10:38 TREND-01     SHORT @25280 0.30L trend:DOWN WIN  $+425 (+1.3R) 26bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 11:48 TREND-01     SHORT @25037 0.30L trend:DOWN LOSS $-282 (-0.3R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 12:48 TREND-01     SHORT @25031 0.30L trend:DOWN WIN  $+62 (+0.1R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 14:11 EXHAUST-01   SHORT @24937 0.15L trend:DOWN LOSS $-285 (-0.7R) 45bars | Exhaust 3bar up, trend:DOWN, vol declining
+  + 15:09 TREND-01     LONG  @25075 0.30L trend:UP   WIN  $+199 (+0.4R) 45bars | Trend pullback long (trend:UP, near VWAP)
+
+  DAY: 6 trades | 4W 2L | WR: 67% | P&L: $+242
+
+==========================================================================================
+  2026-02-27 (Friday) | PDH:25435 PDL:24884
+==========================================================================================
+  X 09:35 EXHAUST-01   LONG  @24858 0.15L trend:FLAT LOSS $-66 (-1.1R) 2bars | Exhaust 3bar down, trend:FLAT, vol declining
+  + 10:23 TREND-01     SHORT @24858 0.30L trend:DOWN WIN  $+22 (+0.2R) 4bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 11:18 EXHAUST-01   LONG  @24956 0.15L trend:UP   WIN  $+49 (+0.3R) 8bars | Exhaust 3bar down, trend:UP, vol declining
+  X 12:38 LEVEL-01     LONG  @25010 0.15L trend:UP   LOSS $-83 (-1.1R) 2bars | Round 25000 bounce (trend:UP)
+  X 13:23 TREND-01     SHORT @24952 0.30L trend:DOWN LOSS $-325 (-1.0R) 7bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 14:28 BREAK-01     LONG  @24929 0.25L trend:FLAT WIN  $+65 (+0.3R) 40bars | Fresh IB break long (trend:FLAT)
+  + 15:14 TREND-01     SHORT @24938 0.30L trend:DOWN WIN  $+73 (+0.2R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+
+  DAY: 7 trades | 4W 3L | WR: 57% | P&L: $-264
+
+==========================================================================================
+  2026-03-02 (Monday) | PDH:25063 PDL:24810
+==========================================================================================
+  X 09:42 LEVEL-01     LONG  @24704 0.15L trend:FLAT LOSS $-63 (-1.1R) 2bars | Round 24700 bounce (trend:FLAT)
+  + 10:43 TREND-01     LONG  @24842 0.30L trend:UP   WIN  $+44 (+0.1R) 9bars | Trend pullback long (trend:UP, near VWAP)
+  + 11:53 TREND-01     LONG  @24935 0.30L trend:UP   WIN  $+302 (+0.5R) 45bars | Trend pullback long (trend:UP, near VWAP)
+  X 13:55 EXHAUST-01   LONG  @25088 0.15L trend:UP   LOSS $-164 (-0.5R) 45bars | Exhaust 3bar down, trend:UP, vol declining
+  + 14:55 TREND-01     LONG  @25011 0.30L trend:UP   WIN  $+613 (+0.8R) 45bars | Trend pullback long (trend:UP, near VWAP)
+
+  DAY: 5 trades | 3W 2L | WR: 60% | P&L: $+733
+
+==========================================================================================
+  2026-03-03 (Tuesday) | PDH:25129 PDL:24625
+==========================================================================================
+  + 09:40 EXHAUST-01   SHORT @24542 0.15L trend:FLAT WIN  $+7 (+0.1R) 4bars | Exhaust 3bar up, trend:FLAT, vol declining
+  X 10:30 BREAK-01     LONG  @24643 0.25L trend:UP   LOSS $-218 (-1.1R) 1bars | Fresh IB break long (trend:UP)
+  + 11:18 BREAK-01     SHORT @24467 0.25L trend:DOWN WIN  $+187 (+0.9R) 13bars | Fresh IB break short (trend:DOWN)
+  + 12:04 TREND-01     LONG  @24553 0.30L trend:UP   WIN  $+997 (+2.1R) 45bars | Trend pullback long (trend:UP, near VWAP)
+  X 13:48 LEVEL-01     LONG  @24711 0.15L trend:UP   LOSS $-83 (-1.1R) 5bars | Round 24700 bounce (trend:UP)
+  + 14:48 LEVEL-01     LONG  @24819 0.15L trend:UP   WIN  $+99 (+1.0R) 3bars | Round 24800 bounce (trend:UP)
+
+  DAY: 6 trades | 4W 2L | WR: 67% | P&L: $+990
+
+==========================================================================================
+  2026-03-04 (Wednesday) | PDH:24883 PDL:24385
+==========================================================================================
+  + 09:31 LEVEL-01     LONG  @24912 0.15L trend:FLAT WIN  $+46 (+0.6R) 12bars | Round 24900 bounce (trend:FLAT)
+  + 10:24 TREND-01     SHORT @24919 0.30L trend:DOWN WIN  $+162 (+1.3R) 4bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 11:11 LEVEL-01     LONG  @25025 0.15L trend:UP   WIN  $+97 (+0.8R) 8bars | Round 25000 bounce (trend:UP)
+  + 12:13 LEVEL-01     LONG  @25102 0.15L trend:UP   WIN  $+17 (+0.3R) 3bars | Round 25100 bounce (trend:UP)
+  + 13:14 EXHAUST-01   LONG  @25190 0.15L trend:UP   WIN  $+29 (+0.1R) 45bars | Exhaust 3bar down, trend:UP, vol declining
+  + 14:28 LEVEL-01     LONG  @25205 0.15L trend:UP   WIN  $+29 (+0.5R) 6bars | Round 25200 bounce (trend:UP)
+
+  DAY: 6 trades | 6W 0L | WR: 100% | P&L: $+381
+
+==========================================================================================
+  2026-03-05 (Thursday) | PDH:25251 PDL:24861
+==========================================================================================
+  X 09:43 EXHAUST-01   SHORT @25063 0.15L trend:FLAT LOSS $-66 (-1.1R) 9bars | Exhaust 3bar up, trend:FLAT, vol declining
+  + 10:30 TREND-01     LONG  @25075 0.30L trend:UP   WIN  $+64 (+0.3R) 3bars | Trend pullback long (trend:UP, near VWAP)
+  + 11:20 TREND-01     SHORT @25138 0.30L trend:DOWN WIN  $+607 (+2.1R) 10bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 12:33 TREND-01     SHORT @25062 0.30L trend:DOWN LOSS $-494 (-1.0R) 31bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 13:42 LEVEL-01     SHORT @24888 0.15L trend:DOWN WIN  $+3 (+0.0R) 6bars | Round 24900 reject (trend:DOWN)
+
+  DAY: 5 trades | 3W 2L | WR: 60% | P&L: $+115
+
+==========================================================================================
+  2026-03-06 (Friday) | PDH:25246 PDL:24813
+==========================================================================================
+  X 09:32 LEVEL-01     LONG  @24871 0.15L trend:FLAT LOSS $-227 (-1.0R) 9bars | PDL reject (trend:FLAT)
+  X 10:21 EXHAUST-01   SHORT @24697 0.15L trend:DOWN LOSS $-212 (-1.0R) 9bars | Exhaust 3bar up, trend:DOWN, vol declining
+  + 11:07 TREND-01     LONG  @24781 0.30L trend:UP   WIN  $+440 (+0.9R) 39bars | Trend pullback long (trend:UP, near VWAP)
+  X 12:07 LEVEL-01     LONG  @24903 0.15L trend:UP   LOSS $-61 (-1.1R) 4bars | Round 24900 bounce (trend:UP)
+  X 13:13 LEVEL-01     SHORT @24882 0.15L trend:DOWN LOSS $-106 (-1.1R) 9bars | Round 24900 reject (trend:DOWN)
+  + 13:58 TREND-01     LONG  @24839 0.30L trend:UP   WIN  $+265 (+0.8R) 28bars | Trend pullback long (trend:UP, near VWAP)
+  X 15:09 TREND-01     LONG  @24868 0.30L trend:UP   LOSS $-133 (-0.3R) 45bars | Trend pullback long (trend:UP, near VWAP)
+
+  DAY: 7 trades | 2W 5L | WR: 29% | P&L: $-34
+
+==========================================================================================
+  2026-03-09 (Monday) | PDH:24967 PDL:24660
+==========================================================================================
+  + 09:44 LEVEL-01     LONG  @24432 0.15L trend:FLAT WIN  $+98 (+0.7R) 2bars | Round 24400 bounce (trend:FLAT)
+  + 10:44 BREAK-01     LONG  @24584 0.25L trend:UP   WIN  $+526 (+1.0R) 45bars | Fresh IB break long (trend:UP)
+  + 11:47 LEVEL-01     LONG  @24673 0.15L trend:UP   WIN  $+80 (+1.0R) 16bars | PDL reject (trend:UP)
+  X 13:29 LEVEL-01     LONG  @24659 0.15L trend:UP   LOSS $-51 (-1.1R) 6bars | PDL reject (trend:UP)
+  + 14:57 LEVEL-01     LONG  @24709 0.15L trend:UP   WIN  $+60 (+0.8R) 20bars | Round 24700 bounce (trend:UP)
+
+  DAY: 5 trades | 4W 1L | WR: 80% | P&L: $+715
+
+==========================================================================================
+  2026-03-10 (Tuesday) | PDH:25102 PDL:24363
+==========================================================================================
+  X 09:32 LEVEL-01     LONG  @25117 0.15L trend:FLAT LOSS $-102 (-1.1R) 1bars | Round 25100 bounce (trend:FLAT)
+  X 10:17 BREAK-01     SHORT @24973 0.25L trend:DOWN LOSS $-392 (-1.0R) 8bars | Fresh IB break short (trend:DOWN)
+  + 11:09 EXHAUST-01   LONG  @25180 0.15L trend:UP   WIN  $+6 (+0.0R) 45bars | Exhaust 7bar down, trend:UP, vol declining
+  + 12:09 TREND-01     LONG  @25150 0.30L trend:UP   WIN  $+339 (+0.7R) 45bars | Trend pullback long (trend:UP, near VWAP)
+  + 13:13 LEVEL-01     LONG  @25203 0.15L trend:UP   WIN  $+33 (+0.6R) 3bars | Round 25200 bounce (trend:UP)
+  X 14:13 TREND-01     LONG  @25169 0.30L trend:UP   LOSS $-474 (-1.0R) 1bars | Trend pullback long (trend:UP, near VWAP)
+  X 15:09 LEVEL-01     SHORT @25091 0.15L trend:FLAT LOSS $-85 (-1.1R) 9bars | PDH reject (trend:FLAT)
+
+  DAY: 7 trades | 3W 4L | WR: 43% | P&L: $-674
+
+==========================================================================================
+  2026-03-11 (Wednesday) | PDH:25268 PDL:24943
+==========================================================================================
+  X 10:06 TREND-01     LONG  @25155 0.30L trend:UP   LOSS $-231 (-1.1R) 6bars | Trend pullback long (trend:UP, near VWAP)
+  + 11:03 TREND-01     SHORT @25095 0.30L trend:DOWN WIN  $+116 (+0.3R) 9bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 12:14 EXHAUST-01   SHORT @24987 0.15L trend:DOWN LOSS $-213 (-1.0R) 20bars | Exhaust 3bar up, trend:DOWN, vol declining
+  X 13:07 TREND-01     LONG  @25077 0.30L trend:UP   LOSS $-316 (-1.1R) 12bars | Trend pullback long (trend:UP, near VWAP)
+  + 13:52 TREND-01     SHORT @25021 0.30L trend:DOWN WIN  $+73 (+0.1R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 14:52 TREND-01     SHORT @25010 0.30L trend:DOWN LOSS $-85 (-0.2R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+
+  DAY: 6 trades | 2W 4L | WR: 33% | P&L: $-656
+
+==========================================================================================
+  2026-03-12 (Thursday) | PDH:25232 PDL:24927
+==========================================================================================
+  + 09:35 EXHAUST-01   SHORT @24871 0.15L trend:FLAT WIN  $+2 (+0.0R) 6bars | Exhaust 4bar up, trend:FLAT, vol declining
+  + 10:53 EXHAUST-01   SHORT @24685 0.15L trend:DOWN WIN  $+7 (+0.0R) 33bars | Exhaust 3bar up, trend:DOWN, vol declining
+  X 11:39 TREND-01     LONG  @24750 0.30L trend:UP   LOSS $-372 (-1.0R) 8bars | Trend pullback long (trend:UP, near VWAP)
+  X 12:26 TREND-01     SHORT @24703 0.30L trend:DOWN LOSS $-423 (-1.0R) 13bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 13:11 TREND-01     LONG  @24743 0.30L trend:UP   LOSS $-343 (-1.0R) 9bars | Trend pullback long (trend:UP, near VWAP)
+  + 14:00 TREND-01     SHORT @24700 0.30L trend:DOWN WIN  $+194 (+0.5R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+
+  DAY: 6 trades | 3W 3L | WR: 50% | P&L: $-934
+
+==========================================================================================
+  2026-03-13 (Friday) | PDH:24891 PDL:24598
+==========================================================================================
+  + 09:50 EXHAUST-01   LONG  @24800 0.15L trend:UP   WIN  $+29 (+0.2R) 6bars | Exhaust 3bar down, trend:UP, vol declining
+  + 10:43 BREAK-01     SHORT @24672 0.25L trend:DOWN WIN  $+242 (+0.5R) 29bars | Fresh IB break short (trend:DOWN)
+  X 12:17 LEVEL-01     SHORT @24489 0.15L trend:DOWN LOSS $-84 (-1.1R) 4bars | Round 24500 reject (trend:DOWN)
+  X 13:27 LEVEL-01     SHORT @24503 0.15L trend:DOWN LOSS $-44 (-1.2R) 1bars | Round 24500 reject (trend:DOWN)
+  + 14:51 TREND-01     SHORT @24526 0.30L trend:DOWN WIN  $+487 (+0.6R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+
+  DAY: 5 trades | 3W 2L | WR: 60% | P&L: $+630
+
+==========================================================================================
+  2026-03-16 (Monday) | PDH:24868 PDL:24414
+==========================================================================================
+  + 09:38 EXHAUST-01   LONG  @24743 0.15L trend:FLAT WIN  $+54 (+0.8R) 7bars | Exhaust 3bar down, trend:FLAT, vol declining
+  + 10:30 TREND-01     SHORT @24755 0.30L trend:DOWN WIN  $+56 (+0.2R) 8bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 11:15 TREND-01     LONG  @24758 0.30L trend:UP   WIN  $+109 (+0.8R) 13bars | Trend pullback long (trend:UP, near VWAP)
+  + 12:00 TREND-01     SHORT @24753 0.30L trend:DOWN WIN  $+104 (+0.6R) 21bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 12:52 TREND-01     LONG  @24755 0.30L trend:UP   WIN  $+29 (+0.2R) 8bars | Trend pullback long (trend:UP, near VWAP)
+  + 13:39 TREND-01     SHORT @24750 0.30L trend:DOWN WIN  $+23 (+0.1R) 12bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 14:28 TREND-01     LONG  @24777 0.30L trend:UP   WIN  $+165 (+0.7R) 41bars | Trend pullback long (trend:UP, near VWAP)
+
+  DAY: 7 trades | 7W 0L | WR: 100% | P&L: $+541
+
+==========================================================================================
+  2026-03-17 (Tuesday) | PDH:24879 PDL:24683
+==========================================================================================
+  X 09:57 EXHAUST-01   LONG  @24928 0.15L trend:UP   LOSS $-115 (-1.1R) 14bars | Exhaust 3bar down, trend:UP, vol declining
+  X 10:57 TREND-01     LONG  @24928 0.30L trend:UP   LOSS $-241 (-1.1R) 10bars | Trend pullback long (trend:UP, near VWAP)
+  X 11:58 EXHAUST-01   LONG  @24839 0.15L trend:FLAT LOSS $-124 (-1.1R) 9bars | Exhaust 3bar down, trend:FLAT, vol declining
+  X 12:49 LEVEL-01     SHORT @24860 0.15L trend:FLAT LOSS $-17 (-0.2R) 45bars | PDH reject (trend:FLAT)
+  X 13:53 TREND-01     LONG  @24888 0.30L trend:UP   LOSS $-188 (-1.1R) 31bars | Trend pullback long (trend:UP, near VWAP)
+
+  DAY: 5 trades | 0W 5L | WR: 0% | P&L: $-686
+
+==========================================================================================
+  2026-03-18 (Wednesday) | PDH:24963 PDL:24797
+==========================================================================================
+  X 09:33 LEVEL-01     SHORT @24794 0.15L trend:FLAT LOSS $-69 (-1.1R) 3bars | Round 24800 reject (trend:FLAT)
+  X 10:35 LEVEL-01     SHORT @24693 0.15L trend:DOWN LOSS $-72 (-1.1R) 22bars | Round 24700 reject (trend:DOWN)
+  X 11:33 TREND-01     LONG  @24769 0.30L trend:UP   LOSS $-226 (-1.1R) 13bars | Trend pullback long (trend:UP, near VWAP)
+  + 12:18 TREND-01     SHORT @24753 0.30L trend:DOWN WIN  $+193 (+1.0R) 35bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 13:39 TREND-01     SHORT @24717 0.30L trend:DOWN WIN  $+116 (+0.3R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+
+  DAY: 5 trades | 2W 3L | WR: 40% | P&L: $-59
+
+==========================================================================================
+  2026-03-19 (Thursday) | PDH:24850 PDL:24496
+==========================================================================================
+  + 09:34 LEVEL-01     LONG  @24218 0.15L trend:FLAT WIN  $+19 (+0.2R) 3bars | Round 24200 bounce (trend:FLAT)
+  X 10:22 TREND-01     SHORT @24294 0.30L trend:DOWN LOSS $-280 (-1.1R) 10bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 11:07 BREAK-01     LONG  @24397 0.25L trend:UP   LOSS $-513 (-1.0R) 24bars | Fresh IB break long (trend:UP)
+  X 11:52 LEVEL-01     SHORT @24292 0.15L trend:FLAT LOSS $-78 (-1.1R) 4bars | Round 24300 reject (trend:FLAT)
+  X 12:38 TREND-01     LONG  @24334 0.30L trend:UP   LOSS $-310 (-1.0R) 26bars | Trend pullback long (trend:UP, near VWAP)
+  X 13:35 TREND-01     SHORT @24294 0.30L trend:DOWN LOSS $-371 (-1.0R) 37bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 14:23 TREND-01     LONG  @24349 0.30L trend:UP   WIN  $+706 (+1.7R) 43bars | Trend pullback long (trend:UP, near VWAP)
+
+  DAY: 7 trades | 2W 5L | WR: 29% | P&L: $-827
+
+==========================================================================================
+  2026-03-20 (Friday) | PDH:24547 PDL:24188
+==========================================================================================
+  X 09:32 LEVEL-01     SHORT @24282 0.15L trend:FLAT LOSS $-105 (-1.1R) 11bars | Round 24300 reject (trend:FLAT)
+  + 10:32 TREND-01     SHORT @24168 0.30L trend:DOWN WIN  $+64 (+0.1R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 11:23 TREND-01     LONG  @24195 0.30L trend:UP   LOSS $-342 (-1.1R) 2bars | Trend pullback long (trend:UP, near VWAP)
+  + 12:26 TREND-01     SHORT @24173 0.30L trend:DOWN WIN  $+130 (+0.5R) 29bars | Trend pullback short (trend:DOWN, near VWAP)
+
+  DAY: 4 trades | 2W 2L | WR: 50% | P&L: $-253
+
+==========================================================================================
+  2026-03-23 (Monday) | PDH:24356 PDL:23836
+==========================================================================================
+  X 09:50 LEVEL-01     LONG  @24406 0.15L trend:UP   LOSS $-72 (-1.1R) 1bars | Round 24400 bounce (trend:UP)
+  + 10:50 TREND-01     LONG  @24428 0.30L trend:UP   WIN  $+147 (+0.4R) 30bars | Trend pullback long (trend:UP, near VWAP)
+  + 11:36 TREND-01     SHORT @24393 0.30L trend:DOWN WIN  $+387 (+1.0R) 16bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 12:36 EXHAUST-01   SHORT @24222 0.15L trend:DOWN WIN  $+177 (+0.7R) 45bars | Exhaust 7bar up, trend:DOWN, vol declining
+  + 13:36 TREND-01     SHORT @24298 0.30L trend:DOWN WIN  $+26 (+0.1R) 45bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 14:34 TREND-01     LONG  @24343 0.30L trend:UP   LOSS $-171 (-0.4R) 45bars | Trend pullback long (trend:UP, near VWAP)
+
+  DAY: 6 trades | 4W 2L | WR: 67% | P&L: $+492
+
+==========================================================================================
+  2026-03-24 (Tuesday) | PDH:24517 PDL:24142
+==========================================================================================
+  + 09:37 LEVEL-01     SHORT @24076 0.15L trend:FLAT WIN  $+97 (+0.8R) 3bars | Round 24100 reject (trend:FLAT)
+  X 10:27 TREND-01     LONG  @24077 0.30L trend:UP   LOSS $-257 (-1.1R) 5bars | Trend pullback long (trend:UP, near VWAP)
+  X 11:30 EXHAUST-01   LONG  @24175 0.15L trend:UP   LOSS $-184 (-1.0R) 35bars | Exhaust 5bar down, trend:UP, vol declining
+  X 12:35 TREND-01     LONG  @24121 0.30L trend:UP   LOSS $-335 (-1.0R) 29bars | Trend pullback long (trend:UP, near VWAP)
+  X 13:20 EXHAUST-01   SHORT @24027 0.15L trend:DOWN LOSS $-184 (-1.0R) 35bars | Exhaust 3bar up, trend:DOWN, vol declining
+  X 14:20 TREND-01     SHORT @24083 0.30L trend:DOWN LOSS $-287 (-1.1R) 12bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 15:05 TREND-01     LONG  @24132 0.30L trend:UP   LOSS $-458 (-1.0R) 41bars | Trend pullback long (trend:UP, near VWAP)
+
+  DAY: 7 trades | 1W 6L | WR: 14% | P&L: $-1,608
+
+==========================================================================================
+  2026-03-25 (Wednesday) | PDH:24223 PDL:23976
+==========================================================================================
+  X 10:03 LEVEL-01     SHORT @24223 0.15L trend:DOWN LOSS $-51 (-1.2R) 1bars | PDH reject (trend:DOWN)
+  X 11:00 TREND-01     LONG  @24314 0.30L trend:UP   LOSS $-332 (-1.0R) 9bars | Trend pullback long (trend:UP, near VWAP)
+  X 11:47 LEVEL-01     SHORT @24198 0.15L trend:DOWN LOSS $-60 (-1.2R) 3bars | Round 24200 reject (trend:DOWN)
+  X 12:32 TREND-01     LONG  @24275 0.30L trend:UP   LOSS $-335 (-1.1R) 38bars | Trend pullback long (trend:UP, near VWAP)
+  X 13:17 TREND-01     SHORT @24236 0.30L trend:DOWN LOSS $-349 (-1.0R) 22bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 14:05 TREND-01     LONG  @24277 0.30L trend:UP   LOSS $-279 (-0.9R) 45bars | Trend pullback long (trend:UP, near VWAP)
+  + 14:50 TREND-01     SHORT @24233 0.30L trend:DOWN WIN  $+26 (+0.1R) 5bars | Trend pullback short (trend:DOWN, near VWAP)
+
+  DAY: 7 trades | 1W 6L | WR: 14% | P&L: $-1,382
+
+==========================================================================================
+  2026-03-26 (Thursday) | PDH:24364 PDL:24130
+==========================================================================================
+  + 10:08 TREND-01     LONG  @24025 0.30L trend:UP   WIN  $+26 (+0.1R) 11bars | Trend pullback long (trend:UP, near VWAP)
+  + 10:58 EXHAUST-01   SHORT @23949 0.15L trend:DOWN WIN  $+59 (+0.4R) 45bars | Exhaust 3bar up, trend:DOWN, vol declining
+  + 12:11 BREAK-01     SHORT @23906 0.25L trend:DOWN WIN  $+293 (+0.7R) 45bars | Fresh IB break short (trend:DOWN)
+  X 13:23 LEVEL-01     SHORT @23800 0.15L trend:DOWN LOSS $-55 (-1.2R) 7bars | Round 23800 reject (trend:DOWN)
+  X 14:29 LEVEL-01     SHORT @23700 0.15L trend:DOWN LOSS $-53 (-1.2R) 2bars | Round 23700 reject (trend:DOWN)
+
+  DAY: 5 trades | 3W 2L | WR: 60% | P&L: $+270
+
+==========================================================================================
+  2026-03-27 (Friday) | PDH:24087 PDL:23625
+==========================================================================================
+  + 09:35 EXHAUST-01   LONG  @23417 0.15L trend:FLAT WIN  $+29 (+0.3R) 2bars | Exhaust 5bar down, trend:FLAT, vol declining
+  + 10:21 TREND-01     SHORT @23397 0.30L trend:DOWN WIN  $+215 (+0.7R) 27bars | Trend pullback short (trend:DOWN, near VWAP)
+  X 11:23 TREND-01     LONG  @23422 0.30L trend:UP   LOSS $-303 (-0.9R) 45bars | Trend pullback long (trend:UP, near VWAP)
+  + 12:08 TREND-01     SHORT @23375 0.30L trend:DOWN WIN  $+9 (+0.0R) 40bars | Trend pullback short (trend:DOWN, near VWAP)
+  + 14:28 EXHAUST-01   SHORT @23229 0.15L trend:DOWN WIN  $+90 (+0.4R) 45bars | Exhaust 4bar up, trend:DOWN, vol declining
+
+  DAY: 5 trades | 4W 1L | WR: 80% | P&L: $+41
+
+==========================================================================================
+  FORGE V22B REPLAY -- WITH TREND FILTER
+==========================================================================================
+  Days: 125
+  Total trades: 704
+  Wins: 352 | Losses: 352 | WR: 50.0%
+  Total P&L: $-7,469
+  Daily avg: $-60
+  Monthly est: $-1,255
+  Avg WIN: $+145
+  Avg LOSS: $-166
+  Win/Loss ratio: 0.87
+
+  Setup           N     WR   AvgPnL   TotalPnL            Type
+  ------------------------------------------------------------
+  EXHAUST-01    147  49.7% $    -10 $   -1,449  mean_reversion
+  LEVEL-01      192  46.9% $    -10 $   -1,871           level
+  TREND-01      313  51.8% $     -7 $   -2,040           trend
+  BREAK-01       52  51.9% $    -41 $   -2,108        breakout
+
+  Trade type breakdown:
+    trend             313t | WR 51.8% | Avg $-7 | Total $-2,040
+    breakout           52t | WR 51.9% | Avg $-41 | Total $-2,108
+    mean_reversion    147t | WR 49.7% | Avg $-10 | Total $-1,449
+    level             192t | WR 46.9% | Avg $-10 | Total $-1,871
+
+  Trend alignment:
+    Trend UP  :  304t | WR 48.4% | $-4,716
+    Trend DOWN:  267t | WR 50.9% | $-1,979
+    Trend FLAT:  133t | WR 51.9% | $-774
+
+  Direction vs Trend:
+    WITH trend:    571t | WR 49.6% | $-6,695
+    FLAT/neutral:  133t | WR 51.9% | $-774
+
+==========================================================================================

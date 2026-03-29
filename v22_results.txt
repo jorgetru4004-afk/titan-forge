@@ -1,0 +1,144 @@
+NEXUS CAPITAL -- FORGE V22 CLEAN REBUILD REPLAY
+5 setups | Fresh signals | 1 trade at a time | 3 independent dims
+
+[DATA] 7592 M1 candles
+
+[REPLAY] 8 trading days
+[SYSTEM] 5 setups | Fresh signals only | 1 trade at a time | 3 independent dims
+==========================================================================================
+
+==========================================================================================
+  2026-03-18 (Wednesday) | PDH:0 PDL:0
+==========================================================================================
+  X 09:33 LEVEL-01     SHORT @24794 dims:2/3 0.20L LOSS $-91 (-1.1R) 3bars | Level bounce: Round 24800
+  X 10:22 REVERT-01    LONG  @24745 dims:1/3 0.10L LOSS $-68 (-1.1R) 4bars | Mean rev long (0.5 ATR from VWAP)
+  + 11:45 EXHAUST-01   SHORT @24752 dims:2/3 0.20L WIN  $+63 (+0.4R) 45bars | Exhaustion 3 bars up, vol declining
+  + 12:38 LEVEL-01     LONG  @24706 dims:2/3 0.20L WIN  $+0 (+0.0R) 21bars | Level bounce: Round 24700
+  + 13:41 LEVEL-01     LONG  @24709 dims:2/3 0.20L WIN  $+10 (+0.1R) 8bars | Level bounce: Round 24700
+  X 14:46 EXHAUST-01   LONG  @24661 dims:3/3 0.30L LOSS $-318 (-1.1R) 8bars | Exhaustion 3 bars down, vol declining
+
+  DAY: 6 trades | 3W 3L | WR: 50% | P&L: $-404
+
+==========================================================================================
+  2026-03-19 (Thursday) | PDH:24850 PDL:24496
+==========================================================================================
+  X 09:30 GAP-01       LONG  @24232 dims:1/3 0.10L LOSS $-66 (-1.1R) 1bars | Gap fade -0.9%
+  X 10:30 LEVEL-01     SHORT @24292 dims:1/3 0.10L LOSS $-44 (-1.1R) 1bars | Level bounce: Round 24300
+  X 11:15 LEVEL-01     LONG  @24412 dims:1/3 0.10L LOSS $-45 (-1.1R) 2bars | Level bounce: Round 24400
+  + 12:00 EXHAUST-01   SHORT @24341 dims:1/3 0.10L WIN  $+16 (+0.1R) 45bars | Exhaustion 3 bars up, vol declining
+  X 12:55 LEVEL-01     LONG  @24306 dims:1/3 0.10L LOSS $-44 (-1.1R) 9bars | Level bounce: Round 24300
+  X 13:44 LEVEL-01     SHORT @24291 dims:1/3 0.10L LOSS $-45 (-1.1R) 7bars | Level bounce: Round 24300
+  X 14:44 LEVEL-01     SHORT @24290 dims:1/3 0.10L LOSS $-44 (-1.1R) 11bars | Level bounce: Round 24300
+
+  DAY: 7 trades | 1W 6L | WR: 14% | P&L: $-272
+
+==========================================================================================
+  2026-03-20 (Friday) | PDH:24547 PDL:24188
+==========================================================================================
+  X 09:30 GAP-01       LONG  @24292 dims:1/3 0.10L LOSS $-52 (-1.1R) 1bars | Gap fade -0.3%
+  + 10:22 BREAK-01     SHORT @24130 dims:2/3 0.20L WIN  $+12 (+0.0R) 45bars | Fresh IB break short
+  + 11:26 EXHAUST-01   LONG  @24123 dims:1/3 0.10L WIN  $+179 (+1.5R) 38bars | Exhaustion 3 bars down, vol declining
+  X 12:30 EXHAUST-01   LONG  @24152 dims:1/3 0.10L LOSS $-68 (-0.6R) 45bars | Exhaustion 3 bars down, vol declining
+  X 13:58 EXHAUST-01   LONG  @24076 dims:1/3 0.10L LOSS $-159 (-1.0R) 24bars | Exhaustion 3 bars down, vol declining
+  X 15:04 EXHAUST-01   LONG  @23964 dims:3/3 0.30L LOSS $-617 (-1.0R) 33bars | Exhaustion 3 bars down, vol declining
+
+  DAY: 6 trades | 2W 4L | WR: 33% | P&L: $-705
+
+==========================================================================================
+  2026-03-23 (Monday) | PDH:24356 PDL:23836
+==========================================================================================
+  X 09:30 GAP-01       SHORT @24306 dims:1/3 0.10L LOSS $-53 (-1.1R) 1bars | Gap fade 1.4%
+  X 10:15 BREAK-01     LONG  @24458 dims:2/3 0.20L LOSS $-28 (-0.1R) 45bars | Fresh IB break long
+  X 11:06 LEVEL-01     SHORT @24489 dims:1/3 0.10L LOSS $-45 (-1.1R) 2bars | Level bounce: Round 24500
+  X 11:54 REVERT-01    LONG  @24273 dims:1/3 0.10L LOSS $-158 (-1.0R) 31bars | Mean rev long (0.5 ATR from VWAP)
+  + 12:59 LEVEL-01     LONG  @24203 dims:2/3 0.20L WIN  $+8 (+0.1R) 1bars | Level bounce: Round 24200
+  X 13:50 EXHAUST-01   SHORT @24257 dims:2/3 0.20L LOSS $-373 (-1.0R) 45bars | Exhaustion 3 bars up, vol declining
+  + 14:54 LEVEL-01     SHORT @24344 dims:2/3 0.20L WIN  $+77 (+1.0R) 22bars | Level bounce: PDH 24356
+
+  DAY: 7 trades | 2W 5L | WR: 29% | P&L: $-572
+
+==========================================================================================
+  2026-03-24 (Tuesday) | PDH:24517 PDL:24142
+==========================================================================================
+  + 09:30 GAP-01       LONG  @24103 dims:1/3 0.10L WIN  $+51 (+1.1R) 1bars | Gap fade -0.6%
+  X 10:40 EXHAUST-01   SHORT @24065 dims:1/3 0.10L LOSS $-90 (-1.1R) 6bars | Exhaustion 3 bars up, vol declining
+  X 11:31 EXHAUST-01   LONG  @24164 dims:1/3 0.10L LOSS $-2 (-0.0R) 45bars | Exhaustion 6 bars down, vol declining
+  X 12:40 LEVEL-01     SHORT @24089 dims:1/3 0.10L LOSS $-45 (-1.1R) 3bars | Level bounce: Round 24100
+  + 13:26 EXHAUST-01   LONG  @24020 dims:1/3 0.10L WIN  $+23 (+0.2R) 29bars | Exhaustion 3 bars down, vol declining
+  X 14:20 LEVEL-01     SHORT @24083 dims:1/3 0.10L LOSS $-45 (-1.1R) 7bars | Level bounce: Round 24100
+
+  DAY: 6 trades | 2W 4L | WR: 33% | P&L: $-109
+
+==========================================================================================
+  2026-03-25 (Wednesday) | PDH:24223 PDL:23976
+==========================================================================================
+  X 09:30 GAP-01       SHORT @24295 dims:1/3 0.10L LOSS $-53 (-1.1R) 5bars | Gap fade 0.9%
+  + 10:30 LEVEL-01     LONG  @24315 dims:1/3 0.10L WIN  $+17 (+0.4R) 5bars | Level bounce: Round 24300
+  X 11:16 BREAK-01     SHORT @24152 dims:3/3 0.30L LOSS $-594 (-1.0R) 8bars | Fresh IB break short
+  + 12:05 EXHAUST-01   LONG  @24187 dims:1/3 0.10L WIN  $+163 (+1.4R) 20bars | Exhaustion 4 bars down, vol declining
+  + 13:05 EXHAUST-01   LONG  @24230 dims:1/3 0.10L WIN  $+163 (+1.4R) 38bars | Exhaustion 4 bars down, vol declining
+  X 13:52 LEVEL-01     SHORT @24261 dims:1/3 0.10L LOSS $-45 (-1.1R) 6bars | Level bounce: Round 24300
+  + 14:54 LEVEL-01     SHORT @24228 dims:2/3 0.20L WIN  $+161 (+2.0R) 1bars | Level bounce: PDH 24223
+
+  DAY: 7 trades | 4W 3L | WR: 57% | P&L: $-189
+
+==========================================================================================
+  2026-03-26 (Thursday) | PDH:24364 PDL:24130
+==========================================================================================
+  X 09:30 GAP-01       LONG  @23955 dims:1/3 0.10L LOSS $-53 (-1.1R) 9bars | Gap fade -0.9%
+  + 10:38 EXHAUST-01   LONG  @24011 dims:1/3 0.10L WIN  $+32 (+0.4R) 2bars | Exhaustion 4 bars down, vol declining
+  + 11:31 BREAK-01     SHORT @23905 dims:2/3 0.20L WIN  $+28 (+0.1R) 45bars | Fresh IB break short
+  X 12:22 EXHAUST-01   LONG  @23873 dims:2/3 0.20L LOSS $-161 (-0.8R) 45bars | Exhaustion 3 bars down, vol declining
+  X 13:22 REVERT-01    LONG  @23800 dims:2/3 0.20L LOSS $-358 (-1.0R) 36bars | Mean rev long (0.5 ATR from VWAP)
+  X 14:22 REVERT-01    LONG  @23726 dims:1/3 0.10L LOSS $-68 (-0.3R) 45bars | Mean rev long (0.5 ATR from VWAP)
+
+  DAY: 6 trades | 2W 4L | WR: 33% | P&L: $-580
+
+==========================================================================================
+  2026-03-27 (Friday) | PDH:24087 PDL:23625
+==========================================================================================
+  X 09:30 GAP-01       LONG  @23508 dims:1/3 0.10L LOSS $-52 (-1.1R) 1bars | Gap fade -0.5%
+  X 10:39 BREAK-01     SHORT @23321 dims:2/3 0.20L LOSS $-410 (-1.0R) 44bars | Fresh IB break short
+  + 11:29 LEVEL-01     LONG  @23420 dims:1/3 0.10L WIN  $+2 (+0.0R) 1bars | Level bounce: Round 23400
+  X 13:12 EXHAUST-01   LONG  @23328 dims:2/3 0.20L LOSS $-223 (-1.1R) 13bars | Exhaustion 3 bars down, vol declining
+  + 14:12 REVERT-01    LONG  @23201 dims:1/3 0.10L WIN  $+8 (+0.0R) 45bars | Mean rev long (0.5 ATR from VWAP)
+  + 14:57 EXHAUST-01   SHORT @23207 dims:1/3 0.10L WIN  $+54 (+0.3R) 45bars | Exhaustion 3 bars up, vol declining
+
+  DAY: 6 trades | 3W 3L | WR: 50% | P&L: $-622
+
+==========================================================================================
+  FORGE V22 REPLAY -- CLEAN REBUILD RESULTS
+==========================================================================================
+  Days: 8
+  Total trades: 51
+  Wins: 19 | Losses: 32 | WR: 37.3%
+  Total P&L: $-3,453
+  Daily avg: $-432
+  Monthly est: $-9,063
+  Avg WIN: $+56
+  Avg LOSS: $-141
+  Win/Loss ratio: 0.40
+
+  Setup           N     WR   AvgPnL   TotalPnL            Type
+  -------------------------------------------------------
+  LEVEL-01       17  41.2% $    -13 $     -221           level
+  GAP-01          7  14.3% $    -40 $     -280  mean_reversion
+  REVERT-01       5  20.0% $   -129 $     -644  mean_reversion
+  BREAK-01        5  40.0% $   -198 $     -991        breakout
+  EXHAUST-01     17  47.1% $    -78 $   -1,318  mean_reversion
+
+  Regime breakdown:
+    TREND        33t | WR 39.4% | $-1,507
+    NORMAL       18t | WR 33.3% | $-1,946
+
+  Dims accuracy:
+    3 dims:     3t | WR 0.0% | $-1,529
+    2 dims:    15t | WR 53.3% | $-1,284
+    1 dims:    33t | WR 33.3% | $-640
+
+  Trade type breakdown:
+    breakout            5t | WR 40.0% | $-991
+    mean_reversion     29t | WR 34.5% | $-2,241
+    level              17t | WR 41.2% | $-221
+
+==========================================================================================
