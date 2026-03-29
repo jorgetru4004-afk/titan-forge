@@ -23,4 +23,180 @@
     USDJPY (C:USDJPY)... OK - 4580 bars
     BTCUSD (X:BTCUSD)... OK - 6503 bars
     USOIL (USO)... OK - 2924 bars
-    GBPUSD (C:GBPUSD)... 
+    GBPUSD (C:GBPUSD)... OK - 4580 bars
+  Loaded: 14 instruments
+
+================================================================================
+  REGIME DISTRIBUTION (how often is each instrument in NEUTRAL?)
+================================================================================
+  Symbol      NEUTRAL%   BULL%   BEAR%   Bars
+  ---------------------------------------------
+  BTCUSD         56.7%   16.9%   26.4%  6443
+  ETHUSD         49.7%   23.5%   26.8%  6443
+  EURGBP        100.0%    0.0%    0.0%  4520
+  EURUSD         98.1%    0.8%    1.1%  4520
+  GBPJPY         98.1%    0.8%    1.2%  4489
+  GBPUSD         98.4%    0.7%    0.9%  4520
+  GER40          78.5%    7.6%   13.9%  1846
+  NZDUSD         96.5%    0.8%    2.7%  4520
+  UK100          64.3%   25.5%   10.2%  1598
+  US100          81.2%    8.0%   10.8%  2901
+  USDCHF         97.4%    0.9%    1.7%  4520
+  USDJPY         96.7%    2.2%    1.1%  4520
+  USOIL          76.4%   13.0%   10.6%  2864
+  XAUUSD         67.1%   20.7%   12.2%  4487
+
+================================================================================
+  NEUTRAL REGIME STRATEGY RESULTS
+================================================================================
+
+  --- PROFITABLE NEUTRAL COMBOS (sorted by R) ---
+  Symbol     Strategy             Dir    Trades     WR        R     PF
+  -----------------------------------------------------------------
+  NZDUSD     STOCH_REVERSAL       SHORT     191  35.1%  +82.00R  2.58
+  USDCHF     STOCH_REVERSAL       SHORT     177  29.9%  +58.00R  2.21
+  USOIL      GAP_FILL             LONG       71  77.5%  +54.00R  5.50
+  GER40      GAP_FILL             SHORT      99  61.6%  +51.14R  3.32
+  GER40      GAP_FILL             LONG      100  60.0%  +50.00R  3.27
+  USOIL      GAP_FILL             SHORT      68  69.1%  +44.56R  4.76
+  US100      GAP_FILL             SHORT      59  72.9%  +39.16R  5.10
+  UK100      GAP_FILL             LONG       56  71.4%  +35.00R  3.69
+  US100      GAP_FILL             LONG       41  75.6%  +32.20R  7.44
+  GER40      STOCH_REVERSAL       LONG       49  42.9%  +30.00R  3.50
+  US100      STOCH_REVERSAL       SHORT     114  28.1%  +30.00R  1.88
+  GBPJPY     STOCH_REVERSAL       SHORT     208  22.6%  +27.00R  1.40
+  USDCHF     GAP_FILL             LONG       30  83.3%  +26.97R 14.49
+  USOIL      STOCH_REVERSAL       SHORT      88  31.8%  +26.00R  1.87
+  EURGBP     GAP_FILL             SHORT      26  88.5%  +25.84R 15.64
+  USDCHF     GAP_FILL             SHORT      35  77.1%  +25.40R  4.63
+  GBPUSD     GAP_FILL             LONG       27  77.8%  +22.20R  8.40
+  UK100      STOCH_REVERSAL       SHORT      61  36.1%  +22.00R  2.00
+  UK100      MEAN_REVERT          SHORT      21  38.1%  +21.00R  8.00
+  USOIL      VWAP_REVERT          SHORT      13  23.1%  +20.00R  6.00
+  USDJPY     STOCH_REVERSAL       LONG      109  24.8%  +19.00R  1.54
+  EURGBP     GAP_FILL             LONG       19  84.2%  +17.20R  9.60
+  EURUSD     STOCH_REVERSAL       SHORT     142  21.1%  +17.00R  1.40
+  GBPUSD     STOCH_REVERSAL       SHORT     162  21.0%  +17.00R  1.33
+  XAUUSD     STOCH_REVERSAL       SHORT     132  25.0%  +17.00R  1.35
+  UK100      GAP_FILL             SHORT      63  54.0%  +16.80R  1.70
+  EURGBP     STOCH_REVERSAL       SHORT     155  17.4%  +16.00R  1.42
+  GER40      MEAN_REVERT          SHORT      14  42.9%  +16.00R  9.00
+  GBPJPY     GAP_FILL             LONG       24  75.0%  +15.32R  4.49
+  EURUSD     EMA_BOUNCE           SHORT      47  21.3%  +15.26R  2.09
+  ETHUSD     STOCH_REVERSAL       LONG       74  25.7%  +15.00R  1.65
+  USOIL      STOCH_REVERSAL       LONG       68  26.5%  +15.00R  1.71
+  GBPJPY     GAP_FILL             SHORT      32  59.4%  +14.39R  2.96
+  USDCHF     MEAN_REVERT          SHORT      48  20.8%  +14.00R  1.88
+  NZDUSD     GAP_FILL             LONG       23  69.6%  +13.14R  3.39
+  EURUSD     STOCH_REVERSAL       LONG      140  20.7%  +13.00R  1.29
+  USDJPY     GAP_FILL             LONG       17  76.5%  +12.60R  5.20
+  EURGBP     MEAN_REVERT          LONG       13  38.5%  +12.00R  5.00
+  EURUSD     GAP_FILL             SHORT      13  84.6%  +11.20R  6.60
+  GER40      STOCH_REVERSAL       SHORT      73  28.8%  +11.00R  1.35
+  US100      STOCH_REVERSAL       LONG       52  25.0%  +11.00R  1.73
+  XAUUSD     GAP_FILL             SHORT      10  90.0%   +9.80R 10.80
+  USDCHF     VWAP_REVERT          SHORT      44   6.8%   +9.09R  1.76
+  BTCUSD     STOCH_REVERSAL       LONG       84  21.4%   +9.00R  1.33
+  GBPJPY     VWAP_REVERT          LONG       22   9.1%   +9.00R  2.29
+  GER40      MEAN_REVERT          LONG       10  40.0%   +9.00R  4.00
+  GBPUSD     GAP_FILL             SHORT      20  65.0%   +8.75R  2.46
+  USDJPY     GAP_FILL             SHORT      15  66.7%   +8.36R  4.37
+  BTCUSD     STOCH_REVERSAL       SHORT      82  18.3%   +8.00R  1.36
+  GBPJPY     MEAN_REVERT          LONG       16  25.0%   +7.00R  2.40
+  USOIL      VWAP_REVERT          LONG        5  20.0%   +7.00R  8.00
+  NZDUSD     VWAP_REVERT          SHORT      36   5.6%   +6.55R  1.94
+  ETHUSD     VWAP_REVERT          LONG        3  33.3%   +6.00R  4.00
+  GBPUSD     VWAP_REVERT          LONG       48   6.2%   +6.00R  1.33
+  GBPUSD     VWAP_REVERT          SHORT      21   9.5%   +5.38R  2.08
+  NZDUSD     GAP_FILL             SHORT       7  71.4%   +5.00R  6.00
+  UK100      EMA_BOUNCE           LONG       10  30.0%   +5.00R  2.25
+  XAUUSD     MEAN_REVERT          LONG        4  50.0%   +5.00R  6.00
+  XAUUSD     VWAP_REVERT          SHORT      32   6.2%   +5.00R  1.45
+  NZDUSD     EMA_BOUNCE           SHORT      55  12.7%   +4.73R  1.34
+  EURUSD     VWAP_REVERT          LONG       47   4.3%   +4.00R  1.33
+  GBPJPY     MEAN_REVERT          SHORT      15  20.0%   +4.00R  1.80
+  UK100      MEAN_REVERT          LONG        5  40.0%   +4.00R  3.00
+  USDJPY     MEAN_REVERT          LONG       21  19.0%   +4.00R  1.50
+  USDJPY     VWAP_REVERT          LONG        8  12.5%   +4.00R  2.00
+  USDJPY     VWAP_REVERT          SHORT      43   7.0%   +4.00R  1.20
+  USDJPY     STOCH_REVERSAL       SHORT     198  23.7%   +4.00R  1.04
+  ETHUSD     EMA_BOUNCE           LONG       22  22.7%   +3.36R  1.34
+  US100      MEAN_REVERT          SHORT      28  14.3%   +3.00R  1.33
+  USDJPY     EMA_BOUNCE           LONG       60  13.3%   +3.00R  1.14
+  XAUUSD     EMA_BOUNCE           SHORT      16  18.8%   +3.00R  1.50
+  XAUUSD     GAP_FILL             LONG        6  66.7%   +2.80R  2.40
+  ETHUSD     MEAN_REVERT          LONG       12  16.7%   +2.00R  1.50
+  GBPUSD     STOCH_REVERSAL       LONG      161  22.4%   +2.00R  1.03
+  US100      VWAP_REVERT          SHORT      28   3.6%   +2.00R  1.33
+  GER40      EMA_BOUNCE           SHORT      14  21.4%   +1.71R  1.34
+  UK100      ORB                  SHORT      46  23.9%   +0.62R  1.03
+  EURUSD     GAP_FILL             LONG        8  37.5%   +0.60R  1.20
+
+================================================================================
+  BEST NEUTRAL STRATEGY PER INSTRUMENT
+================================================================================
+
+  Symbol     Strategy             Dir    Trades     WR        R     PF
+  -----------------------------------------------------------------
+  BTCUSD     STOCH_REVERSAL       LONG       84  21.4%   +9.00R  1.33
+  ETHUSD     STOCH_REVERSAL       LONG       74  25.7%  +15.00R  1.65
+  EURGBP     GAP_FILL             SHORT      26  88.5%  +25.84R 15.64
+  EURUSD     STOCH_REVERSAL       SHORT     142  21.1%  +17.00R  1.40
+  GBPJPY     STOCH_REVERSAL       SHORT     208  22.6%  +27.00R  1.40
+  GBPUSD     GAP_FILL             LONG       27  77.8%  +22.20R  8.40
+  GER40      GAP_FILL             SHORT      99  61.6%  +51.14R  3.32
+  NZDUSD     STOCH_REVERSAL       SHORT     191  35.1%  +82.00R  2.58
+  UK100      GAP_FILL             LONG       56  71.4%  +35.00R  3.69
+  US100      GAP_FILL             SHORT      59  72.9%  +39.16R  5.10
+  USDCHF     STOCH_REVERSAL       SHORT     177  29.9%  +58.00R  2.21
+  USDJPY     STOCH_REVERSAL       LONG      109  24.8%  +19.00R  1.54
+  USOIL      GAP_FILL             LONG       71  77.5%  +54.00R  5.50
+  XAUUSD     STOCH_REVERSAL       SHORT     132  25.0%  +17.00R  1.35
+
+================================================================================
+  BOTH-DIRECTION NEUTRAL COMBOS (same strategy, both sides profitable)
+================================================================================
+
+  Symbol     Strategy               LONG R   SHORT R   Combined
+  ------------------------------------------------------------
+  GER40      GAP_FILL              +50.00R   +51.14R   +101.14R
+  USOIL      GAP_FILL              +54.00R   +44.56R    +98.56R
+  US100      GAP_FILL              +32.20R   +39.16R    +71.36R
+  USDCHF     GAP_FILL              +26.97R   +25.40R    +52.37R
+  UK100      GAP_FILL              +35.00R   +16.80R    +51.80R
+  EURGBP     GAP_FILL              +17.20R   +25.84R    +43.04R
+  GER40      STOCH_REVERSAL        +30.00R   +11.00R    +41.00R
+  US100      STOCH_REVERSAL        +11.00R   +30.00R    +41.00R
+  USOIL      STOCH_REVERSAL        +15.00R   +26.00R    +41.00R
+  GBPUSD     GAP_FILL              +22.20R    +8.75R    +30.95R
+  EURUSD     STOCH_REVERSAL        +13.00R   +17.00R    +30.00R
+  GBPJPY     GAP_FILL              +15.32R   +14.39R    +29.70R
+  USOIL      VWAP_REVERT            +7.00R   +20.00R    +27.00R
+  GER40      MEAN_REVERT            +9.00R   +16.00R    +25.00R
+  UK100      MEAN_REVERT            +4.00R   +21.00R    +25.00R
+  USDJPY     STOCH_REVERSAL        +19.00R    +4.00R    +23.00R
+  USDJPY     GAP_FILL              +12.60R    +8.36R    +20.96R
+  GBPUSD     STOCH_REVERSAL         +2.00R   +17.00R    +19.00R
+  NZDUSD     GAP_FILL              +13.14R    +5.00R    +18.14R
+  BTCUSD     STOCH_REVERSAL         +9.00R    +8.00R    +17.00R
+  XAUUSD     GAP_FILL               +2.80R    +9.80R    +12.60R
+  EURUSD     GAP_FILL               +0.60R   +11.20R    +11.80R
+  GBPUSD     VWAP_REVERT            +6.00R    +5.38R    +11.38R
+  GBPJPY     MEAN_REVERT            +7.00R    +4.00R    +11.00R
+  USDJPY     VWAP_REVERT            +4.00R    +4.00R     +8.00R
+
+================================================================================
+  NEUTRAL RESEARCH SUMMARY
+================================================================================
+
+  Total combos tested: 216
+  Profitable NEUTRAL combos: 78
+  Instruments with NEUTRAL edge: 14
+  Both-direction NEUTRAL combos: 25
+
+  >>> NEUTRAL EDGES FOUND — 14 instruments have profitable neutral strategies <<<
+
+================================================================================
+  RESEARCH COMPLETE
+================================================================================
+
