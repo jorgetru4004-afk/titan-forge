@@ -642,7 +642,10 @@ async def live_trading_loop(adapter: MT5Adapter) -> None:
                 send_telegram(f"🎯 {target_engine.telegram_update()}")
 
             # ── V21: Fast mode at key levels ──────────────────────────
-            key_levels = collect_key_levels(tracker, ctx)
+            try:
+                key_levels = collect_key_levels(tracker, ctx)
+            except (TypeError, AttributeError):
+                key_levels = {}
             cycle_speed = get_cycle_speed(mid, key_levels, atr)
 
             # ── V21: MTF from candle store ────────────────────────────
