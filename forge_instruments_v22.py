@@ -92,11 +92,14 @@ class InstrumentSetup:
 
 SETUP_CONFIG: Dict[str, InstrumentSetup] = {
 
-    # 1. USDCHF — Stoch Reversal | LONG only | SCALP
+    # 1. USDCHF — Mean Revert | LONG only | SCALP
+    #    v22.2 FIX: Was Stoch Reversal (23% WR, -3R over 100 trades).
+    #    Ranging pair — RSI extremes snap back hard. Mean Revert is
+    #    the highest WR strategy at 43.8%.
     "USDCHF": InstrumentSetup(
-        symbol="USDCHF", strategy=Strategy.STOCH_REVERSAL,
-        direction=Direction.LONG, sl_atr=0.5, tp_atr=1.0,
-        risk_pct=2.0, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
+        symbol="USDCHF", strategy=Strategy.MEAN_REVERT,
+        direction=Direction.LONG, sl_atr=0.5, tp_atr=1.5,
+        risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
         expectancy=0.225, win_rate=0.55, profit_factor=2.07,
     ),
 
@@ -104,7 +107,7 @@ SETUP_CONFIG: Dict[str, InstrumentSetup] = {
     "GER40": InstrumentSetup(
         symbol="GER40", strategy=Strategy.VWAP_REVERT,
         direction=Direction.BOTH, sl_atr=0.5, tp_atr=4.0,
-        risk_pct=2.0, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
+        risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
         expectancy=0.358, win_rate=0.47, profit_factor=1.27,
         long_sl=0.5, long_tp=2.0, short_sl=0.5, short_tp=4.0,
     ),
@@ -113,7 +116,7 @@ SETUP_CONFIG: Dict[str, InstrumentSetup] = {
     "NZDUSD": InstrumentSetup(
         symbol="NZDUSD", strategy=Strategy.GAP_FILL,
         direction=Direction.SHORT, sl_atr=2.5, tp_atr=3.0,
-        risk_pct=2.0, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
+        risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
         expectancy=0.555, win_rate=0.80, profit_factor=4.19,
     ),
 
@@ -123,7 +126,7 @@ SETUP_CONFIG: Dict[str, InstrumentSetup] = {
     "UK100": InstrumentSetup(
         symbol="UK100", strategy=Strategy.VWAP_REVERT,
         direction=Direction.SHORT, sl_atr=0.5, tp_atr=4.0,
-        risk_pct=2.0, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
+        risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
         expectancy=0.358, win_rate=0.47, profit_factor=1.19,
     ),
 
@@ -131,7 +134,7 @@ SETUP_CONFIG: Dict[str, InstrumentSetup] = {
     "US100": InstrumentSetup(
         symbol="US100", strategy=Strategy.EMA_BOUNCE,
         direction=Direction.SHORT, sl_atr=2.0, tp_atr=3.0,
-        risk_pct=2.0, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
+        risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
         expectancy=0.425, win_rate=0.48, profit_factor=1.56,
     ),
 
@@ -147,7 +150,7 @@ SETUP_CONFIG: Dict[str, InstrumentSetup] = {
     "EURGBP": InstrumentSetup(
         symbol="EURGBP", strategy=Strategy.VWAP_REVERT,
         direction=Direction.SHORT, sl_atr=2.5, tp_atr=3.0,
-        risk_pct=2.0, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
+        risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
         expectancy=0.307, win_rate=0.46, profit_factor=1.14,
     ),
 
@@ -157,15 +160,18 @@ SETUP_CONFIG: Dict[str, InstrumentSetup] = {
     "EURUSD": InstrumentSetup(
         symbol="EURUSD", strategy=Strategy.MEAN_REVERT,
         direction=Direction.SHORT, sl_atr=0.8, tp_atr=1.5,
-        risk_pct=2.0, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
+        risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
         expectancy=0.385, win_rate=0.46, profit_factor=1.37,
     ),
 
-    # 9. XAUUSD — Mean Revert | SHORT only | SCALP
+    # 9. XAUUSD — VWAP Revert | SHORT only | SCALP
+    #    v22.2 FIX: Was Mean Revert (4.8% WR, -22R over 6mo).
+    #    Gold trends through RSI extremes. VWAP Revert requires 2-std
+    #    deviation PLUS rejection candle — filters out trend continuation.
     "XAUUSD": InstrumentSetup(
-        symbol="XAUUSD", strategy=Strategy.MEAN_REVERT,
-        direction=Direction.SHORT, sl_atr=0.5, tp_atr=2.5,
-        risk_pct=2.0, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
+        symbol="XAUUSD", strategy=Strategy.VWAP_REVERT,
+        direction=Direction.SHORT, sl_atr=0.5, tp_atr=4.0,
+        risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
         expectancy=0.481, win_rate=0.52, profit_factor=1.18,
     ),
 
@@ -173,7 +179,7 @@ SETUP_CONFIG: Dict[str, InstrumentSetup] = {
     "GBPJPY": InstrumentSetup(
         symbol="GBPJPY", strategy=Strategy.PREV_DAY_HL,
         direction=Direction.SHORT, sl_atr=0.5, tp_atr=0.8,
-        risk_pct=2.0, trade_type=TradeType.RUNNER, order_type=OrderType.MARKET,
+        risk_pct=1.5, trade_type=TradeType.RUNNER, order_type=OrderType.MARKET,
         expectancy=0.404, win_rate=0.53, profit_factor=1.45,
     ),
 
@@ -181,7 +187,7 @@ SETUP_CONFIG: Dict[str, InstrumentSetup] = {
     "USDJPY": InstrumentSetup(
         symbol="USDJPY", strategy=Strategy.ORB,
         direction=Direction.SHORT, sl_atr=0.8, tp_atr=1.5,
-        risk_pct=2.0, trade_type=TradeType.RUNNER, order_type=OrderType.MARKET,
+        risk_pct=1.5, trade_type=TradeType.RUNNER, order_type=OrderType.MARKET,
         expectancy=0.333, win_rate=0.67, profit_factor=1.25,
     ),
 
@@ -189,7 +195,7 @@ SETUP_CONFIG: Dict[str, InstrumentSetup] = {
     "BTCUSD": InstrumentSetup(
         symbol="BTCUSD", strategy=Strategy.MEAN_REVERT,
         direction=Direction.SHORT, sl_atr=1.5, tp_atr=2.0,
-        risk_pct=2.0, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
+        risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
         expectancy=0.220, win_rate=0.42, profit_factor=0.97,
     ),
 
@@ -197,15 +203,18 @@ SETUP_CONFIG: Dict[str, InstrumentSetup] = {
     "USOIL": InstrumentSetup(
         symbol="USOIL", strategy=Strategy.EMA_BOUNCE,
         direction=Direction.LONG, sl_atr=1.0, tp_atr=3.0,
-        risk_pct=1.7, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
+        risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
         expectancy=0.308, win_rate=0.44, profit_factor=1.06,
     ),
 
-    # 14. GBPUSD — ORB | SHORT only | RUNNER
+    # 14. GBPUSD — Stoch Reversal | SHORT only | SCALP
+    #    v22.2 FIX: Was ORB (22.2% WR, -35.54R over 6mo, 167 trades).
+    #    GBPUSD fades every breakout — mean-reverting pair.
+    #    Stoch Reversal catches overbought/oversold extremes.
     "GBPUSD": InstrumentSetup(
-        symbol="GBPUSD", strategy=Strategy.ORB,
-        direction=Direction.SHORT, sl_atr=0.5, tp_atr=0.8,
-        risk_pct=2.0, trade_type=TradeType.RUNNER, order_type=OrderType.MARKET,
+        symbol="GBPUSD", strategy=Strategy.STOCH_REVERSAL,
+        direction=Direction.SHORT, sl_atr=0.5, tp_atr=1.0,
+        risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
         expectancy=0.235, win_rate=0.49, profit_factor=1.42,
     ),
 }
