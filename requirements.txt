@@ -1,2 +1,3 @@
 aiohttp 
-aiohttp
+aiohttpnumpy 
+requests 
