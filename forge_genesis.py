@@ -1,463 +1,557 @@
 """
-FORGE v21 — GENESIS CALIBRATION + AUTO-EVOLUTION
-==================================================
-genesis_nightly.py: Runs at 00:05 ET. Reads Ghost data.
-  Builds probability tables. Forward Monte Carlo. Calibration file.
-auto_evolve(): FORGE reads calibration at daily reset.
-  Never moves prior > 15%/day. Never disables > 3 setups/day.
-AccountOrchestrator: multi-account structure (activate later).
+FORGE GENESIS — Adaptive Regime Router
+========================================
+Replaces the external GENESIS service with an in-FORGE module.
+Each instrument gets its regime detected every cycle and routes
+to the correct strategy config (SHORT/LONG/NEUTRAL).
 
-NEXUS Capital — Jorge Trujillo | Claude — AI Architect | March 2026
+Architecture:
+  - forge_instruments_v22.py  → SHORT config (BEAR regime)    +167R proven
+  - forge_instruments_long.py → LONG config (BULL regime)      +234R proven  
+  - forge_instruments_neutral.py → NEUTRAL config (CHOPPY)     TBD
+  - THIS FILE (forge_genesis.py) → Detects regime, picks config
+
+Regime Detection (per instrument, per bar):
+  BEAR:    ADX > 25 AND EMA50 < EMA200         → Use SHORT config
+  BULL:    ADX > 25 AND EMA50 > EMA200         → Use LONG config
+  NEUTRAL: ADX < 20 OR BB_width < squeeze_pct  → Use NEUTRAL config
+  DEFAULT: 20 < ADX < 25 (transition zone)     → Use highest-PF config
+
+Integration:
+  In main.py's trading loop, instead of:
+    setup = SETUP_CONFIG[symbol]
+  
+  Use:
+    setup = genesis.get_active_setup(symbol, snapshot)
+
+  GENESIS returns the correct InstrumentSetup based on current regime.
+
+Logging:
+  Every regime switch gets logged to Telegram:
+    "🔄 REGIME SWITCH: EURUSD BEAR → BULL (ADX=28.4, EMA50>EMA200)"
 """
-from __future__ import annotations
-import json
+
 import logging
-import os
-import math
-import random
+from datetime import datetime, timezone
+from typing import Dict, Optional, Tuple
 from dataclasses import dataclass, field
-from datetime import datetime, date, timezone
-from pathlib import Path
-from typing import Dict, List, Optional, Tuple
 
-logger = logging.getLogger("FORGE.genesis")
+from forge_instruments_v22 import (
+    SETUP_CONFIG, InstrumentSetup, Strategy, Direction, TradeType, OrderType,
+)
 
-GHOST_DIR = Path(os.environ.get("GHOST_DATA_PATH", "/data/ghost_intel/trades"))
-CALIBRATION_DIR = Path(os.environ.get("GENESIS_CAL_PATH", "/data/genesis/calibration"))
-FORWARD_DIR = Path(os.environ.get("GENESIS_FWD_PATH", "/data/genesis/forward"))
+logger = logging.getLogger("titan_forge.genesis")
 
 
-# ─────────────────────────────────────────────────────────────────
-# GENESIS NIGHTLY PIPELINE
-# ─────────────────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════════════════
+# REGIME ENUM & CONFIG
+# ═══════════════════════════════════════════════════════════════════════════════
 
-class GenesisNightly:
+class Regime:
+    BEAR = "BEAR"
+    BULL = "BULL"
+    NEUTRAL = "NEUTRAL"
+    DEFAULT = "DEFAULT"
+
+
+@dataclass
+class RegimeState:
+    """Tracks the current regime for a single instrument."""
+    symbol: str
+    current_regime: str = Regime.DEFAULT
+    regime_since: Optional[datetime] = None
+    regime_bars: int = 0
+    adx: float = 20.0
+    bb_width: float = 5.0
+    ema50: float = 0.0
+    ema200: float = 0.0
+    last_switch: Optional[datetime] = None
+    switches_today: int = 0
+    
+    # Smoothing: require N consecutive bars in new regime before switching
+    pending_regime: Optional[str] = None
+    pending_bars: int = 0
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# GENESIS ENGINE
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class GenesisEngine:
     """
-    Runs at 00:05 ET nightly.
-    1. Read Ghost trade files
-    2. Build conditional probability tables
-    3. Forward Monte Carlo simulation
-    4. Weekly historical backtest (Sundays)
-    5. Write calibration file for FORGE to read at daily reset
+    Per-instrument regime detection and strategy routing.
+    
+    Carries three strategy configs:
+      - short_config: from forge_instruments_v22.py (BEAR regime)
+      - long_config:  from forge_instruments_long.py (BULL regime)  
+      - neutral_config: from forge_instruments_neutral.py (NEUTRAL regime)
+    
+    Each cycle, for each instrument:
+      1. Compute regime indicators (ADX, EMA50/200, BB width)
+      2. Detect regime (BEAR/BULL/NEUTRAL)
+      3. Apply smoothing (require 3 consecutive bars in new regime)
+      4. Return the correct InstrumentSetup
     """
+    
+    # Regime detection thresholds
+    ADX_TREND_THRESHOLD = 25      # ADX above this = trending
+    ADX_NEUTRAL_THRESHOLD = 20    # ADX below this = neutral/choppy
+    BB_SQUEEZE_PCT = 1.5          # BB width below this % = squeeze/neutral
+    REGIME_CONFIRM_BARS = 3       # Bars required to confirm regime switch
+    MAX_SWITCHES_PER_DAY = 3      # Prevent whipsaw: max switches per instrument per day
+    
+    def __init__(
+        self,
+        short_config: Optional[Dict[str, InstrumentSetup]] = None,
+        long_config: Optional[Dict[str, InstrumentSetup]] = None,
+        neutral_config: Optional[Dict[str, InstrumentSetup]] = None,
+        default_regime: str = Regime.BEAR,  # Default when we can't determine
+    ):
+        """
+        Initialize GENESIS with strategy configs for each regime.
+        
+        Args:
+            short_config: SETUP_CONFIG from forge_instruments_v22.py
+            long_config: LONG_SETUP_CONFIG from forge_instruments_long.py
+            neutral_config: NEUTRAL_SETUP_CONFIG from forge_instruments_neutral.py
+            default_regime: Which regime to use on startup before detection kicks in
+        """
+        self.short_config = short_config or dict(SETUP_CONFIG)
+        self.long_config = long_config or {}
+        self.neutral_config = neutral_config or {}
+        self.default_regime = default_regime
+        
+        # Per-instrument regime state
+        self.states: Dict[str, RegimeState] = {}
+        
+        # All symbols we track (union of all configs)
+        self.all_symbols = set(
+            list(self.short_config.keys()) + 
+            list(self.long_config.keys()) + 
+            list(self.neutral_config.keys())
+        )
+        
+        # Initialize states
+        for sym in self.all_symbols:
+            self.states[sym] = RegimeState(
+                symbol=sym,
+                current_regime=default_regime,
+                regime_since=datetime.now(timezone.utc),
+            )
+        
+        logger.info(f"[GENESIS] Initialized: {len(self.all_symbols)} instruments | "
+                    f"SHORT: {len(self.short_config)} | LONG: {len(self.long_config)} | "
+                    f"NEUTRAL: {len(self.neutral_config)} | Default: {default_regime}")
 
-    def __init__(self):
-        self.ghost_trades: List[dict] = []
-        self.calibration: dict = {}
+    def detect_regime(
+        self,
+        symbol: str,
+        adx: float,
+        ema50: float,
+        ema200: float,
+        bb_width: float,
+    ) -> str:
+        """
+        Detect the market regime for a single instrument.
+        
+        Args:
+            symbol: Instrument symbol
+            adx: Current ADX value (14-period)
+            ema50: Current 50-period EMA
+            ema200: Current 200-period EMA
+            bb_width: Bollinger Band width as % of price
+            
+        Returns:
+            Regime string: BEAR, BULL, NEUTRAL, or DEFAULT
+        """
+        # NEUTRAL: low ADX or tight BB squeeze
+        if adx < self.ADX_NEUTRAL_THRESHOLD or bb_width < self.BB_SQUEEZE_PCT:
+            return Regime.NEUTRAL
+        
+        # BEAR: strong trend + downtrend
+        if adx > self.ADX_TREND_THRESHOLD and ema50 < ema200:
+            return Regime.BEAR
+        
+        # BULL: strong trend + uptrend
+        if adx > self.ADX_TREND_THRESHOLD and ema50 > ema200:
+            return Regime.BULL
+        
+        # Transition zone: 20 < ADX < 25, or EMAs are crossing
+        return Regime.DEFAULT
 
-    def load_ghost_data(self, days: int = 30) -> int:
-        """Load ghost trade files from /data/ghost_intel/trades/."""
-        self.ghost_trades = []
-        try:
-            GHOST_DIR.mkdir(parents=True, exist_ok=True)
-            files = sorted(GHOST_DIR.glob("ghost_*.json"))[-days:]
-            for f in files:
-                try:
-                    with open(f) as fh:
-                        trades = json.load(fh)
-                        if isinstance(trades, list):
-                            self.ghost_trades.extend(trades)
-                except (json.JSONDecodeError, IOError):
-                    continue
-        except Exception as e:
-            logger.error("[GENESIS] Failed to load ghost data: %s", e)
-        logger.info("[GENESIS] Loaded %d ghost trades from %d files",
-                     len(self.ghost_trades), min(len(list(GHOST_DIR.glob("ghost_*.json"))), days))
-        return len(self.ghost_trades)
+    def update_regime(
+        self,
+        symbol: str,
+        adx: float,
+        ema50: float,
+        ema200: float,
+        bb_width: float,
+        current_time: Optional[datetime] = None,
+    ) -> Tuple[str, bool]:
+        """
+        Update the regime for an instrument with smoothing.
+        
+        Returns:
+            (current_regime, switched) — the active regime and whether it just switched
+        """
+        if symbol not in self.states:
+            self.states[symbol] = RegimeState(
+                symbol=symbol,
+                current_regime=self.default_regime,
+                regime_since=current_time or datetime.now(timezone.utc),
+            )
+        
+        state = self.states[symbol]
+        now = current_time or datetime.now(timezone.utc)
+        
+        # Reset daily switch counter at midnight UTC
+        if state.last_switch and state.last_switch.date() != now.date():
+            state.switches_today = 0
+        
+        # Update indicators
+        state.adx = adx
+        state.bb_width = bb_width
+        state.ema50 = ema50
+        state.ema200 = ema200
+        
+        # Detect raw regime
+        raw_regime = self.detect_regime(symbol, adx, ema50, ema200, bb_width)
+        
+        # DEFAULT maps to whatever the current regime is (don't switch in transition zone)
+        if raw_regime == Regime.DEFAULT:
+            state.pending_regime = None
+            state.pending_bars = 0
+            state.regime_bars += 1
+            return state.current_regime, False
+        
+        # Same regime as current — reset pending, count bars
+        if raw_regime == state.current_regime:
+            state.pending_regime = None
+            state.pending_bars = 0
+            state.regime_bars += 1
+            return state.current_regime, False
+        
+        # New regime detected — start or continue pending confirmation
+        if raw_regime == state.pending_regime:
+            state.pending_bars += 1
+        else:
+            state.pending_regime = raw_regime
+            state.pending_bars = 1
+        
+        # Check if confirmed (enough consecutive bars in new regime)
+        if state.pending_bars >= self.REGIME_CONFIRM_BARS:
+            # Check daily switch limit
+            if state.switches_today >= self.MAX_SWITCHES_PER_DAY:
+                logger.warning(f"[GENESIS] {symbol}: Regime switch blocked — "
+                             f"max {self.MAX_SWITCHES_PER_DAY} switches/day reached")
+                return state.current_regime, False
+            
+            # Only switch if we have a config for the new regime
+            new_regime = state.pending_regime
+            has_config = self._has_config(symbol, new_regime)
+            
+            if not has_config:
+                logger.debug(f"[GENESIS] {symbol}: No {new_regime} config available, staying {state.current_regime}")
+                return state.current_regime, False
+            
+            # Execute switch
+            old_regime = state.current_regime
+            state.current_regime = new_regime
+            state.regime_since = now
+            state.regime_bars = 0
+            state.last_switch = now
+            state.switches_today += 1
+            state.pending_regime = None
+            state.pending_bars = 0
+            
+            logger.info(f"[GENESIS] 🔄 REGIME SWITCH: {symbol} {old_regime} → {new_regime} "
+                       f"(ADX={adx:.1f}, EMA50{'>' if ema50 > ema200 else '<'}EMA200, "
+                       f"BB={bb_width:.1f}%)")
+            
+            return new_regime, True
+        
+        # Still pending — keep current regime
+        state.regime_bars += 1
+        return state.current_regime, False
 
-    def build_probability_tables(self) -> dict:
-        """Build conditional probability tables from ghost data."""
-        tables = {
-            "priors": {},
-            "regime_multipliers": {},
-            "session_multipliers": {},
-            "time_multipliers": {},
-            "conviction_calibration": {},
-        }
+    def _has_config(self, symbol: str, regime: str) -> bool:
+        """Check if we have a strategy config for this symbol+regime."""
+        if regime == Regime.BEAR:
+            return symbol in self.short_config
+        elif regime == Regime.BULL:
+            return symbol in self.long_config
+        elif regime == Regime.NEUTRAL:
+            return symbol in self.neutral_config
+        return symbol in self.short_config  # DEFAULT fallback
 
-        # Group by setup_id
-        by_setup: Dict[str, List[dict]] = {}
-        for t in self.ghost_trades:
-            sid = t.get("setup_id", "")
-            outcome = t.get("outcome", "")
-            if not sid or outcome not in ("WIN", "LOSS"):
-                continue
-            if sid not in by_setup:
-                by_setup[sid] = []
-            by_setup[sid].append(t)
+    def get_active_setup(
+        self,
+        symbol: str,
+        adx: float = 20.0,
+        ema50: float = 0.0,
+        ema200: float = 0.0,
+        bb_width: float = 5.0,
+        current_time: Optional[datetime] = None,
+    ) -> Optional[InstrumentSetup]:
+        """
+        Main entry point: get the correct InstrumentSetup for a symbol
+        based on current market conditions.
+        
+        This is the function main.py calls instead of SETUP_CONFIG[symbol].
+        
+        Returns:
+            InstrumentSetup for the current regime, or None if no config available
+        """
+        # Update regime
+        regime, switched = self.update_regime(symbol, adx, ema50, ema200, bb_width, current_time)
+        
+        # Get setup from the appropriate config
+        if regime == Regime.BEAR:
+            setup = self.short_config.get(symbol)
+        elif regime == Regime.BULL:
+            setup = self.long_config.get(symbol)
+        elif regime == Regime.NEUTRAL:
+            setup = self.neutral_config.get(symbol)
+        else:
+            # DEFAULT fallback chain: SHORT > LONG > NEUTRAL
+            setup = (self.short_config.get(symbol) or 
+                    self.long_config.get(symbol) or 
+                    self.neutral_config.get(symbol))
+        
+        return setup
 
-        # P(win | setup_id) — minimum 50 trades
-        for sid, trades in by_setup.items():
-            if len(trades) >= 50:
-                wins = sum(1 for t in trades if t["outcome"] == "WIN")
-                tables["priors"][sid] = {
-                    "base_wr": round(wins / len(trades), 4),
-                    "n_trades": len(trades),
-                }
-
-            # P(win | setup_id, regime) — minimum 20 trades per regime
-            regime_groups: Dict[str, List[dict]] = {}
-            for t in trades:
-                r = t.get("regime", "NORMAL")
-                if r not in regime_groups:
-                    regime_groups[r] = []
-                regime_groups[r].append(t)
-
-            for regime, rtrades in regime_groups.items():
-                if len(rtrades) >= 20:
-                    wins = sum(1 for t in rtrades if t["outcome"] == "WIN")
-                    base_wr = tables["priors"].get(sid, {}).get("base_wr", 0.50)
-                    regime_wr = wins / len(rtrades)
-                    mult = regime_wr / base_wr if base_wr > 0 else 1.0
-                    if sid not in tables["regime_multipliers"]:
-                        tables["regime_multipliers"][sid] = {}
-                    tables["regime_multipliers"][sid][regime] = round(mult, 3)
-
-            # P(win | setup_id, session) — minimum 15 trades per session
-            session_groups: Dict[str, List[dict]] = {}
-            for t in trades:
-                s = t.get("session", "RTH")
-                if s not in session_groups:
-                    session_groups[s] = []
-                session_groups[s].append(t)
-
-            for session, strades in session_groups.items():
-                if len(strades) >= 15:
-                    wins = sum(1 for t in strades if t["outcome"] == "WIN")
-                    base_wr = tables["priors"].get(sid, {}).get("base_wr", 0.50)
-                    session_wr = wins / len(strades)
-                    mult = session_wr / base_wr if base_wr > 0 else 1.0
-                    if sid not in tables["session_multipliers"]:
-                        tables["session_multipliers"][sid] = {}
-                    tables["session_multipliers"][sid][session] = round(mult, 3)
-
-            # P(win | setup_id, hour) — minimum 10 trades per hour
-            hour_groups: Dict[str, List[dict]] = {}
-            for t in trades:
-                h = str(t.get("hour_et", ""))
-                if h and h not in hour_groups:
-                    hour_groups[h] = []
-                if h:
-                    hour_groups[h].append(t)
-
-            for hour, htrades in hour_groups.items():
-                if len(htrades) >= 10:
-                    wins = sum(1 for t in htrades if t["outcome"] == "WIN")
-                    base_wr = tables["priors"].get(sid, {}).get("base_wr", 0.50)
-                    hour_wr = wins / len(htrades)
-                    mult = hour_wr / base_wr if base_wr > 0 else 1.0
-                    if sid not in tables["time_multipliers"]:
-                        tables["time_multipliers"][sid] = {}
-                    tables["time_multipliers"][sid][hour] = round(mult, 3)
-
-        # Conviction calibration curve
-        # Groups: 40-50%, 50-60%, 60-70%, 70-80%, 80+%
-        conv_groups = {
-            "40-50": [], "50-60": [], "60-70": [], "70-80": [], "80+": []
-        }
-        for t in self.ghost_trades:
-            post = t.get("conviction_posterior", 0) * 100
-            outcome = t.get("outcome", "")
-            if outcome not in ("WIN", "LOSS"):
-                continue
-            if 40 <= post < 50:
-                conv_groups["40-50"].append(t)
-            elif 50 <= post < 60:
-                conv_groups["50-60"].append(t)
-            elif 60 <= post < 70:
-                conv_groups["60-70"].append(t)
-            elif 70 <= post < 80:
-                conv_groups["70-80"].append(t)
-            elif post >= 80:
-                conv_groups["80+"].append(t)
-
-        for group, trades in conv_groups.items():
-            if len(trades) >= 30:
-                wins = sum(1 for t in trades if t["outcome"] == "WIN")
-                tables["conviction_calibration"][group] = {
-                    "actual_wr": round(wins / len(trades), 4),
-                    "n_trades": len(trades),
-                }
-
-        return tables
-
-    def forward_monte_carlo(self, n_sims: int = 1000) -> dict:
-        """Forward simulation of tomorrow using current parameters."""
-        if not self.ghost_trades:
-            return {"error": "No ghost data"}
-
-        # Calculate base stats
-        daily_results = []
-        for _ in range(n_sims):
-            daily_pnl = 0.0
-            n_trades = random.randint(15, 30)
-            for _ in range(n_trades):
-                # Sample from recent ghost trade outcomes
-                trade = random.choice(self.ghost_trades)
-                r_mult = trade.get("r_multiple", 0)
-                daily_pnl += r_mult * 20  # approximate $ per R
-            daily_results.append(daily_pnl)
-
-        daily_results.sort()
+    def get_regime_status(self, symbol: str) -> Dict:
+        """Get the current regime status for an instrument (for logging/Telegram)."""
+        state = self.states.get(symbol)
+        if not state:
+            return {"symbol": symbol, "regime": "UNKNOWN", "bars": 0}
+        
         return {
-            "median_pnl": round(daily_results[len(daily_results) // 2], 2),
-            "p5_pnl": round(daily_results[int(len(daily_results) * 0.05)], 2),
-            "p95_pnl": round(daily_results[int(len(daily_results) * 0.95)], 2),
-            "prob_profitable": round(sum(1 for d in daily_results if d > 0) / len(daily_results), 4),
-            "deployment_recommendation": "DEPLOY FULL SIZE" if daily_results[len(daily_results) // 2] > 0 else "REDUCE SIZE",
+            "symbol": symbol,
+            "regime": state.current_regime,
+            "bars": state.regime_bars,
+            "since": state.regime_since.isoformat() if state.regime_since else None,
+            "adx": state.adx,
+            "bb_width": state.bb_width,
+            "ema_trend": "UP" if state.ema50 > state.ema200 else "DOWN",
+            "switches_today": state.switches_today,
+            "pending": state.pending_regime,
+            "pending_bars": state.pending_bars,
         }
 
-    def identify_disabled_setups(self, tables: dict) -> List[str]:
-        """Identify setups that should be disabled (max 3 per day)."""
-        disabled = []
-        for sid, data in tables.get("priors", {}).items():
-            if data["n_trades"] >= 50 and data["base_wr"] < 0.35:
-                disabled.append(sid)
-        return disabled[:3]  # max 3 per day
+    def get_all_regimes(self) -> Dict[str, str]:
+        """Get a summary of all instrument regimes."""
+        return {sym: state.current_regime for sym, state in self.states.items()}
 
-    def generate_calibration(self) -> dict:
-        """Full calibration pipeline."""
-        tables = self.build_probability_tables()
-        forward = self.forward_monte_carlo()
-        disabled = self.identify_disabled_setups(tables)
+    def get_regime_summary(self) -> str:
+        """Get a human-readable summary for Telegram."""
+        regimes = self.get_all_regimes()
+        counts = {}
+        for r in regimes.values():
+            counts[r] = counts.get(r, 0) + 1
+        
+        lines = ["🧠 GENESIS REGIME STATUS"]
+        for regime in [Regime.BEAR, Regime.BULL, Regime.NEUTRAL, Regime.DEFAULT]:
+            if regime in counts:
+                syms = [s for s, r in regimes.items() if r == regime]
+                lines.append(f"  {regime}: {counts[regime]} — {', '.join(sorted(syms))}")
+        
+        return "\n".join(lines)
 
-        self.calibration = {
-            "generated_at": datetime.now(timezone.utc).isoformat(),
-            "ghost_trades_processed": len(self.ghost_trades),
-            "priors": tables["priors"],
-            "regime_multipliers": tables["regime_multipliers"],
-            "session_multipliers": tables["session_multipliers"],
-            "time_multipliers": tables["time_multipliers"],
-            "conviction_calibration": tables["conviction_calibration"],
-            "forward_sim": forward,
-            "disabled_setups": disabled,
-            "deployment_recommendation": forward.get("deployment_recommendation", "HOLD"),
-        }
-        return self.calibration
+    def force_regime(self, symbol: str, regime: str):
+        """Force a regime for an instrument (manual override via Telegram command)."""
+        if symbol in self.states:
+            old = self.states[symbol].current_regime
+            self.states[symbol].current_regime = regime
+            self.states[symbol].regime_since = datetime.now(timezone.utc)
+            self.states[symbol].regime_bars = 0
+            self.states[symbol].pending_regime = None
+            self.states[symbol].pending_bars = 0
+            logger.info(f"[GENESIS] ⚡ MANUAL OVERRIDE: {symbol} {old} → {regime}")
 
-    def write_calibration(self) -> Path:
-        """Write calibration file for FORGE to read."""
-        CALIBRATION_DIR.mkdir(parents=True, exist_ok=True)
-        filepath = CALIBRATION_DIR / "forge_calibration.json"
-        with open(filepath, "w") as f:
-            json.dump(self.calibration, f, indent=2, default=str)
-        logger.info("[GENESIS] Calibration written: %s (%d setups)",
-                     filepath, len(self.calibration.get("priors", {})))
-        return filepath
-
-    def run_nightly(self) -> dict:
-        """Full nightly pipeline."""
-        n = self.load_ghost_data(30)
-        if n < 100:
-            logger.warning("[GENESIS] Only %d ghost trades — insufficient for calibration", n)
-            return {"status": "skipped", "reason": f"Only {n} trades"}
-
-        cal = self.generate_calibration()
-        self.write_calibration()
-
-        logger.info("[GENESIS] Nightly complete: %d trades → %d setups calibrated",
-                     n, len(cal.get("priors", {})))
-        return {"status": "completed", "trades_processed": n, "calibration": cal}
+    def force_all(self, regime: str):
+        """Force all instruments to a specific regime."""
+        for sym in self.states:
+            self.force_regime(sym, regime)
+        logger.info(f"[GENESIS] ⚡ ALL INSTRUMENTS → {regime}")
 
 
-# ─────────────────────────────────────────────────────────────────
-# AUTO-EVOLUTION — FORGE reads calibration at daily reset
-# ─────────────────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════════════════
+# HELPER: Extract indicators from MarketSnapshot
+# ═══════════════════════════════════════════════════════════════════════════════
 
-def auto_evolve(setup_config: dict, send_telegram_fn=None) -> dict:
+def extract_regime_indicators(snapshot) -> Dict[str, float]:
     """
-    Read GENESIS calibration file and update FORGE parameters.
-    Safety rails:
-    - Never move prior more than 15% per day
-    - Never disable more than 3 setups per day
-    - Stale calibration (not today) = skip
-    - Less than 50 ghost trades per setup = skip
-    - Log every change to Telegram
+    Extract the indicators needed for regime detection from a MarketSnapshot.
+    Use this in main.py to feed GENESIS:
+    
+        indicators = extract_regime_indicators(snapshot)
+        setup = genesis.get_active_setup(symbol, **indicators)
     """
-    cal_file = CALIBRATION_DIR / "forge_calibration.json"
-    if not cal_file.exists():
-        logger.info("[EVOLVE] No calibration file found — skipping")
-        return {"status": "no_file"}
+    # BB width as percentage of price
+    price = snapshot.closes[-1] if len(snapshot.closes) > 0 else 1.0
+    bb_range = snapshot.bb_upper - snapshot.bb_lower
+    bb_width = (bb_range / price * 100) if price > 0 else 5.0
+    
+    return {
+        "adx": snapshot.adx if snapshot.adx is not None else 20.0,
+        "ema50": snapshot.ema_50 if snapshot.ema_50 is not None else 0.0,
+        "ema200": snapshot.ema_200 if snapshot.ema_200 is not None else 0.0,
+        "bb_width": bb_width,
+    }
 
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# TELEGRAM COMMANDS (for forge_commands.py integration)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+GENESIS_COMMANDS = {
+    "/regime": "Show current regime for all instruments",
+    "/regime_detail": "Show detailed regime info for all instruments",
+    "/force_bear": "Force all instruments to BEAR regime",
+    "/force_bull": "Force all instruments to BULL regime",
+    "/force_neutral": "Force all instruments to NEUTRAL regime",
+    "/force_auto": "Reset all instruments to automatic regime detection",
+}
+
+
+def handle_genesis_command(genesis: GenesisEngine, command: str, args: str = "") -> str:
+    """Handle Telegram commands for GENESIS. Returns response string."""
+    
+    if command == "/regime":
+        return genesis.get_regime_summary()
+    
+    elif command == "/regime_detail":
+        lines = ["🧠 GENESIS DETAILED STATUS"]
+        for sym in sorted(genesis.states.keys()):
+            status = genesis.get_regime_status(sym)
+            lines.append(
+                f"  {sym:10s}: {status['regime']:7s} | ADX={status['adx']:.0f} "
+                f"| EMA={status['ema_trend']:4s} | BB={status['bb_width']:.1f}% "
+                f"| {status['bars']}bars"
+            )
+        return "\n".join(lines)
+    
+    elif command == "/force_bear":
+        genesis.force_all(Regime.BEAR)
+        return "⚡ All instruments forced to BEAR regime (SHORT config)"
+    
+    elif command == "/force_bull":
+        genesis.force_all(Regime.BULL)
+        return "⚡ All instruments forced to BULL regime (LONG config)"
+    
+    elif command == "/force_neutral":
+        genesis.force_all(Regime.NEUTRAL)
+        return "⚡ All instruments forced to NEUTRAL regime"
+    
+    elif command == "/force_auto":
+        genesis.force_all(Regime.DEFAULT)
+        return "⚡ All instruments reset to automatic regime detection"
+    
+    return f"Unknown GENESIS command: {command}"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# INITIALIZATION HELPER
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def create_genesis(default_regime: str = Regime.BEAR) -> GenesisEngine:
+    """
+    Factory function to create a GENESIS engine with all available configs.
+    
+    Usage in main.py:
+        from forge_genesis import create_genesis, extract_regime_indicators
+        
+        genesis = create_genesis(default_regime="BEAR")
+        
+        # In the trading loop:
+        for symbol, snapshot in snapshots.items():
+            indicators = extract_regime_indicators(snapshot)
+            setup = genesis.get_active_setup(symbol, **indicators)
+            if setup:
+                # Use setup for signal generation
+    """
+    from forge_instruments_v22 import SETUP_CONFIG
+    
+    # Try to import LONG config
+    long_config = {}
     try:
-        with open(cal_file) as f:
-            cal = json.load(f)
-    except (json.JSONDecodeError, IOError) as e:
-        logger.error("[EVOLVE] Failed to read calibration: %s", e)
-        return {"status": "read_error"}
-
-    # Only apply if generated today
-    gen_date = cal.get("generated_at", "")[:10]
-    if gen_date != date.today().isoformat():
-        logger.info("[EVOLVE] Stale calibration (%s) — skipping", gen_date)
-        return {"status": "stale"}
-
-    changes = []
-
-    # Update base win rates (cap at 15% move per day)
-    for setup_id, data in cal.get("priors", {}).items():
-        if setup_id in setup_config and data.get("n_trades", 0) >= 50:
-            old = setup_config[setup_id].get("base_win_rate", 0.50)
-            new = data["base_wr"]
-            capped = max(old - 0.15, min(old + 0.15, new))
-            if abs(capped - old) > 0.005:
-                setup_config[setup_id]["base_win_rate"] = round(capped, 3)
-                changes.append(f"{setup_id}: WR {old:.1%} → {capped:.1%}")
-
-    # Disable flagged setups (max 3)
-    disabled = cal.get("disabled_setups", [])[:3]
-    for sid in disabled:
-        if sid in setup_config:
-            setup_config[sid]["signal_fn"] = "disabled"
-            setup_config[sid]["name"] = setup_config[sid].get("name", "") + " [DISABLED by GENESIS]"
-            changes.append(f"{sid}: DISABLED")
-
-    msg = f"GENESIS EVOLUTION: {len(changes)} changes"
-    if changes:
-        msg += "\n" + "\n".join(changes)
-
-    logger.info("[EVOLVE] %s", msg)
-    if send_telegram_fn:
-        send_telegram_fn(f"🧬 <b>{msg}</b>")
-
-    return {"status": "applied", "changes": changes, "calibration": cal}
-
-
-# ─────────────────────────────────────────────────────────────────
-# CONVICTION CALIBRATION LOOKUP
-# ─────────────────────────────────────────────────────────────────
-
-def get_calibrated_wr(raw_posterior: float) -> Optional[float]:
-    """
-    Bayesian says 70% but actual outcomes might show 55%.
-    Ghost data builds the truth. Kelly sizing uses CALIBRATED probability.
-
-    Returns calibrated WR if available, None otherwise.
-    """
-    cal_file = CALIBRATION_DIR / "forge_calibration.json"
-    if not cal_file.exists():
-        return None
-
+        from forge_instruments_long import LONG_SETUP_CONFIG
+        long_config = dict(LONG_SETUP_CONFIG)
+        logger.info(f"[GENESIS] Loaded LONG config: {len(long_config)} instruments")
+    except ImportError:
+        logger.warning("[GENESIS] No LONG config found (forge_instruments_long.py)")
+    
+    # Try to import NEUTRAL config
+    neutral_config = {}
     try:
-        with open(cal_file) as f:
-            cal = json.load(f)
-    except Exception:
-        return None
-
-    conv_cal = cal.get("conviction_calibration", {})
-    post_pct = raw_posterior * 100
-
-    if 40 <= post_pct < 50 and "40-50" in conv_cal:
-        return conv_cal["40-50"]["actual_wr"]
-    elif 50 <= post_pct < 60 and "50-60" in conv_cal:
-        return conv_cal["50-60"]["actual_wr"]
-    elif 60 <= post_pct < 70 and "60-70" in conv_cal:
-        return conv_cal["60-70"]["actual_wr"]
-    elif 70 <= post_pct < 80 and "70-80" in conv_cal:
-        return conv_cal["70-80"]["actual_wr"]
-    elif post_pct >= 80 and "80+" in conv_cal:
-        return conv_cal["80+"]["actual_wr"]
-
-    return None
+        from forge_instruments_neutral import NEUTRAL_SETUP_CONFIG
+        neutral_config = dict(NEUTRAL_SETUP_CONFIG)
+        logger.info(f"[GENESIS] Loaded NEUTRAL config: {len(neutral_config)} instruments")
+    except ImportError:
+        logger.warning("[GENESIS] No NEUTRAL config found (forge_instruments_neutral.py)")
+    
+    return GenesisEngine(
+        short_config=dict(SETUP_CONFIG),
+        long_config=long_config,
+        neutral_config=neutral_config,
+        default_regime=default_regime,
+    )
 
 
-# ─────────────────────────────────────────────────────────────────
-# MULTI-ACCOUNT ARCHITECTURE (structure only, activate later)
-# ─────────────────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════════════════
+# STANDALONE TEST
+# ═══════════════════════════════════════════════════════════════════════════════
 
-class AccountOrchestrator:
-    """
-    Build structure now. Activate when FORGE passes evaluation.
-    Zero code changes needed to add second account.
-    """
-
-    def __init__(self):
-        self.accounts: List[dict] = []
-
-    def add_account(self, account_id: str, adapter, firm_id: str,
-                    risk_budget: float = 5000.0):
-        self.accounts.append({
-            "id": account_id,
-            "adapter": adapter,
-            "firm_id": firm_id,
-            "risk_budget": risk_budget,
-            "daily_pnl": 0.0,
-            "active": True,
-        })
-        logger.info("[ORCHESTRATOR] Added account: %s (%s)", account_id[:8], firm_id)
-
-    async def execute_signal(self, signal, conviction, lot_size: float):
-        """
-        Execute signal across all accounts with anti-copy-trade measures.
-        - Stagger entry by 30-90 seconds
-        - Vary lot size ±10%
-        - Check per-account risk limits
-        """
-        import asyncio
-
-        results = []
-        for i, account in enumerate(self.accounts):
-            if not account["active"]:
-                continue
-
-            # Anti-copy-trade: stagger and vary
-            delay = 30 + random.randint(0, 60)
-            size_variation = lot_size * (0.90 + random.random() * 0.20)
-            size_variation = round(round(size_variation / 0.10) * 0.10, 2)
-            size_variation = max(0.10, size_variation)
-
-            # Per-account risk check
-            if account["daily_pnl"] <= -account["risk_budget"]:
-                logger.warning("[ORCHESTRATOR] %s risk budget blown", account["id"][:8])
-                continue
-
-            if i > 0:
-                await asyncio.sleep(delay)
-
-            try:
-                from execution_base import OrderRequest, OrderDirection, OrderType
-                order = OrderRequest(
-                    instrument=signal.entry_price,  # resolved already
-                    direction=OrderDirection.LONG if signal.direction == "long" else OrderDirection.SHORT,
-                    size=size_variation,
-                    order_type=OrderType.MARKET,
-                    stop_loss=signal.stop_loss,
-                    take_profit=signal.take_profit,
-                    comment=f"{signal.setup_id}|{conviction.conviction_level}",
-                )
-                result = await account["adapter"].place_order(order)
-                results.append(result)
-            except Exception as e:
-                logger.error("[ORCHESTRATOR] %s order failed: %s", account["id"][:8], e)
-
-        return results
-
-    def record_pnl(self, account_id: str, pnl: float):
-        for account in self.accounts:
-            if account["id"] == account_id:
-                account["daily_pnl"] += pnl
-                break
-
-    def reset_daily(self):
-        for account in self.accounts:
-            account["daily_pnl"] = 0.0
-
-
-# ─────────────────────────────────────────────────────────────────
-# STATISTICAL SIGNIFICANCE TESTING
-# ─────────────────────────────────────────────────────────────────
-
-def is_edge_significant(wins: int, total: int, null_wr: float = 0.50) -> Tuple[bool, float, float]:
-    """
-    Test if observed win rate is statistically significant.
-    Only deploy setups where p < 0.05.
-    Ghost generates 200+ trades/day — significance within 5 days.
-    """
-    if total < 30:
-        return False, 0.0, 1.0
-
-    observed_wr = wins / total
-    z = (observed_wr - null_wr) / math.sqrt(null_wr * (1 - null_wr) / total)
-    # Approximate p-value using error function
-    p_value = 0.5 * (1 - math.erf(z / math.sqrt(2)))
-    return p_value < 0.05, observed_wr, p_value
+if __name__ == "__main__":
+    print("\n" + "=" * 60)
+    print("  GENESIS ENGINE — Self Test")
+    print("=" * 60)
+    
+    genesis = create_genesis(default_regime=Regime.BEAR)
+    
+    print(f"\n  Instruments: {len(genesis.all_symbols)}")
+    print(f"  SHORT configs: {len(genesis.short_config)}")
+    print(f"  LONG configs: {len(genesis.long_config)}")
+    print(f"  NEUTRAL configs: {len(genesis.neutral_config)}")
+    
+    # Simulate regime detection
+    print(f"\n  Simulating regime changes...")
+    
+    # Test BEAR regime (ADX high, EMA50 < EMA200)
+    regime, switched = genesis.update_regime("EURUSD", adx=30, ema50=1.08, ema200=1.10, bb_width=3.0)
+    print(f"  EURUSD: ADX=30 EMA50<EMA200 → {regime} (switched={switched})")
+    
+    # Need 3 bars to confirm
+    regime, switched = genesis.update_regime("EURUSD", adx=31, ema50=1.08, ema200=1.10, bb_width=3.0)
+    print(f"  EURUSD: bar 2 → {regime} (switched={switched})")
+    
+    regime, switched = genesis.update_regime("EURUSD", adx=32, ema50=1.08, ema200=1.10, bb_width=3.0)
+    print(f"  EURUSD: bar 3 → {regime} (switched={switched})")
+    
+    # Test BULL regime (ADX high, EMA50 > EMA200)
+    for i in range(4):
+        regime, switched = genesis.update_regime("BTCUSD", adx=28, ema50=95000, ema200=85000, bb_width=4.0)
+    print(f"  BTCUSD: ADX=28 EMA50>EMA200 → {regime} (switched={switched})")
+    
+    # Test NEUTRAL regime (low ADX)
+    for i in range(4):
+        regime, switched = genesis.update_regime("USDCHF", adx=15, ema50=0.90, ema200=0.91, bb_width=1.0)
+    print(f"  USDCHF: ADX=15 squeeze → {regime} (switched={switched})")
+    
+    # Show summary
+    print(f"\n{genesis.get_regime_summary()}")
+    
+    # Test setup retrieval
+    print(f"\n  Testing get_active_setup:")
+    for sym in ["EURUSD", "BTCUSD", "USDCHF"]:
+        state = genesis.states.get(sym)
+        setup = genesis.get_active_setup(sym, adx=state.adx, ema50=state.ema50,
+                                          ema200=state.ema200, bb_width=state.bb_width)
+        if setup:
+            print(f"    {sym}: {state.current_regime} → {setup.strategy.value} {setup.direction.value}")
+        else:
+            print(f"    {sym}: {state.current_regime} → No config available")
+    
+    print(f"\n  ✅ GENESIS self-test passed")
+    print("=" * 60 + "\n")
