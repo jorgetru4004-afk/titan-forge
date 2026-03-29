@@ -1,622 +1,890 @@
 """
-FORGE v22 — REAL DATA TEST
-============================
-Pulls real candle data from Polygon API, computes all indicators,
-runs the signal engine, and shows exactly what signals fire.
+FORGE v22.1 — COMPREHENSIVE STRESS TEST SUITE
+===============================================
+6 test scenarios on real Polygon data, bar-by-bar walk-forward:
+
+  TEST 1: Standard Backtest (baseline)
+  TEST 2: Spread & Slippage Stress (3x spreads + random slippage)
+  TEST 3: Choppy Market (inject price noise to simulate ranging hell)
+  TEST 4: Drawdown Recovery (start after 4 consecutive losses)
+  TEST 5: Monte Carlo (1000 randomized trade sequences → P&L distribution)
+  TEST 6: FTMO Pass/Fail Simulation (10 challenge attempts)
+
+v22.1 fixes from backtest data:
+  - EURUSD: CONFLUENCE → MEAN_REVERT (was 45% of all trades, 20% WR)
+  - UK100: BOTH → SHORT only (both LONG trades lost)
+  - CONFLUENCE: 4/5 signals required (was 3/5, too loose)
 
 Usage:
     set POLYGON_API_KEY=your_key_here
-    python test_v22_real_data.py
-
-Or on Railway, POLYGON_API_KEY is already in env vars.
+    set PYTHONIOENCODING=utf-8
+    python test_v22_real_data.py > test_results.txt 2>&1
 """
 
 import os
 import sys
-import json
 import time
+import random
 import requests
 import numpy as np
 from datetime import datetime, timezone, timedelta
-from typing import Dict, List, Optional, Tuple
-from dataclasses import dataclass
+from typing import Dict, List, Optional, Set, Tuple
+from dataclasses import dataclass, field
+from copy import deepcopy
 
-# Add current dir to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from forge_instruments_v22 import (
-    SETUP_CONFIG, INSTRUMENT_META, get_all_symbols,
-    TIME_OF_DAY_EDGES, CORRELATION_GROUPS, MONTHLY_SEASONALITY,
+    SETUP_CONFIG, get_all_symbols,
+    TIME_OF_DAY_EDGES, MONTHLY_SEASONALITY,
 )
 from forge_signals_v22 import SignalEngine, MarketSnapshot, Signal
-from forge_runner import TradeManager, RunnerDetector
+from forge_runner import TradeManager, ManagedTrade, RunnerContext, RunnerDetector, TradeType, ExitReason
 from forge_limit import LimitOrderManager
 from forge_correlation import CorrelationGuard
 
 
-# ─── Polygon API ─────────────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════════════════
+# POLYGON DATA FETCH
+# ═══════════════════════════════════════════════════════════════════════════════
 
 POLYGON_API_KEY = os.environ.get("POLYGON_API_KEY", "")
 
-# Polygon ticker mapping (their format differs from MetaAPI)
 POLYGON_TICKERS = {
-    # Forex: C:XXXYYY
-    "USDCHF": "C:USDCHF",
-    "NZDUSD": "C:NZDUSD",
-    "EURGBP": "C:EURGBP",
-    "EURUSD": "C:EURUSD",
-    "GBPJPY": "C:GBPJPY",
-    "USDJPY": "C:USDJPY",
-    "GBPUSD": "C:GBPUSD",
-    # Indices (Polygon uses I: prefix or specific tickers)
-    "GER40":  "I:DAX",
-    "UK100":  "I:UKX",
-    "US100":  "I:NDX",
-    # Commodities
-    "XAUUSD": "C:XAUUSD",
-    "USOIL":  "C:USDBRO",  # Brent crude proxy — adjust if needed
-    # Crypto: X:XXXUSD
-    "ETHUSD": "X:ETHUSD",
-    "BTCUSD": "X:BTCUSD",
-}
-
-# Fallback tickers if primary doesn't work
-POLYGON_FALLBACKS = {
-    "GER40": "C:EURUSD",    # Fallback: use EURUSD data as proxy
-    "UK100": "C:GBPUSD",    # Fallback
-    "US100": "X:BTCUSD",    # Fallback
-    "USOIL": "C:USDCAD",   # Fallback (oil-correlated)
+    "USDCHF": "C:USDCHF", "NZDUSD": "C:NZDUSD", "EURGBP": "C:EURGBP",
+    "EURUSD": "C:EURUSD", "GBPJPY": "C:GBPJPY", "USDJPY": "C:USDJPY",
+    "GBPUSD": "C:GBPUSD", "XAUUSD": "C:XAUUSD",
+    "GER40": "EWG", "UK100": "EWU", "US100": "QQQ", "USOIL": "USO",
+    "ETHUSD": "X:ETHUSD", "BTCUSD": "X:BTCUSD",
 }
 
 
-def fetch_polygon_candles(
-    symbol: str,
-    timeframe: str = "5",       # minutes
-    days_back: int = 5,
-    limit: int = 200,
-) -> Optional[Dict]:
-    """Fetch candle data from Polygon API."""
-    
+def fetch_polygon_candles(symbol):
     ticker = POLYGON_TICKERS.get(symbol)
-    if ticker is None:
-        print(f"  ⚠ No Polygon ticker for {symbol}")
+    if not ticker:
         return None
-
-    end_date = datetime.now(timezone.utc)
-    start_date = end_date - timedelta(days=days_back)
-
-    url = (
-        f"https://api.polygon.io/v2/aggs/ticker/{ticker}/range"
-        f"/{timeframe}/minute"
-        f"/{start_date.strftime('%Y-%m-%d')}"
-        f"/{end_date.strftime('%Y-%m-%d')}"
-        f"?adjusted=true&sort=asc&limit={limit}"
-        f"&apiKey={POLYGON_API_KEY}"
-    )
-
+    end = datetime.now(timezone.utc)
+    start = end - timedelta(days=30)
+    url = (f"https://api.polygon.io/v2/aggs/ticker/{ticker}/range/1/hour"
+           f"/{start.strftime('%Y-%m-%d')}/{end.strftime('%Y-%m-%d')}"
+           f"?adjusted=true&sort=asc&limit=50000&apiKey={POLYGON_API_KEY}")
+    all_results = []
+    pages = 0
     try:
-        resp = requests.get(url, timeout=15)
-        data = resp.json()
-
-        if data.get("resultsCount", 0) == 0:
-            # Try fallback ticker
-            fallback = POLYGON_FALLBACKS.get(symbol)
-            if fallback:
-                print(f"  ⚠ No data for {ticker}, trying fallback {fallback}")
-                url = url.replace(ticker, fallback)
+        while url and pages < 15:
+            resp = requests.get(url, timeout=15)
+            if resp.status_code == 429:
+                time.sleep(12)
                 resp = requests.get(url, timeout=15)
-                data = resp.json()
-                if data.get("resultsCount", 0) == 0:
-                    print(f"  ❌ No data for {symbol} (fallback also empty)")
-                    return None
+            if resp.status_code != 200:
+                break
+            data = resp.json()
+            all_results.extend(data.get("results", []))
+            pages += 1
+            nxt = data.get("next_url")
+            if nxt and len(all_results) < 1000:
+                url = nxt + (f"&apiKey={POLYGON_API_KEY}" if "apiKey" not in nxt else "")
+                time.sleep(0.3)
             else:
-                print(f"  ❌ No data for {symbol}")
-                return None
-
-        results = data.get("results", [])
-        if len(results) < 50:
-            print(f"  ⚠ Only {len(results)} candles for {symbol} (need 50+)")
-            return None
-
-        candles = {
-            "opens":   np.array([r["o"] for r in results], dtype=float),
-            "highs":   np.array([r["h"] for r in results], dtype=float),
-            "lows":    np.array([r["l"] for r in results], dtype=float),
-            "closes":  np.array([r["c"] for r in results], dtype=float),
-            "volumes": np.array([r.get("v", 0) for r in results], dtype=float),
-            "timestamps": [r["t"] for r in results],
-            "count": len(results),
-        }
-        return candles
-
+                break
     except Exception as e:
-        print(f"  ❌ Polygon error for {symbol}: {e}")
         return None
-
-
-# ─── Indicator Computation ───────────────────────────────────────────────────
-
-def compute_atr(highs, lows, closes, period=14):
-    """Average True Range."""
-    if len(closes) < period + 1:
-        return 0.0
-    tr = np.maximum(
-        highs[1:] - lows[1:],
-        np.maximum(
-            np.abs(highs[1:] - closes[:-1]),
-            np.abs(lows[1:] - closes[:-1])
-        )
-    )
-    if len(tr) < period:
-        return np.mean(tr) if len(tr) > 0 else 0.0
-    # Wilder's smoothing
-    atr = np.mean(tr[:period])
-    for i in range(period, len(tr)):
-        atr = (atr * (period - 1) + tr[i]) / period
-    return atr
-
-
-def compute_rsi(closes, period=14):
-    """Relative Strength Index."""
-    if len(closes) < period + 1:
-        return 50.0
-    deltas = np.diff(closes)
-    gains = np.where(deltas > 0, deltas, 0)
-    losses = np.where(deltas < 0, -deltas, 0)
-
-    avg_gain = np.mean(gains[:period])
-    avg_loss = np.mean(losses[:period])
-
-    for i in range(period, len(gains)):
-        avg_gain = (avg_gain * (period - 1) + gains[i]) / period
-        avg_loss = (avg_loss * (period - 1) + losses[i]) / period
-
-    if avg_loss == 0:
-        return 100.0
-    rs = avg_gain / avg_loss
-    return 100.0 - (100.0 / (1.0 + rs))
-
-
-def compute_ema(data, period):
-    """Exponential Moving Average."""
-    if len(data) < period:
-        return np.mean(data) if len(data) > 0 else 0.0
-    multiplier = 2.0 / (period + 1)
-    ema = np.mean(data[:period])
-    for i in range(period, len(data)):
-        ema = (data[i] - ema) * multiplier + ema
-    return ema
-
-
-def compute_ema_series(data, period):
-    """Full EMA series."""
-    ema = np.zeros(len(data))
-    if len(data) < period:
-        return ema
-    ema[period - 1] = np.mean(data[:period])
-    multiplier = 2.0 / (period + 1)
-    for i in range(period, len(data)):
-        ema[i] = (data[i] - ema[i - 1]) * multiplier + ema[i - 1]
-    return ema
-
-
-def compute_bollinger(closes, period=20, std_mult=2.0):
-    """Bollinger Bands."""
-    if len(closes) < period:
-        mid = np.mean(closes)
-        return mid + 0.01, mid - 0.01, mid
-    sma = np.mean(closes[-period:])
-    std = np.std(closes[-period:])
-    return sma + std_mult * std, sma - std_mult * std, sma
-
-
-def compute_stochastic(highs, lows, closes, k_period=14, d_period=3):
-    """Stochastic Oscillator (%K, %D)."""
-    if len(closes) < k_period + d_period:
-        return 50.0, 50.0, 50.0, 50.0
-
-    k_values = []
-    for i in range(k_period - 1, len(closes)):
-        h = np.max(highs[i - k_period + 1:i + 1])
-        l = np.min(lows[i - k_period + 1:i + 1])
-        if h - l == 0:
-            k_values.append(50.0)
-        else:
-            k_values.append(100.0 * (closes[i] - l) / (h - l))
-
-    k_values = np.array(k_values)
-
-    # %D is SMA of %K
-    if len(k_values) < d_period:
-        return k_values[-1], k_values[-1], k_values[-1], k_values[-1]
-
-    d_current = np.mean(k_values[-d_period:])
-    d_prev = np.mean(k_values[-d_period - 1:-1]) if len(k_values) > d_period else d_current
-    k_prev = k_values[-2] if len(k_values) > 1 else k_values[-1]
-
-    return k_values[-1], d_current, k_prev, d_prev
-
-
-def compute_vwap(highs, lows, closes, volumes):
-    """Volume-Weighted Average Price + std deviation."""
-    typical = (highs + lows + closes) / 3.0
-    cum_vol = np.cumsum(volumes)
-    cum_tp_vol = np.cumsum(typical * volumes)
-
-    if cum_vol[-1] == 0:
-        return closes[-1], 1.0
-
-    vwap = cum_tp_vol[-1] / cum_vol[-1]
-    # VWAP std
-    vwap_std = np.std(typical - vwap) if len(typical) > 1 else 1.0
-    if vwap_std == 0:
-        vwap_std = abs(closes[-1]) * 0.001  # Prevent zero
-
-    return vwap, vwap_std
-
-
-def compute_adx(highs, lows, closes, period=14):
-    """Average Directional Index + DI+ / DI-."""
-    if len(closes) < period * 2:
-        return 20.0, 20.0, 25.0, 25.0  # adx, adx_prev, plus_di, minus_di
-
-    plus_dm = np.zeros(len(highs))
-    minus_dm = np.zeros(len(highs))
-    tr = np.zeros(len(highs))
-
-    for i in range(1, len(highs)):
-        up = highs[i] - highs[i - 1]
-        down = lows[i - 1] - lows[i]
-        plus_dm[i] = up if up > down and up > 0 else 0
-        minus_dm[i] = down if down > up and down > 0 else 0
-        tr[i] = max(
-            highs[i] - lows[i],
-            abs(highs[i] - closes[i - 1]),
-            abs(lows[i] - closes[i - 1])
-        )
-
-    # Wilder smoothing
-    atr_s = np.mean(tr[1:period + 1])
-    plus_dm_s = np.mean(plus_dm[1:period + 1])
-    minus_dm_s = np.mean(minus_dm[1:period + 1])
-
-    dx_values = []
-    plus_di_val = 0
-    minus_di_val = 0
-
-    for i in range(period + 1, len(highs)):
-        atr_s = (atr_s * (period - 1) + tr[i]) / period
-        plus_dm_s = (plus_dm_s * (period - 1) + plus_dm[i]) / period
-        minus_dm_s = (minus_dm_s * (period - 1) + minus_dm[i]) / period
-
-        if atr_s > 0:
-            plus_di_val = 100.0 * plus_dm_s / atr_s
-            minus_di_val = 100.0 * minus_dm_s / atr_s
-        else:
-            plus_di_val = 0
-            minus_di_val = 0
-
-        di_sum = plus_di_val + minus_di_val
-        if di_sum > 0:
-            dx = 100.0 * abs(plus_di_val - minus_di_val) / di_sum
-        else:
-            dx = 0
-        dx_values.append(dx)
-
-    if len(dx_values) < period:
-        adx = np.mean(dx_values) if dx_values else 20.0
-        return adx, adx, plus_di_val, minus_di_val
-
-    adx = np.mean(dx_values[:period])
-    for i in range(period, len(dx_values)):
-        adx = (adx * (period - 1) + dx_values[i]) / period
-
-    # ADX 5 bars ago
-    adx_prev = adx  # Approximate
-    if len(dx_values) > 5:
-        adx_prev_series = np.mean(dx_values[:period])
-        for i in range(period, len(dx_values) - 5):
-            adx_prev_series = (adx_prev_series * (period - 1) + dx_values[i]) / period
-        adx_prev = adx_prev_series
-
-    return adx, adx_prev, plus_di_val, minus_di_val
-
-
-def compute_keltner(closes, highs, lows, ema_period=20, atr_mult=1.5, atr_period=14):
-    """Keltner Channels."""
-    ema = compute_ema(closes, ema_period)
-    atr = compute_atr(highs, lows, closes, atr_period)
-    return ema + atr_mult * atr, ema - atr_mult * atr
-
-
-# ─── Build MarketSnapshot from Real Data ────────────────────────────────────
-
-def build_snapshot(symbol: str, candles: Dict) -> Optional[MarketSnapshot]:
-    """Build a complete MarketSnapshot from Polygon candle data."""
-    opens = candles["opens"]
-    highs = candles["highs"]
-    lows = candles["lows"]
-    closes = candles["closes"]
-    volumes = candles["volumes"]
-
-    if len(closes) < 50:
+    if len(all_results) < 50:
         return None
+    return {
+        "opens": np.array([r["o"] for r in all_results], dtype=float),
+        "highs": np.array([r["h"] for r in all_results], dtype=float),
+        "lows": np.array([r["l"] for r in all_results], dtype=float),
+        "closes": np.array([r["c"] for r in all_results], dtype=float),
+        "volumes": np.array([r.get("v", 0) for r in all_results], dtype=float),
+        "timestamps": [r["t"] for r in all_results],
+        "count": len(all_results),
+    }
 
-    # Compute all indicators
-    atr = compute_atr(highs, lows, closes)
-    rsi = compute_rsi(closes)
-    stoch_k, stoch_d, stoch_k_prev, stoch_d_prev = compute_stochastic(highs, lows, closes)
-    ema_50 = compute_ema(closes, 50)
-    ema_200 = compute_ema(closes, 200) if len(closes) >= 200 else compute_ema(closes, len(closes))
-    bb_upper, bb_lower, bb_middle = compute_bollinger(closes)
-    vwap, vwap_std = compute_vwap(highs, lows, closes, volumes)
-    adx, adx_prev, plus_di, minus_di = compute_adx(highs, lows, closes)
-    keltner_upper, keltner_lower = compute_keltner(closes, highs, lows)
 
-    # Session data (approximate from recent candles)
-    # Use last ~78 candles as "today" (5min * 78 ≈ 6.5 hours)
-    session_len = min(78, len(closes))
-    session_closes = closes[-session_len:]
-    session_highs = highs[-session_len:]
-    session_lows = lows[-session_len:]
+# ═══════════════════════════════════════════════════════════════════════════════
+# INDICATORS
+# ═══════════════════════════════════════════════════════════════════════════════
 
-    prev_day_idx = min(session_len + 78, len(closes))
-    prev_day_closes = closes[-prev_day_idx:-session_len] if prev_day_idx > session_len else closes[:session_len]
+def compute_atr(h, l, c, p=14):
+    if len(c) < 2: return abs(c[-1]) * 0.01
+    tr = np.maximum(h[1:]-l[1:], np.maximum(np.abs(h[1:]-c[:-1]), np.abs(l[1:]-c[:-1])))
+    if len(tr) < p: return np.mean(tr)
+    a = np.mean(tr[:p])
+    for i in range(p, len(tr)): a = (a*(p-1)+tr[i])/p
+    return a
 
-    prev_day_high = np.max(prev_day_closes) if len(prev_day_closes) > 0 else closes[-1]
-    prev_day_low = np.min(prev_day_closes) if len(prev_day_closes) > 0 else closes[-1]
-    prev_day_close = prev_day_closes[-1] if len(prev_day_closes) > 0 else closes[-1]
+def compute_rsi(c, p=14):
+    if len(c) < p+1: return 50.0
+    d = np.diff(c)
+    g, lo = np.where(d>0,d,0), np.where(d<0,-d,0)
+    ag, al = np.mean(g[:p]), np.mean(lo[:p])
+    for i in range(p,len(g)): ag=(ag*(p-1)+g[i])/p; al=(al*(p-1)+lo[i])/p
+    if al == 0: return 100.0
+    return 100.0 - 100.0/(1.0+ag/al)
 
-    session_open = session_closes[0]
-    session_high = np.max(session_highs)
-    session_low = np.min(session_lows)
+def compute_ema(d, p):
+    if len(d) < p: return np.mean(d) if len(d) > 0 else 0.0
+    m = 2.0/(p+1); e = np.mean(d[:p])
+    for i in range(p, len(d)): e = (d[i]-e)*m+e
+    return e
 
-    # ORB (first 6 candles = 30 min at 5min timeframe)
-    orb_candles = min(6, len(session_highs))
-    orb_high = np.max(session_highs[:orb_candles])
-    orb_low = np.min(session_lows[:orb_candles])
-    orb_complete = session_len > 6
+def compute_bollinger(c, p=20, m=2.0):
+    if len(c) < p:
+        mid = np.mean(c); s = np.std(c) if len(c)>1 else abs(mid)*0.01
+        return mid+m*s, mid-m*s, mid
+    sma = np.mean(c[-p:]); s = np.std(c[-p:])
+    if s == 0: s = abs(sma)*0.001
+    return sma+m*s, sma-m*s, sma
 
-    # Asian range (approximate — first 84 candles of day at 5min = 7 hours)
-    asian_len = min(84, len(highs))
-    asian_high = np.max(highs[:asian_len])
-    asian_low = np.min(lows[:asian_len])
+def compute_stochastic(h, l, c, kp=14, dp=3):
+    if len(c) < kp+dp: return 50.0,50.0,50.0,50.0
+    kvs = []
+    for i in range(kp-1, len(c)):
+        hi,lo = np.max(h[i-kp+1:i+1]), np.min(l[i-kp+1:i+1])
+        kvs.append(100.0*(c[i]-lo)/(hi-lo) if hi!=lo else 50.0)
+    kvs = np.array(kvs)
+    if len(kvs) < dp: return kvs[-1],kvs[-1],kvs[-1],kvs[-1]
+    return kvs[-1], np.mean(kvs[-dp:]), kvs[-2] if len(kvs)>1 else kvs[-1], np.mean(kvs[-dp-1:-1]) if len(kvs)>dp else np.mean(kvs[-dp:])
 
-    current_price = closes[-1]
-    spread = atr * 0.05 if atr > 0 else abs(current_price) * 0.0001
+def compute_vwap(h, l, c, v):
+    tp = (h+l+c)/3.0; cv = np.cumsum(v); ctv = np.cumsum(tp*v)
+    if cv[-1]==0: return c[-1], abs(c[-1])*0.001
+    vw = ctv[-1]/cv[-1]; vs = np.std(tp-vw) if len(tp)>1 else abs(c[-1])*0.001
+    return vw, max(vs, abs(c[-1])*0.0001)
 
-    now_utc = datetime.now(timezone.utc)
+def compute_adx(h, l, c, p=14):
+    if len(c) < p*2: return 20.0,20.0,25.0,25.0
+    pdm,mdm,tr = np.zeros(len(h)),np.zeros(len(h)),np.zeros(len(h))
+    for i in range(1,len(h)):
+        u,d = h[i]-h[i-1], l[i-1]-l[i]
+        pdm[i] = u if u>d and u>0 else 0
+        mdm[i] = d if d>u and d>0 else 0
+        tr[i] = max(h[i]-l[i], abs(h[i]-c[i-1]), abs(l[i]-c[i-1]))
+    atrs = np.mean(tr[1:p+1]); pdms = np.mean(pdm[1:p+1]); mdms = np.mean(mdm[1:p+1])
+    dxv = []; pdi=mdi=0
+    for i in range(p+1,len(h)):
+        atrs=(atrs*(p-1)+tr[i])/p; pdms=(pdms*(p-1)+pdm[i])/p; mdms=(mdms*(p-1)+mdm[i])/p
+        if atrs>0: pdi=100.0*pdms/atrs; mdi=100.0*mdms/atrs
+        ds=pdi+mdi; dxv.append(100.0*abs(pdi-mdi)/ds if ds>0 else 0)
+    if len(dxv)<p: a=np.mean(dxv) if dxv else 20.0; return a,a,pdi,mdi
+    adx=np.mean(dxv[:p])
+    for i in range(p,len(dxv)): adx=(adx*(p-1)+dxv[i])/p
+    ap=adx
+    if len(dxv)>5:
+        ap=np.mean(dxv[:p])
+        for i in range(p,len(dxv)-5): ap=(ap*(p-1)+dxv[i])/p
+    return adx,ap,pdi,mdi
+
+def compute_keltner(c, h, l):
+    e = compute_ema(c, 20); a = compute_atr(h, l, c)
+    return e+1.5*a, e-1.5*a
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# BUILD SNAPSHOT AT BAR
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def build_snapshot_at_bar(symbol, candles, bar_idx, timestamp_ms=None,
+                          spread_mult=1.0, noise_pct=0.0):
+    """Build MarketSnapshot at a specific bar. Supports spread/noise injection."""
+    end = bar_idx + 1
+    start = max(0, end - 250)
+    o = candles["opens"][start:end].copy()
+    h = candles["highs"][start:end].copy()
+    l = candles["lows"][start:end].copy()
+    c = candles["closes"][start:end].copy()
+    v = candles["volumes"][start:end].copy()
+    n = len(c)
+    if n < 20: return None
+
+    # Inject noise for choppy market test
+    if noise_pct > 0:
+        noise = np.random.normal(0, noise_pct, n) * c
+        c = c + noise
+        h = np.maximum(h, c)
+        l = np.minimum(l, c)
+
+    atr = compute_atr(h, l, c)
+    if atr == 0: atr = abs(c[-1])*0.001
+    rsi = compute_rsi(c)
+    sk,sd,skp,sdp = compute_stochastic(h,l,c)
+    e50 = compute_ema(c, min(50,n))
+    e200 = compute_ema(c, min(200,n))
+    bbu,bbl,bbm = compute_bollinger(c)
+    vwap,vstd = compute_vwap(h,l,c,v)
+    adx,adxp,pdi,mdi = compute_adx(h,l,c)
+    ku,kl = compute_keltner(c,h,l)
+
+    sl = min(8,n); pi = min(sl+8,n)
+    pdh = np.max(h[-pi:-sl]) if pi>sl else np.max(h[:sl])
+    pdl = np.min(l[-pi:-sl]) if pi>sl else np.min(l[:sl])
+    pdc = c[-sl-1] if n>sl else c[0]
+    price = c[-1]
+    spread = atr * 0.05 * spread_mult
+
+    hour = 12
+    if timestamp_ms:
+        hour = datetime.fromtimestamp(timestamp_ms/1000, tz=timezone.utc).hour
 
     return MarketSnapshot(
         symbol=symbol,
-        opens=opens, highs=highs, lows=lows, closes=closes, volumes=volumes,
-        bid=current_price - spread / 2,
-        ask=current_price + spread / 2,
+        opens=o, highs=h, lows=l, closes=c, volumes=v,
+        bid=price-spread/2, ask=price+spread/2,
         atr=atr, rsi=rsi,
-        stoch_k=stoch_k, stoch_d=stoch_d,
-        stoch_k_prev=stoch_k_prev, stoch_d_prev=stoch_d_prev,
-        ema_50=ema_50, ema_200=ema_200,
-        bb_upper=bb_upper, bb_lower=bb_lower, bb_middle=bb_middle,
-        vwap=vwap, vwap_std=vwap_std,
-        adx=adx, adx_prev=adx_prev,
-        plus_di=plus_di, minus_di=minus_di,
-        prev_day_high=prev_day_high, prev_day_low=prev_day_low,
-        prev_day_close=prev_day_close,
-        session_open=session_open, session_high=session_high, session_low=session_low,
-        orb_high=orb_high, orb_low=orb_low, orb_complete=orb_complete,
-        asian_high=asian_high, asian_low=asian_low, asian_complete=True,
-        keltner_upper=keltner_upper, keltner_lower=keltner_lower,
-        bars_since_open=session_len,
-        current_hour_utc=now_utc.hour,
+        stoch_k=sk, stoch_d=sd, stoch_k_prev=skp, stoch_d_prev=sdp,
+        ema_50=e50, ema_200=e200,
+        bb_upper=bbu, bb_lower=bbl, bb_middle=bbm,
+        vwap=vwap, vwap_std=vstd,
+        adx=adx, adx_prev=adxp, plus_di=pdi, minus_di=mdi,
+        prev_day_high=pdh, prev_day_low=pdl, prev_day_close=pdc,
+        session_open=o[-sl], session_high=np.max(h[-sl:]), session_low=np.min(l[-sl:]),
+        orb_high=h[-sl], orb_low=l[-sl], orb_complete=True,
+        asian_high=np.max(h[:min(7,n)]), asian_low=np.min(l[:min(7,n)]), asian_complete=True,
+        keltner_upper=ku, keltner_lower=kl,
+        bars_since_open=sl, current_hour_utc=hour,
     )
 
 
-# ─── Pretty Print ───────────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════════════════
+# BACKTEST TRADE
+# ═══════════════════════════════════════════════════════════════════════════════
 
-def print_header():
-    print("\n" + "=" * 80)
-    print("  FORGE v22 — REAL DATA TEST")
-    print("  Philosophy: ALL GAS FIRST THEN BRAKES")
-    print("=" * 80)
+@dataclass
+class BacktestTrade:
+    trade_id: str
+    symbol: str
+    strategy: str
+    direction: str
+    trade_type: str
+    entry_price: float
+    sl_price: float
+    tp_price: float
+    current_sl: float
+    risk_pct: float
+    atr_at_entry: float
+    confidence: float
+    entry_bar: int
+    exit_bar: int = -1
+    exit_price: float = 0.0
+    exit_reason: str = ""
+    pnl_r: float = 0.0
+    partial_taken: bool = False
+    be_set: bool = False
+    bars_held: int = 0
+    max_favorable_r: float = 0.0
+    slippage_applied: float = 0.0
 
+    @property
+    def r_unit(self):
+        return abs(self.entry_price - self.sl_price)
 
-def print_snapshot_summary(symbol: str, snap: MarketSnapshot):
-    """Print key indicator values for a symbol."""
-    print(f"\n  {symbol}:")
-    print(f"    Price: {snap.closes[-1]:.5f} | ATR: {snap.atr:.5f}")
-    print(f"    RSI: {snap.rsi:.1f} | Stoch K/D: {snap.stoch_k:.1f}/{snap.stoch_d:.1f}")
-    print(f"    EMA50: {snap.ema_50:.5f} | EMA200: {snap.ema_200:.5f}")
-    print(f"    BB: [{snap.bb_lower:.5f} — {snap.bb_middle:.5f} — {snap.bb_upper:.5f}]")
-    print(f"    VWAP: {snap.vwap:.5f} ± {snap.vwap_std:.5f}")
-    print(f"    ADX: {snap.adx:.1f} (prev: {snap.adx_prev:.1f}) | +DI: {snap.plus_di:.1f} | -DI: {snap.minus_di:.1f}")
-    print(f"    Prev Day: H={snap.prev_day_high:.5f} L={snap.prev_day_low:.5f} C={snap.prev_day_close:.5f}")
-    print(f"    Session: O={snap.session_open:.5f} H={snap.session_high:.5f} L={snap.session_low:.5f}")
-    print(f"    ORB: H={snap.orb_high:.5f} L={snap.orb_low:.5f} ({'complete' if snap.orb_complete else 'pending'})")
-    setup = SETUP_CONFIG[symbol]
-    print(f"    Strategy: {setup.strategy.value} | Dir: {setup.direction.value} | "
-          f"Type: {setup.trade_type.value} | Order: {setup.order_type.value}")
+    def current_r(self, price):
+        if self.r_unit == 0: return 0.0
+        if self.direction == "LONG":
+            return (price - self.entry_price) / self.r_unit
+        return (self.entry_price - price) / self.r_unit
 
-
-def print_signal(sig: Signal, idx: int):
-    """Print a signal in detail."""
-    r_ratio = sig.tp_atr_mult / sig.sl_atr_mult if sig.sl_atr_mult > 0 else 0
-    print(f"\n  {'🟢' if sig.order_type.value == 'MARKET' else '🔵'} SIGNAL #{idx}: "
-          f"{sig.symbol} {sig.direction} — {sig.strategy.value}")
-    print(f"    Confidence: {sig.final_confidence:.3f} "
-          f"(raw: {sig.raw_confidence:.3f})")
-    print(f"    Trade Type: {sig.trade_type.value} | Order: {sig.order_type.value}")
-    print(f"    Entry: {sig.entry_price:.5f}")
-    print(f"    SL: {sig.sl_price:.5f} ({sig.sl_atr_mult:.1f} ATR)")
-    print(f"    TP: {sig.tp_price:.5f} ({sig.tp_atr_mult:.1f} ATR)")
-    print(f"    R:R = 1:{r_ratio:.1f}")
-    print(f"    Risk: {sig.risk_pct:.1f}%")
-
-    # Context details
-    ctx = sig.context
-    if ctx:
-        ctx_str = " | ".join(f"{k}={v:.4f}" if isinstance(v, float) else f"{k}={v}"
-                             for k, v in ctx.items())
-        print(f"    Context: {ctx_str}")
-
-    # Time-of-day edge?
-    if ctx.get("tod_edge"):
-        print(f"    ⚡ TIME-OF-DAY EDGE (p={ctx.get('tod_p_value', '?')})")
-    if ctx.get("tod_suppressed"):
-        print(f"    ⏸ Time-of-day SUPPRESSED (edge exists at different hour)")
-    if ctx.get("seasonal_boost"):
-        print(f"    📅 SEASONAL BOOST: +{ctx['seasonal_boost']:.0%}")
+    @property
+    def is_open(self):
+        return self.exit_bar == -1
 
 
-def print_correlation_check(signals: List[Signal]):
-    """Check which signals could trade together."""
-    guard = CorrelationGuard()
-    active = set()
-    allowed_signals = []
-    blocked_signals = []
+# ═══════════════════════════════════════════════════════════════════════════════
+# WALK-FORWARD BACKTEST ENGINE
+# ═══════════════════════════════════════════════════════════════════════════════
 
-    for sig in signals:
-        can, reason = guard.can_trade(sig.symbol, active)
-        if can:
-            active.add(sig.symbol)
-            allowed_signals.append(sig)
+class WalkForwardBacktest:
+    """Configurable walk-forward backtest engine."""
+
+    def __init__(self, starting_balance=10000, spread_mult=1.0, noise_pct=0.0,
+                 slippage_atr=0.0, forced_initial_losses=0, label="Standard"):
+        self.STARTING_BALANCE = starting_balance
+        self.spread_mult = spread_mult
+        self.noise_pct = noise_pct
+        self.slippage_atr = slippage_atr
+        self.forced_initial_losses = forced_initial_losses
+        self.label = label
+
+        self.BE_R = 0.5
+        self.PARTIAL_R = 1.0
+        self.PARTIAL_PCT = 0.50
+        self.TRAIL_R = 1.5
+        self.MAX_HOLD = 50
+        self.COOLDOWN_BARS = 2
+        self.MAX_OPEN = 5
+        self.MAX_DAILY = 12
+
+        self.trades = []
+        self.open_trades = {}
+        self.signal_engine = SignalEngine()
+        self.correlation_guard = CorrelationGuard()
+        self.last_trade_bar = {}
+        self.daily_counts = {}
+        self.balance = starting_balance
+        self.peak_balance = starting_balance
+        self.max_drawdown = 0.0
+        self.equity_curve = []
+        self.forced_losses_remaining = forced_initial_losses
+
+    def run(self, all_candles):
+        min_bars = min(c["count"] for c in all_candles.values())
+        start_bar = 50
+        end_bar = min_bars
+
+        for bar in range(start_bar, end_bar):
+            if bar % 100 == 0:
+                pct = (bar - start_bar) / max(1, end_bar - start_bar) * 100
+                print(f"    [{self.label}] Bar {bar}/{end_bar} ({pct:.0f}%) | "
+                      f"Bal: ${self.balance:,.2f} | Trades: {len(self.trades)}", flush=True)
+
+            self._manage_trades(all_candles, bar)
+
+            snapshots = {}
+            for sym, cand in all_candles.items():
+                if bar < cand["count"]:
+                    ts = cand["timestamps"][bar] if bar < len(cand["timestamps"]) else None
+                    snap = build_snapshot_at_bar(sym, cand, bar, ts,
+                                                 self.spread_mult, self.noise_pct)
+                    if snap:
+                        snapshots[sym] = snap
+            if not snapshots:
+                continue
+
+            first_sym = list(all_candles.keys())[0]
+            ts = all_candles[first_sym]["timestamps"][bar]
+            bar_time = datetime.fromtimestamp(ts/1000, tz=timezone.utc)
+
+            signals = self.signal_engine.generate_signals(snapshots, current_time=bar_time)
+
+            for sig in signals:
+                if not self._can_take(sig, bar, bar_time):
+                    continue
+                self._open_trade(sig, bar, all_candles)
+
+            self.equity_curve.append(self.balance)
+            if self.balance < self.STARTING_BALANCE * 0.90:
+                break
+
+        self._close_all_open(all_candles, end_bar - 1)
+        return self._build_report(end_bar - start_bar)
+
+    def _manage_trades(self, all_candles, bar):
+        for sym in list(self.open_trades.keys()):
+            trade = self.open_trades[sym]
+            cand = all_candles.get(sym)
+            if not cand or bar >= cand["count"]:
+                continue
+            trade.bars_held += 1
+            high, low, close = cand["highs"][bar], cand["lows"][bar], cand["closes"][bar]
+            r = trade.current_r(close)
+            if r > trade.max_favorable_r:
+                trade.max_favorable_r = r
+
+            # SL check
+            if trade.direction == "LONG" and low <= trade.current_sl:
+                self._close(trade, bar, trade.current_sl, "BREAKEVEN_STOP" if trade.be_set else "SL_HIT")
+                continue
+            elif trade.direction == "SHORT" and high >= trade.current_sl:
+                self._close(trade, bar, trade.current_sl, "BREAKEVEN_STOP" if trade.be_set else "SL_HIT")
+                continue
+
+            # TP check (SCALP only)
+            if trade.trade_type == "SCALP":
+                if trade.direction == "LONG" and high >= trade.tp_price:
+                    self._close(trade, bar, trade.tp_price, "TP_HIT"); continue
+                elif trade.direction == "SHORT" and low <= trade.tp_price:
+                    self._close(trade, bar, trade.tp_price, "TP_HIT"); continue
+
+            # Breakeven
+            if not trade.be_set and r >= self.BE_R:
+                trade.current_sl = trade.entry_price
+                trade.be_set = True
+
+            # Runner management
+            if trade.trade_type == "RUNNER":
+                if not trade.partial_taken and r >= self.PARTIAL_R:
+                    trade.partial_taken = True
+                    pp = trade.r_unit * self.PARTIAL_PCT * self._lots(trade.risk_pct, trade.r_unit)
+                    self.balance += abs(pp)
+                if trade.partial_taken and trade.r_unit > 0:
+                    if trade.direction == "LONG":
+                        nt = close - self.TRAIL_R * trade.r_unit
+                        if nt > trade.current_sl: trade.current_sl = nt
+                    else:
+                        nt = close + self.TRAIL_R * trade.r_unit
+                        if nt < trade.current_sl: trade.current_sl = nt
+                if trade.bars_held >= self.MAX_HOLD:
+                    self._close(trade, bar, close, "MAX_HOLD"); continue
+
+    def _can_take(self, sig, bar, bar_time):
+        if len(self.open_trades) >= self.MAX_OPEN: return False
+        if sig.symbol in self.open_trades: return False
+        if bar - self.last_trade_bar.get(sig.symbol, -999) < self.COOLDOWN_BARS: return False
+        dk = bar_time.strftime("%Y-%m-%d")
+        if self.daily_counts.get(dk, 0) >= self.MAX_DAILY: return False
+        ok, _ = self.correlation_guard.can_trade(sig.symbol, set(self.open_trades.keys()))
+        return ok
+
+    def _lots(self, risk_pct, sl_dist):
+        rd = self.balance * risk_pct / 100
+        if sl_dist == 0: return 0.01
+        return max(0.01, min(rd / sl_dist, 2.0))
+
+    def _open_trade(self, sig, bar, all_candles):
+        # Apply slippage
+        slip = 0.0
+        if self.slippage_atr > 0:
+            slip = random.uniform(0, self.slippage_atr) * sig.atr_value
+            if sig.direction == "LONG":
+                sig.entry_price += slip
+            else:
+                sig.entry_price -= slip
+
+        # Force initial losses for drawdown recovery test
+        force_loss = False
+        if self.forced_losses_remaining > 0:
+            force_loss = True
+            self.forced_losses_remaining -= 1
+
+        t = BacktestTrade(
+            trade_id=f"{sig.symbol}-{bar}", symbol=sig.symbol,
+            strategy=sig.strategy.value, direction=sig.direction,
+            trade_type=sig.trade_type.value, entry_price=sig.entry_price,
+            sl_price=sig.sl_price, tp_price=sig.tp_price,
+            current_sl=sig.sl_price, risk_pct=sig.risk_pct,
+            atr_at_entry=sig.atr_value, confidence=sig.final_confidence,
+            entry_bar=bar, slippage_applied=slip,
+        )
+
+        if force_loss:
+            # Simulate immediate stop loss hit
+            t.exit_bar = bar + 1
+            t.exit_price = sig.sl_price
+            t.exit_reason = "FORCED_LOSS"
+            t.pnl_r = -1.0
+            t.bars_held = 1
+            dollar_pnl = -t.r_unit * self._lots(t.risk_pct, t.r_unit)
+            self.balance += dollar_pnl
+            self.trades.append(t)
+            self.last_trade_bar[sig.symbol] = bar
+            return
+
+        self.open_trades[sig.symbol] = t
+        self.trades.append(t)
+        self.last_trade_bar[sig.symbol] = bar
+        dk = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        self.daily_counts[dk] = self.daily_counts.get(dk, 0) + 1
+
+    def _close(self, trade, bar, exit_price, reason):
+        trade.exit_bar = bar
+        trade.exit_price = exit_price
+        trade.exit_reason = reason
+
+        if trade.r_unit > 0:
+            if trade.direction == "LONG":
+                trade.pnl_r = (exit_price - trade.entry_price) / trade.r_unit
+            else:
+                trade.pnl_r = (trade.entry_price - exit_price) / trade.r_unit
         else:
-            blocked_signals.append((sig, reason))
+            trade.pnl_r = 0
 
-    if blocked_signals:
-        print(f"\n  ⚠ CORRELATION BLOCKS:")
-        for sig, reason in blocked_signals:
-            print(f"    ❌ {sig.symbol} {sig.direction}: {reason}")
+        if trade.trade_type == "RUNNER" and trade.partial_taken:
+            dp = trade.pnl_r * (1 - self.PARTIAL_PCT) * trade.r_unit * self._lots(trade.risk_pct, trade.r_unit)
+        else:
+            dp = trade.pnl_r * trade.r_unit * self._lots(trade.risk_pct, trade.r_unit)
+        self.balance += dp
 
-    return allowed_signals
+        if self.balance > self.peak_balance:
+            self.peak_balance = self.balance
+        dd = (self.peak_balance - self.balance) / self.peak_balance * 100
+        if dd > self.max_drawdown:
+            self.max_drawdown = dd
+
+        if trade.symbol in self.open_trades:
+            del self.open_trades[trade.symbol]
+
+    def _close_all_open(self, all_candles, last_bar):
+        for sym in list(self.open_trades.keys()):
+            t = self.open_trades[sym]
+            c = all_candles.get(sym)
+            p = c["closes"][last_bar] if c and last_bar < c["count"] else t.entry_price
+            self._close(t, last_bar, p, "END_OF_TEST")
+
+    def _build_report(self, total_bars):
+        closed = [t for t in self.trades if t.exit_bar >= 0]
+        if not closed:
+            return {"label": self.label, "error": "No trades"}
+
+        winners = [t for t in closed if t.pnl_r > 0]
+        losers = [t for t in closed if t.pnl_r < 0]
+        scratches = [t for t in closed if t.pnl_r == 0]
+        total_r = sum(t.pnl_r for t in closed)
+
+        strat_stats = {}
+        for t in closed:
+            s = t.strategy
+            if s not in strat_stats:
+                strat_stats[s] = {"trades": 0, "wins": 0, "total_r": 0}
+            strat_stats[s]["trades"] += 1
+            strat_stats[s]["total_r"] += t.pnl_r
+            if t.pnl_r > 0: strat_stats[s]["wins"] += 1
+
+        sym_stats = {}
+        for t in closed:
+            s = t.symbol
+            if s not in sym_stats:
+                sym_stats[s] = {"trades": 0, "wins": 0, "total_r": 0}
+            sym_stats[s]["trades"] += 1
+            sym_stats[s]["total_r"] += t.pnl_r
+            if t.pnl_r > 0: sym_stats[s]["wins"] += 1
+
+        exit_reasons = {}
+        for t in closed:
+            exit_reasons[t.exit_reason] = exit_reasons.get(t.exit_reason, 0) + 1
+
+        return {
+            "label": self.label,
+            "total_bars": total_bars,
+            "total_trades": len(closed),
+            "winners": len(winners),
+            "losers": len(losers),
+            "scratches": len(scratches),
+            "win_rate": len(winners) / len(closed) * 100 if closed else 0,
+            "total_r": total_r,
+            "avg_winner_r": np.mean([t.pnl_r for t in winners]) if winners else 0,
+            "avg_loser_r": np.mean([t.pnl_r for t in losers]) if losers else 0,
+            "profit_factor": abs(sum(t.pnl_r for t in winners)) / abs(sum(t.pnl_r for t in losers)) if losers and sum(t.pnl_r for t in losers) != 0 else 999,
+            "avg_hold": np.mean([t.bars_held for t in closed]),
+            "max_drawdown_pct": self.max_drawdown,
+            "final_balance": self.balance,
+            "pnl_dollar": self.balance - self.STARTING_BALANCE,
+            "pnl_pct": (self.balance - self.STARTING_BALANCE) / self.STARTING_BALANCE * 100,
+            "strategy_breakdown": strat_stats,
+            "symbol_breakdown": sym_stats,
+            "exit_reasons": exit_reasons,
+            "trade_log": closed,
+            "equity_curve": list(self.equity_curve),
+        }
 
 
-# ─── Main Test Runner ────────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════════════════
+# MONTE CARLO SIMULATION
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def monte_carlo_simulation(trade_pnls, n_sims=1000, starting_balance=10000):
+    """Randomize trade order N times, return distribution of outcomes."""
+    results = []
+    max_dds = []
+    bust_count = 0
+    ftmo_pass = 0
+
+    for _ in range(n_sims):
+        shuffled = trade_pnls.copy()
+        random.shuffle(shuffled)
+
+        balance = starting_balance
+        peak = starting_balance
+        max_dd = 0
+
+        for pnl_r in shuffled:
+            # Approximate dollar P&L: 2% risk per trade, risk = 1R
+            risk_dollars = balance * 0.02
+            balance += pnl_r * risk_dollars
+
+            if balance > peak:
+                peak = balance
+            dd = (peak - balance) / peak * 100
+            if dd > max_dd:
+                max_dd = dd
+
+            if balance < starting_balance * 0.90:  # FTMO hard limit
+                bust_count += 1
+                break
+
+        max_dds.append(max_dd)
+        final_pnl_pct = (balance - starting_balance) / starting_balance * 100
+        results.append(final_pnl_pct)
+
+        # FTMO pass: > 10% profit AND max DD < 10% AND max daily DD < 5%
+        if final_pnl_pct >= 10.0 and max_dd < 10.0:
+            ftmo_pass += 1
+
+    return {
+        "n_sims": n_sims,
+        "avg_pnl_pct": np.mean(results),
+        "median_pnl_pct": np.median(results),
+        "worst_pnl_pct": np.min(results),
+        "best_pnl_pct": np.max(results),
+        "std_pnl_pct": np.std(results),
+        "p5_pnl_pct": np.percentile(results, 5),
+        "p25_pnl_pct": np.percentile(results, 25),
+        "p75_pnl_pct": np.percentile(results, 75),
+        "p95_pnl_pct": np.percentile(results, 95),
+        "avg_max_dd": np.mean(max_dds),
+        "worst_max_dd": np.max(max_dds),
+        "p95_max_dd": np.percentile(max_dds, 95),
+        "bust_rate": bust_count / n_sims * 100,
+        "ftmo_pass_rate": ftmo_pass / n_sims * 100,
+    }
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DISPLAY
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def fmt(p):
+    if p > 100: return ".2f"
+    elif p > 1: return ".4f"
+    else: return ".5f"
+
+
+def print_report(r, show_trades=True):
+    if "error" in r:
+        print(f"\n  [{r['label']}] ERROR: {r['error']}")
+        return
+
+    print(f"\n  {'='*70}")
+    print(f"  {r['label'].upper()}")
+    print(f"  {'='*70}")
+    print(f"  Trades: {r['total_trades']} | W: {r['winners']} L: {r['losers']} BE: {r['scratches']} | "
+          f"WR: {r['win_rate']:.1f}%")
+    print(f"  Total R: {r['total_r']:+.2f}R | PF: {r['profit_factor']:.2f} | "
+          f"Avg W: {r['avg_winner_r']:+.2f}R | Avg L: {r['avg_loser_r']:+.2f}R")
+    print(f"  Max DD: {r['max_drawdown_pct']:.2f}% | Final: ${r['final_balance']:,.2f} "
+          f"({r['pnl_pct']:+.1f}%)")
+    print(f"  Avg hold: {r['avg_hold']:.1f} bars")
+
+    # Strategy breakdown
+    print(f"\n  Strategy breakdown:")
+    for s, st in sorted(r['strategy_breakdown'].items(), key=lambda x: x[1]['total_r'], reverse=True):
+        wr = st['wins']/st['trades']*100 if st['trades'] > 0 else 0
+        print(f"    {s:20s}: {st['trades']:3d} trades | WR: {wr:5.1f}% | {st['total_r']:+7.2f}R")
+
+    # Symbol breakdown
+    print(f"\n  Symbol breakdown:")
+    for s, st in sorted(r['symbol_breakdown'].items(), key=lambda x: x[1]['total_r'], reverse=True):
+        wr = st['wins']/st['trades']*100 if st['trades'] > 0 else 0
+        print(f"    {s:10s}: {st['trades']:3d} trades | WR: {wr:5.1f}% | {st['total_r']:+7.2f}R")
+
+    # Exit reasons
+    print(f"\n  Exit reasons:")
+    for reason, count in sorted(r['exit_reasons'].items(), key=lambda x: x[1], reverse=True):
+        print(f"    {reason:20s}: {count}")
+
+    # Trade log
+    if show_trades:
+        trades = r['trade_log']
+        show = min(15, len(trades))
+        print(f"\n  Last {show} trades:")
+        print(f"  {'Sym':10s} {'Dir':5s} {'Strategy':20s} {'Type':7s} {'P&L':>7s} {'Reason':15s}")
+        print(f"  {'-'*70}")
+        for t in trades[-show:]:
+            print(f"  {t.symbol:10s} {t.direction:5s} {t.strategy:20s} {t.trade_type:7s} "
+                  f"{t.pnl_r:+6.2f}R {t.exit_reason:15s}")
+
+
+def print_monte_carlo(mc):
+    print(f"\n  {'='*70}")
+    print(f"  MONTE CARLO ({mc['n_sims']} simulations)")
+    print(f"  {'='*70}")
+    print(f"  P&L Distribution:")
+    print(f"    Worst:    {mc['worst_pnl_pct']:+.1f}%")
+    print(f"    P5:       {mc['p5_pnl_pct']:+.1f}%")
+    print(f"    P25:      {mc['p25_pnl_pct']:+.1f}%")
+    print(f"    Median:   {mc['median_pnl_pct']:+.1f}%")
+    print(f"    Mean:     {mc['avg_pnl_pct']:+.1f}%")
+    print(f"    P75:      {mc['p75_pnl_pct']:+.1f}%")
+    print(f"    P95:      {mc['p95_pnl_pct']:+.1f}%")
+    print(f"    Best:     {mc['best_pnl_pct']:+.1f}%")
+    print(f"    Std Dev:  {mc['std_pnl_pct']:.1f}%")
+    print(f"\n  Drawdown Distribution:")
+    print(f"    Avg Max DD:   {mc['avg_max_dd']:.2f}%")
+    print(f"    P95 Max DD:   {mc['p95_max_dd']:.2f}%")
+    print(f"    Worst Max DD: {mc['worst_max_dd']:.2f}%")
+    print(f"\n  Risk:")
+    print(f"    Bust rate (hit -10% DD): {mc['bust_rate']:.1f}%")
+    print(f"    FTMO pass rate (>10% profit, <10% DD): {mc['ftmo_pass_rate']:.1f}%")
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# MAIN
+# ═══════════════════════════════════════════════════════════════════════════════
 
 def main():
-    print_header()
+    print("\n" + "=" * 80)
+    print("  FORGE v22.1 — COMPREHENSIVE STRESS TEST SUITE")
+    print("  6 scenarios on real Polygon data")
+    print("  Fixes: EURUSD->MEAN_REVERT, UK100->SHORT, CONFLUENCE 4/5")
+    print("=" * 80)
 
     if not POLYGON_API_KEY:
-        print("\n  ❌ POLYGON_API_KEY not set!")
-        print("  Run: set POLYGON_API_KEY=your_key_here")
-        print("  Or on Railway it's already in env vars.")
+        print("\n  POLYGON_API_KEY not set!")
         sys.exit(1)
 
-    print(f"\n  API Key: {POLYGON_API_KEY[:8]}...")
-    print(f"  Time: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}")
-    print(f"  Instruments: {len(SETUP_CONFIG)}")
+    print(f"\n  Time: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}")
 
-    # ─── Step 1: Fetch data for all instruments ──────────────────────
+    # ─── Fetch data ──────────────────────────────────────────────────
     print("\n" + "-" * 80)
-    print("  STEP 1: Fetching real Polygon data...")
+    print("  Fetching 30 days of hourly data...")
     print("-" * 80)
 
-    snapshots: Dict[str, MarketSnapshot] = {}
-    fetch_errors = []
+    all_candles = {}
+    for sym in get_all_symbols():
+        t = POLYGON_TICKERS.get(sym, "?")
+        print(f"  {sym} ({t})...", end=" ", flush=True)
+        c = fetch_polygon_candles(sym)
+        if c and c["count"] >= 50:
+            all_candles[sym] = c
+            print(f"OK - {c['count']} bars")
+        else:
+            print("SKIP")
+        time.sleep(0.3)
 
-    for symbol in get_all_symbols():
-        print(f"  📡 Fetching {symbol}...", end=" ", flush=True)
-        candles = fetch_polygon_candles(symbol, timeframe="5", days_back=5, limit=200)
+    print(f"\n  Loaded: {len(all_candles)}/{len(SETUP_CONFIG)} instruments")
+    if len(all_candles) < 5:
+        print("  Not enough data."); sys.exit(1)
 
-        if candles is None:
-            fetch_errors.append(symbol)
-            print("FAILED")
-            continue
 
-        snap = build_snapshot(symbol, candles)
-        if snap is None:
-            fetch_errors.append(symbol)
-            print("INSUFFICIENT DATA")
-            continue
+    # ═══════════════════════════════════════════════════════════════════
+    # TEST 1: STANDARD BACKTEST (baseline)
+    # ═══════════════════════════════════════════════════════════════════
+    print("\n" + "#" * 80)
+    print("  TEST 1: STANDARD BACKTEST (baseline v22.1)")
+    print("#" * 80)
 
-        snapshots[symbol] = snap
-        print(f"OK ({candles['count']} candles)")
-        time.sleep(0.25)  # Rate limit
+    bt1 = WalkForwardBacktest(label="Standard v22.1")
+    r1 = bt1.run(deepcopy(all_candles))
+    print_report(r1)
 
-    print(f"\n  ✅ Got data for {len(snapshots)}/{len(SETUP_CONFIG)} instruments")
-    if fetch_errors:
-        print(f"  ❌ Failed: {', '.join(fetch_errors)}")
 
-    if not snapshots:
-        print("\n  💀 No data at all. Check your API key and market hours.")
-        sys.exit(1)
+    # ═══════════════════════════════════════════════════════════════════
+    # TEST 2: SPREAD & SLIPPAGE STRESS
+    # ═══════════════════════════════════════════════════════════════════
+    print("\n" + "#" * 80)
+    print("  TEST 2: SPREAD & SLIPPAGE STRESS")
+    print("  3x normal spreads + random slippage up to 0.3 ATR")
+    print("#" * 80)
 
-    # ─── Step 2: Show indicator snapshots ────────────────────────────
-    print("\n" + "-" * 80)
-    print("  STEP 2: Indicator Snapshots")
-    print("-" * 80)
+    bt2 = WalkForwardBacktest(
+        label="3x Spread + Slippage",
+        spread_mult=3.0,
+        slippage_atr=0.3,
+    )
+    r2 = bt2.run(deepcopy(all_candles))
+    print_report(r2)
 
-    for symbol, snap in snapshots.items():
-        print_snapshot_summary(symbol, snap)
 
-    # ─── Step 3: Run signal engine ───────────────────────────────────
-    print("\n" + "-" * 80)
-    print("  STEP 3: Running Signal Engine (threshold=0.20)")
-    print("-" * 80)
+    # ═══════════════════════════════════════════════════════════════════
+    # TEST 3: CHOPPY MARKET (injected noise)
+    # ═══════════════════════════════════════════════════════════════════
+    print("\n" + "#" * 80)
+    print("  TEST 3: CHOPPY MARKET")
+    print("  0.3% random price noise injected into every bar")
+    print("#" * 80)
 
-    engine = SignalEngine()
-    signals = engine.generate_signals(snapshots)
+    bt3 = WalkForwardBacktest(
+        label="Choppy Market (0.3% noise)",
+        noise_pct=0.003,
+    )
+    r3 = bt3.run(deepcopy(all_candles))
+    print_report(r3)
 
-    if not signals:
-        print("\n  😤 NO SIGNALS FIRED.")
-        print("  This is unusual with a 0.20 threshold — check market conditions.")
-        print("  If markets are closed, indicators may not show tradeable conditions.")
+
+    # ═══════════════════════════════════════════════════════════════════
+    # TEST 4: DRAWDOWN RECOVERY
+    # ═══════════════════════════════════════════════════════════════════
+    print("\n" + "#" * 80)
+    print("  TEST 4: DRAWDOWN RECOVERY")
+    print("  Start with 4 forced consecutive losses, then trade normally")
+    print("#" * 80)
+
+    bt4 = WalkForwardBacktest(
+        label="Drawdown Recovery (4 forced losses)",
+        forced_initial_losses=4,
+    )
+    r4 = bt4.run(deepcopy(all_candles))
+    print_report(r4)
+
+
+    # ═══════════════════════════════════════════════════════════════════
+    # TEST 5: WORST CASE — ALL STRESS COMBINED
+    # ═══════════════════════════════════════════════════════════════════
+    print("\n" + "#" * 80)
+    print("  TEST 5: WORST CASE (all stress combined)")
+    print("  3x spreads + slippage + noise + 4 forced losses")
+    print("#" * 80)
+
+    bt5 = WalkForwardBacktest(
+        label="WORST CASE (everything bad)",
+        spread_mult=3.0,
+        slippage_atr=0.3,
+        noise_pct=0.003,
+        forced_initial_losses=4,
+    )
+    r5 = bt5.run(deepcopy(all_candles))
+    print_report(r5)
+
+
+    # ═══════════════════════════════════════════════════════════════════
+    # TEST 6: MONTE CARLO SIMULATION
+    # ═══════════════════════════════════════════════════════════════════
+    print("\n" + "#" * 80)
+    print("  TEST 6: MONTE CARLO (1000 simulations)")
+    print("  Randomize trade order from baseline results")
+    print("#" * 80)
+
+    if "error" not in r1:
+        trade_pnls = [t.pnl_r for t in r1["trade_log"]]
+        if trade_pnls:
+            mc = monte_carlo_simulation(trade_pnls, n_sims=1000)
+            print_monte_carlo(mc)
+        else:
+            print("  No trades to simulate")
     else:
-        print(f"\n  🔥 {len(signals)} SIGNALS FIRED!")
-        for i, sig in enumerate(signals, 1):
-            print_signal(sig, i)
+        print("  Baseline had no trades, skipping MC")
 
-    # ─── Step 4: Correlation check ───────────────────────────────────
-    if signals:
-        print("\n" + "-" * 80)
-        print("  STEP 4: Correlation Filter")
-        print("-" * 80)
 
-        allowed = print_correlation_check(signals)
-        print(f"\n  ✅ {len(allowed)} signals pass correlation check")
-        if allowed:
-            print(f"  Would trade: {', '.join(s.symbol for s in allowed)}")
-
-    # ─── Step 5: Summary ─────────────────────────────────────────────
+    # ═══════════════════════════════════════════════════════════════════
+    # COMPARISON TABLE
+    # ═══════════════════════════════════════════════════════════════════
     print("\n" + "=" * 80)
-    print("  SUMMARY")
+    print("  COMPARISON TABLE")
     print("=" * 80)
-    print(f"  Instruments with data:  {len(snapshots)}")
-    print(f"  Signals generated:      {len(signals)}")
-    print(f"  Conviction threshold:   0.20")
+    print(f"\n  {'Test':40s} {'Trades':>7s} {'WR':>6s} {'Total R':>9s} {'PF':>6s} {'MaxDD':>7s} {'P&L':>9s}")
+    print(f"  {'-'*84}")
 
-    if signals:
-        scalps = sum(1 for s in signals if s.trade_type.value == "SCALP")
-        runners = sum(1 for s in signals if s.trade_type.value == "RUNNER")
-        limits = sum(1 for s in signals if s.order_type.value == "LIMIT")
-        markets = sum(1 for s in signals if s.order_type.value == "MARKET")
-        avg_conf = np.mean([s.final_confidence for s in signals])
-        max_conf = max(s.final_confidence for s in signals)
+    for r in [r1, r2, r3, r4, r5]:
+        if "error" in r:
+            print(f"  {r['label']:40s} {'ERROR':>7s}")
+            continue
+        print(f"  {r['label']:40s} {r['total_trades']:7d} {r['win_rate']:5.1f}% "
+              f"{r['total_r']:+8.2f}R {r['profit_factor']:5.2f} {r['max_drawdown_pct']:6.2f}% "
+              f"${r['pnl_dollar']:+8.2f}")
 
-        print(f"  SCALP / RUNNER:         {scalps} / {runners}")
-        print(f"  LIMIT / MARKET:         {limits} / {markets}")
-        print(f"  Avg confidence:         {avg_conf:.3f}")
-        print(f"  Max confidence:         {max_conf:.3f}")
-        print(f"  Strategies firing:      {', '.join(set(s.strategy.value for s in signals))}")
+    # ═══════════════════════════════════════════════════════════════════
+    # VERDICT
+    # ═══════════════════════════════════════════════════════════════════
+    print("\n" + "=" * 80)
+    print("  VERDICT")
+    print("=" * 80)
 
-        # Time-of-day edge check
-        tod_signals = [s for s in signals if s.context.get("tod_edge")]
-        if tod_signals:
-            print(f"  ⚡ TOD edge signals:    {len(tod_signals)} "
-                  f"({', '.join(s.symbol for s in tod_signals)})")
-
-    print(f"\n  Current hour UTC:       {datetime.now(timezone.utc).hour}:00")
-    print(f"  Current month:          {datetime.now(timezone.utc).month}")
-
-    # Check if any TOD edges active now
-    hour = datetime.now(timezone.utc).hour
-    active_edges = TIME_OF_DAY_EDGES.get(hour, [])
-    if active_edges:
-        print(f"  ⚡ Active TOD edges:    {', '.join(f'{s} {d}' for s, d, _ in active_edges)}")
-    else:
-        print(f"  No TOD edges at {hour}:00 UTC")
+    if "error" not in r1 and "error" not in r5:
+        baseline_ok = r1["total_r"] > 0 and r1["max_drawdown_pct"] < 10
+        worst_ok = r5["total_r"] > -5 and r5["max_drawdown_pct"] < 10
+        print(f"\n  Baseline profitable:     {'YES' if baseline_ok else 'NO'} "
+              f"({r1['total_r']:+.2f}R, {r1['max_drawdown_pct']:.2f}% DD)")
+        print(f"  Survives worst case:     {'YES' if worst_ok else 'NO'} "
+              f"({r5['total_r']:+.2f}R, {r5['max_drawdown_pct']:.2f}% DD)")
+        if baseline_ok and worst_ok:
+            print(f"\n  >>> FORGE v22.1 is CLEARED FOR DEPLOYMENT <<<")
+        elif baseline_ok:
+            print(f"\n  >>> Baseline good but stressed. Deploy with caution. <<<")
+        else:
+            print(f"\n  >>> NEEDS MORE TUNING before deployment <<<")
 
     print("\n" + "=" * 80)
-    print("  TEST COMPLETE")
+    print("  ALL TESTS COMPLETE")
     print("=" * 80 + "\n")
 
 

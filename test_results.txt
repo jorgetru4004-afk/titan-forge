@@ -1,0 +1,374 @@
+
+================================================================================
+  FORGE v22.1 — COMPREHENSIVE STRESS TEST SUITE
+  6 scenarios on real Polygon data
+  Fixes: EURUSD->MEAN_REVERT, UK100->SHORT, CONFLUENCE 4/5
+================================================================================
+
+  Time: 2026-03-29 19:35 UTC
+
+--------------------------------------------------------------------------------
+  Fetching 30 days of hourly data...
+--------------------------------------------------------------------------------
+  USDCHF (C:USDCHF)... OK - 502 bars
+  GER40 (EWG)... OK - 239 bars
+  NZDUSD (C:NZDUSD)... OK - 502 bars
+  UK100 (EWU)... OK - 191 bars
+  US100 (QQQ)... OK - 336 bars
+  ETHUSD (X:ETHUSD)... OK - 740 bars
+  EURGBP (C:EURGBP)... OK - 502 bars
+  EURUSD (C:EURUSD)... OK - 502 bars
+  XAUUSD (C:XAUUSD)... OK - 502 bars
+  GBPJPY (C:GBPJPY)... OK - 502 bars
+  USDJPY (C:USDJPY)... OK - 502 bars
+  BTCUSD (X:BTCUSD)... OK - 740 bars
+  USOIL (USO)... OK - 336 bars
+  GBPUSD (C:GBPUSD)... OK - 502 bars
+
+  Loaded: 14/14 instruments
+
+################################################################################
+  TEST 1: STANDARD BACKTEST (baseline v22.1)
+################################################################################
+    [Standard v22.1] Bar 100/191 (35%) | Bal: $10,017.32 | Trades: 8
+
+  ======================================================================
+  STANDARD V22.1
+  ======================================================================
+  Trades: 30 | W: 11 L: 9 BE: 10 | WR: 36.7%
+  Total R: +12.62R | PF: 2.40 | Avg W: +1.97R | Avg L: -1.00R
+  Max DD: 2.40% | Final: $10,128.16 (+1.3%)
+  Avg hold: 4.9 bars
+
+  Strategy breakdown:
+    VWAP_REVERT         :   1 trades | WR: 100.0% |   +4.00R
+    STOCH_REVERSAL      :   7 trades | WR:  28.6% |   +3.00R
+    PREV_DAY_HL         :   6 trades | WR:  33.3% |   +2.58R
+    EMA_BOUNCE          :   8 trades | WR:  37.5% |   +1.62R
+    ORB                 :   6 trades | WR:  33.3% |   +1.09R
+    MEAN_REVERT         :   2 trades | WR:  50.0% |   +0.33R
+
+  Symbol breakdown:
+    GER40     :   1 trades | WR: 100.0% |   +4.00R
+    USDCHF    :   7 trades | WR:  28.6% |   +3.00R
+    USOIL     :   6 trades | WR:  33.3% |   +2.52R
+    ETHUSD    :   3 trades | WR:  33.3% |   +1.90R
+    USDJPY    :   3 trades | WR:  33.3% |   +1.50R
+    GBPJPY    :   3 trades | WR:  33.3% |   +0.68R
+    BTCUSD    :   2 trades | WR:  50.0% |   +0.33R
+    GBPUSD    :   3 trades | WR:  33.3% |   -0.41R
+    US100     :   2 trades | WR:  50.0% |   -0.90R
+
+  Exit reasons:
+    BREAKEVEN_STOP      : 12
+    SL_HIT              : 9
+    TP_HIT              : 5
+    END_OF_TEST         : 4
+
+  Last 15 trades:
+  Sym        Dir   Strategy             Type        P&L Reason         
+  ----------------------------------------------------------------------
+  GBPUSD     SHORT ORB                  RUNNER   -1.00R SL_HIT         
+  BTCUSD     SHORT MEAN_REVERT          SCALP    -1.00R SL_HIT         
+  USOIL      LONG  EMA_BOUNCE           SCALP    -1.00R SL_HIT         
+  USOIL      LONG  EMA_BOUNCE           SCALP    +3.00R TP_HIT         
+  BTCUSD     SHORT MEAN_REVERT          SCALP    +1.33R TP_HIT         
+  USDCHF     LONG  STOCH_REVERSAL       SCALP    +0.00R BREAKEVEN_STOP 
+  ETHUSD     SHORT PREV_DAY_HL          RUNNER   -1.00R SL_HIT         
+  USDJPY     SHORT ORB                  RUNNER   +0.00R BREAKEVEN_STOP 
+  USDCHF     LONG  STOCH_REVERSAL       SCALP    +0.00R BREAKEVEN_STOP 
+  USDCHF     LONG  STOCH_REVERSAL       SCALP    +2.00R TP_HIT         
+  US100      SHORT EMA_BOUNCE           RUNNER   +0.10R END_OF_TEST    
+  ETHUSD     SHORT PREV_DAY_HL          RUNNER   +2.90R END_OF_TEST    
+  GER40      LONG  VWAP_REVERT          SCALP    +4.00R TP_HIT         
+  GBPUSD     SHORT ORB                  RUNNER   +1.59R END_OF_TEST    
+  USOIL      LONG  EMA_BOUNCE           SCALP    +0.52R END_OF_TEST    
+
+################################################################################
+  TEST 2: SPREAD & SLIPPAGE STRESS
+  3x normal spreads + random slippage up to 0.3 ATR
+################################################################################
+    [3x Spread + Slippage] Bar 100/191 (35%) | Bal: $9,985.26 | Trades: 7
+
+  ======================================================================
+  3X SPREAD + SLIPPAGE
+  ======================================================================
+  Trades: 26 | W: 10 L: 11 BE: 5 | WR: 38.5%
+  Total R: +6.81R | PF: 1.68 | Avg W: +1.68R | Avg L: -0.91R
+  Max DD: 2.98% | Final: $9,819.74 (-1.8%)
+  Avg hold: 6.5 bars
+
+  Strategy breakdown:
+    STOCH_REVERSAL      :   7 trades | WR:  42.9% |   +2.25R
+    VWAP_REVERT         :   1 trades | WR: 100.0% |   +2.14R
+    PREV_DAY_HL         :   6 trades | WR:  33.3% |   +1.74R
+    EMA_BOUNCE          :   5 trades | WR:  40.0% |   +0.91R
+    ORB                 :   5 trades | WR:  40.0% |   +0.78R
+    MEAN_REVERT         :   2 trades | WR:   0.0% |   -1.00R
+
+  Symbol breakdown:
+    USDCHF    :   7 trades | WR:  42.9% |   +2.25R
+    GER40     :   1 trades | WR: 100.0% |   +2.14R
+    USOIL     :   3 trades | WR:  66.7% |   +1.91R
+    ETHUSD    :   3 trades | WR:  33.3% |   +1.55R
+    USDJPY    :   2 trades | WR:  50.0% |   +1.53R
+    GBPJPY    :   3 trades | WR:  33.3% |   +0.19R
+    GBPUSD    :   3 trades | WR:  33.3% |   -0.75R
+    BTCUSD    :   2 trades | WR:   0.0% |   -1.00R
+    US100     :   2 trades | WR:   0.0% |   -1.00R
+
+  Exit reasons:
+    SL_HIT              : 10
+    BREAKEVEN_STOP      : 7
+    TP_HIT              : 5
+    END_OF_TEST         : 4
+
+  Last 15 trades:
+  Sym        Dir   Strategy             Type        P&L Reason         
+  ----------------------------------------------------------------------
+  USDCHF     LONG  STOCH_REVERSAL       SCALP    +0.00R BREAKEVEN_STOP 
+  USDCHF     LONG  STOCH_REVERSAL       SCALP    +1.81R TP_HIT         
+  GBPUSD     SHORT ORB                  RUNNER   -1.00R SL_HIT         
+  BTCUSD     SHORT MEAN_REVERT          SCALP    -1.00R SL_HIT         
+  BTCUSD     SHORT MEAN_REVERT          SCALP    +0.00R BREAKEVEN_STOP 
+  USDCHF     LONG  STOCH_REVERSAL       SCALP    -1.00R SL_HIT         
+  ETHUSD     SHORT PREV_DAY_HL          RUNNER   -1.00R SL_HIT         
+  USDJPY     SHORT ORB                  RUNNER   +0.00R BREAKEVEN_STOP 
+  USDCHF     LONG  STOCH_REVERSAL       SCALP    +0.00R BREAKEVEN_STOP 
+  USDCHF     LONG  STOCH_REVERSAL       SCALP    +1.28R TP_HIT         
+  US100      SHORT EMA_BOUNCE           RUNNER   -0.00R END_OF_TEST    
+  ETHUSD     SHORT PREV_DAY_HL          RUNNER   +2.55R END_OF_TEST    
+  GER40      LONG  VWAP_REVERT          SCALP    +2.14R TP_HIT         
+  GBPUSD     SHORT ORB                  RUNNER   +1.25R END_OF_TEST    
+  USOIL      LONG  EMA_BOUNCE           SCALP    +0.35R END_OF_TEST    
+
+################################################################################
+  TEST 3: CHOPPY MARKET
+  0.3% random price noise injected into every bar
+################################################################################
+    [Choppy Market (0.3% noise)] Bar 100/191 (35%) | Bal: $9,994.94 | Trades: 17
+
+  ======================================================================
+  CHOPPY MARKET (0.3% NOISE)
+  ======================================================================
+  Trades: 44 | W: 11 L: 27 BE: 6 | WR: 25.0%
+  Total R: -12.80R | PF: 0.49 | Avg W: +1.13R | Avg L: -0.94R
+  Max DD: 0.19% | Final: $10,278.33 (+2.8%)
+  Avg hold: 7.2 bars
+
+  Strategy breakdown:
+    STOCH_REVERSAL      :   4 trades | WR:  75.0% |   +6.00R
+    EMA_BOUNCE          :   7 trades | WR:  42.9% |   +2.52R
+    MEAN_REVERT         :   1 trades | WR: 100.0% |   +1.33R
+    GAP_FILL            :   4 trades | WR:  25.0% |   -0.72R
+    PREV_DAY_HL         :   4 trades | WR:   0.0% |   -3.00R
+    ORB                 :  24 trades | WR:  12.5% |  -18.93R
+
+  Symbol breakdown:
+    USDCHF    :   4 trades | WR:  75.0% |   +6.00R
+    USOIL     :   6 trades | WR:  33.3% |   +2.49R
+    BTCUSD    :   1 trades | WR: 100.0% |   +1.33R
+    US100     :   1 trades | WR: 100.0% |   +0.03R
+    ETHUSD    :   1 trades | WR:   0.0% |   +0.00R
+    NZDUSD    :   4 trades | WR:  25.0% |   -0.72R
+    GBPJPY    :   3 trades | WR:   0.0% |   -3.00R
+    USDJPY    :   9 trades | WR:  22.2% |   -6.70R
+    GBPUSD    :  15 trades | WR:   6.7% |  -12.23R
+
+  Exit reasons:
+    SL_HIT              : 25
+    BREAKEVEN_STOP      : 9
+    TP_HIT              : 7
+    END_OF_TEST         : 3
+
+  Last 15 trades:
+  Sym        Dir   Strategy             Type        P&L Reason         
+  ----------------------------------------------------------------------
+  GBPUSD     SHORT ORB                  RUNNER   -1.00R SL_HIT         
+  USOIL      LONG  EMA_BOUNCE           SCALP    +3.00R TP_HIT         
+  USDJPY     SHORT ORB                  RUNNER   -1.00R SL_HIT         
+  BTCUSD     SHORT MEAN_REVERT          SCALP    +1.33R TP_HIT         
+  GBPUSD     SHORT ORB                  RUNNER   -1.00R SL_HIT         
+  GBPUSD     SHORT ORB                  RUNNER   -1.00R SL_HIT         
+  USDJPY     SHORT ORB                  RUNNER   +0.27R BREAKEVEN_STOP 
+  ETHUSD     SHORT PREV_DAY_HL          RUNNER   +0.00R BREAKEVEN_STOP 
+  USDCHF     LONG  STOCH_REVERSAL       SCALP    +2.00R TP_HIT         
+  GBPUSD     SHORT ORB                  RUNNER   -1.00R SL_HIT         
+  USDCHF     LONG  STOCH_REVERSAL       SCALP    +0.00R BREAKEVEN_STOP 
+  NZDUSD     SHORT GAP_FILL             SCALP    +0.55R END_OF_TEST    
+  US100      SHORT EMA_BOUNCE           SCALP    +0.03R END_OF_TEST    
+  GBPUSD     SHORT ORB                  RUNNER   -1.00R SL_HIT         
+  USOIL      LONG  EMA_BOUNCE           SCALP    +0.49R END_OF_TEST    
+
+################################################################################
+  TEST 4: DRAWDOWN RECOVERY
+  Start with 4 forced consecutive losses, then trade normally
+################################################################################
+    [Drawdown Recovery (4 forced losses)] Bar 100/191 (35%) | Bal: $9,925.35 | Trades: 8
+
+  ======================================================================
+  DRAWDOWN RECOVERY (4 FORCED LOSSES)
+  ======================================================================
+  Trades: 30 | W: 10 L: 12 BE: 8 | WR: 33.3%
+  Total R: +6.94R | PF: 1.58 | Avg W: +1.89R | Avg L: -1.00R
+  Max DD: 3.13% | Final: $10,035.62 (+0.4%)
+  Avg hold: 4.5 bars
+
+  Strategy breakdown:
+    VWAP_REVERT         :   1 trades | WR: 100.0% |   +4.00R
+    STOCH_REVERSAL      :   7 trades | WR:  28.6% |   +2.00R
+    EMA_BOUNCE          :   8 trades | WR:  37.5% |   +1.62R
+    ORB                 :   6 trades | WR:  33.3% |   +1.09R
+    MEAN_REVERT         :   2 trades | WR:  50.0% |   +0.33R
+    PREV_DAY_HL         :   6 trades | WR:  16.7% |   -2.10R
+
+  Symbol breakdown:
+    GER40     :   1 trades | WR: 100.0% |   +4.00R
+    USOIL     :   6 trades | WR:  33.3% |   +2.52R
+    USDCHF    :   7 trades | WR:  28.6% |   +2.00R
+    USDJPY    :   3 trades | WR:  33.3% |   +1.50R
+    ETHUSD    :   3 trades | WR:  33.3% |   +0.90R
+    BTCUSD    :   2 trades | WR:  50.0% |   +0.33R
+    GBPUSD    :   3 trades | WR:  33.3% |   -0.41R
+    US100     :   2 trades | WR:  50.0% |   -0.90R
+    GBPJPY    :   3 trades | WR:   0.0% |   -3.00R
+
+  Exit reasons:
+    BREAKEVEN_STOP      : 9
+    SL_HIT              : 8
+    TP_HIT              : 5
+    FORCED_LOSS         : 4
+    END_OF_TEST         : 4
+
+  Last 15 trades:
+  Sym        Dir   Strategy             Type        P&L Reason         
+  ----------------------------------------------------------------------
+  GBPUSD     SHORT ORB                  RUNNER   -1.00R SL_HIT         
+  BTCUSD     SHORT MEAN_REVERT          SCALP    -1.00R SL_HIT         
+  USOIL      LONG  EMA_BOUNCE           SCALP    -1.00R SL_HIT         
+  USOIL      LONG  EMA_BOUNCE           SCALP    +3.00R TP_HIT         
+  BTCUSD     SHORT MEAN_REVERT          SCALP    +1.33R TP_HIT         
+  USDCHF     LONG  STOCH_REVERSAL       SCALP    +0.00R BREAKEVEN_STOP 
+  ETHUSD     SHORT PREV_DAY_HL          RUNNER   -1.00R SL_HIT         
+  USDJPY     SHORT ORB                  RUNNER   +0.00R BREAKEVEN_STOP 
+  USDCHF     LONG  STOCH_REVERSAL       SCALP    +0.00R BREAKEVEN_STOP 
+  USDCHF     LONG  STOCH_REVERSAL       SCALP    +2.00R TP_HIT         
+  US100      SHORT EMA_BOUNCE           RUNNER   +0.10R END_OF_TEST    
+  ETHUSD     SHORT PREV_DAY_HL          RUNNER   +2.90R END_OF_TEST    
+  GER40      LONG  VWAP_REVERT          SCALP    +4.00R TP_HIT         
+  GBPUSD     SHORT ORB                  RUNNER   +1.59R END_OF_TEST    
+  USOIL      LONG  EMA_BOUNCE           SCALP    +0.52R END_OF_TEST    
+
+################################################################################
+  TEST 5: WORST CASE (all stress combined)
+  3x spreads + slippage + noise + 4 forced losses
+################################################################################
+    [WORST CASE (everything bad)] Bar 100/191 (35%) | Bal: $9,985.47 | Trades: 20
+
+  ======================================================================
+  WORST CASE (EVERYTHING BAD)
+  ======================================================================
+  Trades: 52 | W: 11 L: 38 BE: 3 | WR: 21.2%
+  Total R: -22.60R | PF: 0.36 | Avg W: +1.17R | Avg L: -0.93R
+  Max DD: 0.78% | Final: $10,250.01 (+2.5%)
+  Avg hold: 5.9 bars
+
+  Strategy breakdown:
+    VWAP_REVERT         :   1 trades | WR: 100.0% |   +3.50R
+    EMA_BOUNCE          :   3 trades | WR:  66.7% |   +1.79R
+    STOCH_REVERSAL      :   2 trades | WR:  50.0% |   +1.54R
+    MEAN_REVERT         :   1 trades | WR: 100.0% |   +1.27R
+    GAP_FILL            :   7 trades | WR:  57.1% |   +0.69R
+    PREV_DAY_HL         :  12 trades | WR:   8.3% |   -8.13R
+    ORB                 :  26 trades | WR:   3.8% |  -23.27R
+
+  Symbol breakdown:
+    GER40     :   1 trades | WR: 100.0% |   +3.50R
+    USOIL     :   3 trades | WR:  66.7% |   +1.79R
+    USDCHF    :   2 trades | WR:  50.0% |   +1.54R
+    BTCUSD    :   1 trades | WR: 100.0% |   +1.27R
+    ETHUSD    :   3 trades | WR:  33.3% |   +0.87R
+    NZDUSD    :   7 trades | WR:  57.1% |   +0.69R
+    USDJPY    :  11 trades | WR:   9.1% |   -8.27R
+    GBPJPY    :   9 trades | WR:   0.0% |   -9.00R
+    GBPUSD    :  15 trades | WR:   0.0% |  -15.00R
+
+  Exit reasons:
+    SL_HIT              : 31
+    TP_HIT              : 10
+    FORCED_LOSS         : 4
+    END_OF_TEST         : 4
+    BREAKEVEN_STOP      : 3
+
+  Last 15 trades:
+  Sym        Dir   Strategy             Type        P&L Reason         
+  ----------------------------------------------------------------------
+  GBPJPY     SHORT PREV_DAY_HL          RUNNER   -1.00R SL_HIT         
+  NZDUSD     SHORT GAP_FILL             SCALP    -0.00R TP_HIT         
+  GBPUSD     SHORT ORB                  RUNNER   -1.00R SL_HIT         
+  NZDUSD     SHORT GAP_FILL             SCALP    -0.46R END_OF_TEST    
+  ETHUSD     SHORT PREV_DAY_HL          RUNNER   -1.00R SL_HIT         
+  USDJPY     SHORT ORB                  RUNNER   -1.00R SL_HIT         
+  USDJPY     SHORT ORB                  RUNNER   +0.73R END_OF_TEST    
+  GBPUSD     SHORT ORB                  RUNNER   -1.00R SL_HIT         
+  GBPUSD     SHORT ORB                  RUNNER   -1.00R SL_HIT         
+  USDCHF     LONG  STOCH_REVERSAL       SCALP    +0.00R BREAKEVEN_STOP 
+  GBPUSD     SHORT ORB                  RUNNER   -1.00R SL_HIT         
+  ETHUSD     SHORT PREV_DAY_HL          RUNNER   +1.87R END_OF_TEST    
+  GER40      LONG  VWAP_REVERT          SCALP    +3.50R TP_HIT         
+  GBPUSD     SHORT ORB                  RUNNER   -1.00R SL_HIT         
+  USOIL      LONG  EMA_BOUNCE           SCALP    +0.23R END_OF_TEST    
+
+################################################################################
+  TEST 6: MONTE CARLO (1000 simulations)
+  Randomize trade order from baseline results
+################################################################################
+
+  ======================================================================
+  MONTE CARLO (1000 simulations)
+  ======================================================================
+  P&L Distribution:
+    Worst:    -11.4%
+    P5:       +27.1%
+    P25:      +27.1%
+    Median:   +27.1%
+    Mean:     +26.9%
+    P75:      +27.1%
+    P95:      +27.1%
+    Best:     +27.1%
+    Std Dev:  2.7%
+
+  Drawdown Distribution:
+    Avg Max DD:   6.77%
+    P95 Max DD:   10.43%
+    Worst Max DD: 16.46%
+
+  Risk:
+    Bust rate (hit -10% DD): 0.5%
+    FTMO pass rate (>10% profit, <10% DD): 94.5%
+
+================================================================================
+  COMPARISON TABLE
+================================================================================
+
+  Test                                      Trades     WR   Total R     PF   MaxDD       P&L
+  ------------------------------------------------------------------------------------
+  Standard v22.1                                30  36.7%   +12.62R  2.40   2.40% $ +128.16
+  3x Spread + Slippage                          26  38.5%    +6.81R  1.68   2.98% $ -180.26
+  Choppy Market (0.3% noise)                    44  25.0%   -12.80R  0.49   0.19% $ +278.33
+  Drawdown Recovery (4 forced losses)           30  33.3%    +6.94R  1.58   3.13% $  +35.62
+  WORST CASE (everything bad)                   52  21.2%   -22.60R  0.36   0.78% $ +250.01
+
+================================================================================
+  VERDICT
+================================================================================
+
+  Baseline profitable:     YES (+12.62R, 2.40% DD)
+  Survives worst case:     NO (-22.60R, 0.78% DD)
+
+  >>> Baseline good but stressed. Deploy with caution. <<<
+
+================================================================================
+  ALL TESTS COMPLETE
+================================================================================
+

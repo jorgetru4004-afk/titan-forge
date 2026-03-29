@@ -117,10 +117,12 @@ SETUP_CONFIG: Dict[str, InstrumentSetup] = {
         expectancy=0.555, win_rate=0.80, profit_factor=4.19,
     ),
 
-    # 4. UK100 — VWAP Revert | BOTH | SCALP
+    # 4. UK100 — VWAP Revert | SHORT only | SCALP
+    #    v22.1 FIX: Was BOTH direction, both LONG trades lost -2.00R.
+    #    Instrument in structural downtrend. SHORT only.
     "UK100": InstrumentSetup(
         symbol="UK100", strategy=Strategy.VWAP_REVERT,
-        direction=Direction.BOTH, sl_atr=0.5, tp_atr=4.0,
+        direction=Direction.SHORT, sl_atr=0.5, tp_atr=4.0,
         risk_pct=2.0, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
         expectancy=0.358, win_rate=0.47, profit_factor=1.19,
     ),
@@ -149,11 +151,13 @@ SETUP_CONFIG: Dict[str, InstrumentSetup] = {
         expectancy=0.307, win_rate=0.46, profit_factor=1.14,
     ),
 
-    # 8. EURUSD — Confluence | SHORT only | RUNNER
+    # 8. EURUSD — Mean Revert | SHORT only | SCALP
+    #    v22.1 FIX: Was CONFLUENCE, fired 25 of 55 trades (45% of activity)
+    #    at 20% win rate = -2.68R. Mean Revert only fires on RSI extremes.
     "EURUSD": InstrumentSetup(
-        symbol="EURUSD", strategy=Strategy.CONFLUENCE,
-        direction=Direction.SHORT, sl_atr=0.8, tp_atr=1.0,
-        risk_pct=2.0, trade_type=TradeType.RUNNER, order_type=OrderType.MARKET,
+        symbol="EURUSD", strategy=Strategy.MEAN_REVERT,
+        direction=Direction.SHORT, sl_atr=0.8, tp_atr=1.5,
+        risk_pct=2.0, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
         expectancy=0.385, win_rate=0.46, profit_factor=1.37,
     ),
 

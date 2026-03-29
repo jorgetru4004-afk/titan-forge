@@ -579,9 +579,9 @@ def _signal_confluence(snap: MarketSnapshot, setup: InstrumentSetup) -> Optional
             snap.minus_di > snap.plus_di,
         ]
         signals_aligned = sum(checks)
-        if signals_aligned >= 3:
+        if signals_aligned >= 4:
             direction = "SHORT"
-            confidence = 0.20 + signals_aligned * 0.08  # 0.44 at 3, 0.52 at 4, 0.60 at 5
+            confidence = 0.20 + signals_aligned * 0.08  # 0.52 at 4, 0.60 at 5
 
     # Check LONG conditions
     if direction is None and setup.direction in (Direction.LONG, Direction.BOTH):
@@ -593,7 +593,7 @@ def _signal_confluence(snap: MarketSnapshot, setup: InstrumentSetup) -> Optional
             snap.plus_di > snap.minus_di,
         ]
         signals_aligned = sum(checks)
-        if signals_aligned >= 3:
+        if signals_aligned >= 4:
             direction = "LONG"
             confidence = 0.20 + signals_aligned * 0.08
 
