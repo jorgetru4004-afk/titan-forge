@@ -98,7 +98,7 @@ SETUP_CONFIG: Dict[str, InstrumentSetup] = {
     #    the highest WR strategy at 43.8%.
     "USDCHF": InstrumentSetup(
         symbol="USDCHF", strategy=Strategy.MEAN_REVERT,
-        direction=Direction.LONG, sl_atr=0.5, tp_atr=1.5,
+        direction=Direction.BOTH, sl_atr=0.5, tp_atr=1.5,
         risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
         expectancy=0.225, win_rate=0.55, profit_factor=2.07,
     ),
@@ -141,7 +141,7 @@ SETUP_CONFIG: Dict[str, InstrumentSetup] = {
     # 6. ETHUSD — Prev Day HL | SHORT only | RUNNER
     "ETHUSD": InstrumentSetup(
         symbol="ETHUSD", strategy=Strategy.PREV_DAY_HL,
-        direction=Direction.SHORT, sl_atr=1.0, tp_atr=1.5,
+        direction=Direction.BOTH, sl_atr=1.0, tp_atr=1.5,
         risk_pct=1.2, trade_type=TradeType.RUNNER, order_type=OrderType.MARKET,
         expectancy=0.481, win_rate=0.56, profit_factor=1.93,
     ),
@@ -159,7 +159,7 @@ SETUP_CONFIG: Dict[str, InstrumentSetup] = {
     #    at 20% win rate = -2.68R. Mean Revert only fires on RSI extremes.
     "EURUSD": InstrumentSetup(
         symbol="EURUSD", strategy=Strategy.MEAN_REVERT,
-        direction=Direction.SHORT, sl_atr=0.8, tp_atr=1.5,
+        direction=Direction.BOTH, sl_atr=0.8, tp_atr=1.5,
         risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
         expectancy=0.385, win_rate=0.46, profit_factor=1.37,
     ),
@@ -186,7 +186,7 @@ SETUP_CONFIG: Dict[str, InstrumentSetup] = {
     # 11. USDJPY — Gap Fill / ORB | SHORT only | RUNNER
     "USDJPY": InstrumentSetup(
         symbol="USDJPY", strategy=Strategy.ORB,
-        direction=Direction.SHORT, sl_atr=0.8, tp_atr=1.5,
+        direction=Direction.BOTH, sl_atr=0.8, tp_atr=1.5,
         risk_pct=1.5, trade_type=TradeType.RUNNER, order_type=OrderType.MARKET,
         expectancy=0.333, win_rate=0.67, profit_factor=1.25,
     ),
@@ -194,7 +194,7 @@ SETUP_CONFIG: Dict[str, InstrumentSetup] = {
     # 12. BTCUSD — Mean Revert | SHORT only | SCALP
     "BTCUSD": InstrumentSetup(
         symbol="BTCUSD", strategy=Strategy.MEAN_REVERT,
-        direction=Direction.SHORT, sl_atr=1.5, tp_atr=2.0,
+        direction=Direction.BOTH, sl_atr=1.5, tp_atr=2.0,
         risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
         expectancy=0.220, win_rate=0.42, profit_factor=0.97,
     ),
@@ -213,7 +213,7 @@ SETUP_CONFIG: Dict[str, InstrumentSetup] = {
     #    Stoch Reversal catches overbought/oversold extremes.
     "GBPUSD": InstrumentSetup(
         symbol="GBPUSD", strategy=Strategy.STOCH_REVERSAL,
-        direction=Direction.SHORT, sl_atr=0.5, tp_atr=1.0,
+        direction=Direction.BOTH, sl_atr=0.5, tp_atr=1.0,
         risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
         expectancy=0.235, win_rate=0.49, profit_factor=1.42,
     ),

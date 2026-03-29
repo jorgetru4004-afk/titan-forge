@@ -1,0 +1,329 @@
+
+================================================================================
+  FORGE v22 — LONG SYSTEM + COMBINED BACKTEST
+  6 months real data | LONG standalone | SHORT+LONG combined
+================================================================================
+
+  SHORT config: 14 instruments
+  LONG config:  14 instruments
+
+--------------------------------------------------------------------------------
+  Fetching 6 months of hourly data...
+--------------------------------------------------------------------------------
+  BTCUSD (X:BTCUSD)... OK - 4320 bars
+  ETHUSD (X:ETHUSD)... OK - 4320 bars
+  EURGBP (C:EURGBP)... OK - 3042 bars
+  EURUSD (C:EURUSD)... OK - 3042 bars
+  GBPJPY (C:GBPJPY)... OK - 3011 bars
+  GBPUSD (C:GBPUSD)... OK - 3042 bars
+  GER40 (EWG)... OK - 1249 bars
+  NZDUSD (C:NZDUSD)... OK - 3042 bars
+  UK100 (EWU)... OK - 1108 bars
+  US100 (QQQ)... OK - 1974 bars
+  USDCHF (C:USDCHF)... OK - 3042 bars
+  USDJPY (C:USDJPY)... OK - 3042 bars
+  USOIL (USO)... OK - 1960 bars
+  XAUUSD (C:XAUUSD)... OK - 3018 bars
+
+  Loaded: 14 instruments
+
+################################################################################
+  TEST 1: LONG CONFIG STANDALONE (6 months)
+################################################################################
+
+    [LONG Standalone 6mo] Walking 60 to 4320 (4260 bars)...
+    [LONG Standalone 6mo] Bar 500/4320 (10%) | $10,753.16 | 121 trades
+    [LONG Standalone 6mo] Bar 1000/4320 (22%) | $11,433.49 | 248 trades
+    [LONG Standalone 6mo] Bar 1500/4320 (34%) | $12,957.58 | 369 trades
+    [LONG Standalone 6mo] Bar 2000/4320 (46%) | $13,877.87 | 481 trades
+    [LONG Standalone 6mo] Bar 2500/4320 (57%) | $15,430.62 | 537 trades
+    [LONG Standalone 6mo] Bar 3000/4320 (69%) | $14,567.23 | 626 trades
+    [LONG Standalone 6mo] Bar 3500/4320 (81%) | $15,235.93 | 661 trades
+    [LONG Standalone 6mo] Bar 4000/4320 (92%) | $15,994.55 | 688 trades
+
+  ===========================================================================
+  LONG STANDALONE 6MO
+  ===========================================================================
+  Trades: 715 | W:253 L:262 BE:200 | WR: 35.4%
+  Total R: +234.23R | PF: 1.90 | Avg W: +1.95R | Avg L: -0.99R
+  Max DD: 13.37% | Final: $16,312.28 (+63.1%)
+  Max consec losses: 7 | Avg hold: 4.3 bars
+  LONG:  715 trades +234.23R | SHORT: 0 trades +0.00R
+  SCALP: 712 trades +235.23R | RUNNER: 3 trades -1.00R
+  Monthly R: +28.37R | Est months: 8.3
+
+  Strategy breakdown:
+    STOCH_REVERSAL      :  544 trades | WR:  36.2% |  +163.67R
+    MEAN_REVERT         :   82 trades | WR:  36.6% |   +48.63R
+    VWAP_REVERT         :   12 trades | WR:  16.7% |   +11.00R
+    EMA_BOUNCE          :   57 trades | WR:  17.5% |    +8.00R
+    GAP_FILL            :   20 trades | WR:  70.0% |    +2.94R
+
+  Symbol breakdown:
+    ETHUSD    :  132 trades | WR:  40.9% |   +44.00R | L:132 S:0
+    GBPJPY    :   86 trades | WR:  40.7% |   +39.00R | L:86 S:0
+    US100     :   86 trades | WR:  34.9% |   +25.00R | L:86 S:0
+    GBPUSD    :   40 trades | WR:  37.5% |   +24.00R | L:40 S:0
+    USOIL     :   66 trades | WR:  31.8% |   +20.00R | L:66 S:0
+    BTCUSD    :  124 trades | WR:  37.9% |   +18.67R | L:124 S:0
+    XAUUSD    :   50 trades | WR:  20.0% |   +17.00R | L:50 S:0
+    GER40     :   12 trades | WR:  16.7% |   +11.00R | L:12 S:0
+    EURGBP    :    7 trades | WR:  57.1% |    +9.00R | L:7 S:0
+    USDJPY    :   57 trades | WR:  17.5% |    +8.00R | L:57 S:0
+    UK100     :   14 trades | WR:  35.7% |    +7.00R | L:14 S:0
+    NZDUSD    :   11 trades | WR:  27.3% |    +6.00R | L:11 S:0
+    USDCHF    :   20 trades | WR:  70.0% |    +2.94R | L:20 S:0
+    EURUSD    :   10 trades | WR:  30.0% |    +2.63R | L:10 S:0
+
+  Exit reasons:
+    SL_HIT              : 258
+    TP_HIT              : 257
+    BE_STOP             : 200
+
+  Last 15 trades:
+  Sym        Dir   Strat                Type        P&L  Hold Reason         
+  ------------------------------------------------------------------------
+  BTCUSD     LONG  STOCH_REVERSAL       SCALP    +1.33R    4b TP_HIT         
+  BTCUSD     LONG  STOCH_REVERSAL       SCALP    +0.00R    7b BE_STOP        
+  BTCUSD     LONG  STOCH_REVERSAL       SCALP    -1.00R    5b SL_HIT         
+  ETHUSD     LONG  STOCH_REVERSAL       SCALP    -1.00R    3b SL_HIT         
+  BTCUSD     LONG  STOCH_REVERSAL       SCALP    -1.00R    3b SL_HIT         
+  ETHUSD     LONG  STOCH_REVERSAL       SCALP    +0.00R    2b BE_STOP        
+  ETHUSD     LONG  STOCH_REVERSAL       SCALP    -1.00R    2b SL_HIT         
+  BTCUSD     LONG  STOCH_REVERSAL       SCALP    -1.00R    3b SL_HIT         
+  ETHUSD     LONG  STOCH_REVERSAL       SCALP    +1.50R    2b TP_HIT         
+  BTCUSD     LONG  STOCH_REVERSAL       SCALP    +1.33R    2b TP_HIT         
+  BTCUSD     LONG  STOCH_REVERSAL       SCALP    -1.00R    3b SL_HIT         
+  ETHUSD     LONG  STOCH_REVERSAL       SCALP    +1.50R    2b TP_HIT         
+  BTCUSD     LONG  STOCH_REVERSAL       SCALP    +1.33R    2b TP_HIT         
+  ETHUSD     LONG  STOCH_REVERSAL       SCALP    +0.00R    2b BE_STOP        
+  BTCUSD     LONG  STOCH_REVERSAL       SCALP    +1.33R   19b TP_HIT         
+
+################################################################################
+  TEST 2: LONG STRESS (3x spread + slippage)
+################################################################################
+
+    [LONG Stress 6mo] Walking 60 to 4320 (4260 bars)...
+    [LONG Stress 6mo] Bar 500/4320 (10%) | $10,158.52 | 122 trades
+    [LONG Stress 6mo] Bar 1000/4320 (22%) | $10,231.33 | 245 trades
+    [LONG Stress 6mo] Bar 1500/4320 (34%) | $11,009.48 | 362 trades
+    [LONG Stress 6mo] Bar 2000/4320 (46%) | $11,799.88 | 473 trades
+    [LONG Stress 6mo] Bar 2500/4320 (57%) | $12,986.01 | 528 trades
+    [LONG Stress 6mo] Bar 3000/4320 (69%) | $11,279.63 | 617 trades
+    [LONG Stress 6mo] Bar 3500/4320 (81%) | $11,731.87 | 652 trades
+    [LONG Stress 6mo] Bar 4000/4320 (92%) | $11,781.47 | 677 trades
+
+  ===========================================================================
+  LONG STRESS 6MO
+  ===========================================================================
+  Trades: 703 | W:261 L:309 BE:133 | WR: 37.1%
+  Total R: +71.33R | PF: 1.23 | Avg W: +1.44R | Avg L: -0.99R
+  Max DD: 21.70% | Final: $11,595.03 (+16.0%)
+  Max consec losses: 9 | Avg hold: 4.7 bars
+  LONG:  703 trades +71.33R | SHORT: 0 trades +0.00R
+  SCALP: 700 trades +73.33R | RUNNER: 3 trades -2.00R
+  Monthly R: +8.64R | Est months: 8.3
+
+  Strategy breakdown:
+    STOCH_REVERSAL      :  533 trades | WR:  38.6% |   +41.82R
+    MEAN_REVERT         :   82 trades | WR:  36.6% |   +24.59R
+    VWAP_REVERT         :   12 trades | WR:  16.7% |    +5.12R
+    GAP_FILL            :   20 trades | WR:  65.0% |    +0.65R
+    EMA_BOUNCE          :   56 trades | WR:  17.9% |    -0.85R
+
+  Symbol breakdown:
+    ETHUSD    :  126 trades | WR:  43.7% |   +16.99R | L:126 S:0
+    GBPJPY    :   85 trades | WR:  43.5% |   +12.51R | L:85 S:0
+    GBPUSD    :   40 trades | WR:  35.0% |   +11.37R | L:40 S:0
+    BTCUSD    :  121 trades | WR:  42.1% |    +6.02R | L:121 S:0
+    GER40     :   12 trades | WR:  16.7% |    +5.12R | L:12 S:0
+    EURGBP    :    7 trades | WR:  57.1% |    +5.00R | L:7 S:0
+    USOIL     :   66 trades | WR:  34.8% |    +3.92R | L:66 S:0
+    NZDUSD    :   11 trades | WR:  27.3% |    +3.52R | L:11 S:0
+    UK100     :   14 trades | WR:  35.7% |    +2.41R | L:14 S:0
+    EURUSD    :   10 trades | WR:  40.0% |    +2.30R | L:10 S:0
+    XAUUSD    :   50 trades | WR:  18.0% |    +1.83R | L:50 S:0
+    USDCHF    :   20 trades | WR:  65.0% |    +0.65R | L:20 S:0
+    US100     :   85 trades | WR:  36.5% |    +0.55R | L:85 S:0
+    USDJPY    :   56 trades | WR:  17.9% |    -0.85R | L:56 S:0
+
+  Exit reasons:
+    SL_HIT              : 304
+    TP_HIT              : 266
+    BE_STOP             : 133
+
+################################################################################
+  TEST 3: SHORT CONFIG (baseline for comparison)
+################################################################################
+
+    [SHORT Baseline 6mo] Walking 60 to 4320 (4260 bars)...
+    [SHORT Baseline 6mo] Bar 500/4320 (10%) | $9,884.67 | 131 trades
+    [SHORT Baseline 6mo] Bar 1000/4320 (22%) | $9,613.66 | 292 trades
+    [SHORT Baseline 6mo] Bar 1500/4320 (34%) | $9,564.52 | 435 trades
+
+  ===========================================================================
+  SHORT BASELINE 6MO
+  ===========================================================================
+  Trades: 544 | W:160 L:234 BE:150 | WR: 29.4%
+  Total R: +162.24R | PF: 1.69 | Avg W: +2.48R | Avg L: -1.00R
+  Max DD: 11.94% | Final: $8,999.25 (-10.0%)
+  Max consec losses: 6 | Avg hold: 4.7 bars
+  LONG:  244 trades +42.88R | SHORT: 300 trades +119.37R
+  SCALP: 317 trades +152.00R | RUNNER: 227 trades +10.24R
+  Monthly R: +46.13R | Est months: 3.5
+
+  Strategy breakdown:
+    MEAN_REVERT         :   91 trades | WR:  38.5% |   +70.18R
+    STOCH_REVERSAL      :  122 trades | WR:  36.9% |   +42.00R
+    VWAP_REVERT         :   68 trades | WR:  17.6% |   +29.80R
+    ORB                 :  112 trades | WR:  25.0% |   +14.26R
+    EMA_BOUNCE          :   35 trades | WR:  28.6% |    +7.05R
+    GAP_FILL            :    4 trades | WR: 100.0% |    +2.10R
+    PREV_DAY_HL         :  112 trades | WR:  23.2% |    -3.15R
+
+  Symbol breakdown:
+    GBPUSD    :  122 trades | WR:  36.9% |   +42.00R | L:59 S:63
+    USDCHF    :   49 trades | WR:  36.7% |   +39.24R | L:28 S:21
+    EURUSD    :   16 trades | WR:  62.5% |   +32.61R | L:8 S:8
+    UK100     :   12 trades | WR:  33.3% |   +30.00R | L:0 S:12
+    USDJPY    :  112 trades | WR:  25.0% |   +14.26R | L:62 S:50
+    GER40     :   18 trades | WR:  22.2% |   +12.00R | L:12 S:6
+    USOIL     :   22 trades | WR:  22.7% |    +5.55R | L:22 S:0
+    EURGBP    :    7 trades | WR:  57.1% |    +2.80R | L:0 S:7
+    NZDUSD    :    4 trades | WR: 100.0% |    +2.10R | L:0 S:4
+    US100     :   13 trades | WR:  38.5% |    +1.50R | L:0 S:13
+    GBPJPY    :   40 trades | WR:  22.5% |    -0.99R | L:0 S:40
+    BTCUSD    :   26 trades | WR:  26.9% |    -1.67R | L:17 S:9
+    ETHUSD    :   72 trades | WR:  23.6% |    -2.15R | L:36 S:36
+    XAUUSD    :   31 trades | WR:   0.0% |   -15.00R | L:0 S:31
+
+  Exit reasons:
+    SL_HIT              : 234
+    BE_STOP             : 205
+    TP_HIT              : 102
+    END_OF_TEST         : 3
+
+################################################################################
+  TEST 4: COMBINED (SHORT strategies + LONG strategies)
+  Each instrument gets its SHORT strategy + LONG strategy
+################################################################################
+
+    [COMBINED SHORT+LONG 6mo] Walking 60 to 4320 (4260 bars)...
+    [COMBINED SHORT+LONG 6mo] Bar 500/4320 (10%) | $9,849.71 | 152 trades
+    [COMBINED SHORT+LONG 6mo] Bar 1000/4320 (22%) | $9,564.99 | 336 trades
+    [COMBINED SHORT+LONG 6mo] Bar 1500/4320 (34%) | $9,499.31 | 501 trades
+
+  ===========================================================================
+  COMBINED SHORT+LONG 6MO
+  ===========================================================================
+  Trades: 608 | W:169 L:272 BE:167 | WR: 27.8%
+  Total R: +110.78R | PF: 1.38 | Avg W: +2.36R | Avg L: -1.06R
+  Max DD: 36.54% | Final: $6,483.50 (-35.2%)
+  Max consec losses: 6 | Avg hold: 5.2 bars
+  LONG:  307 trades +20.38R | SHORT: 301 trades +90.40R
+  SCALP: 352 trades +94.65R | RUNNER: 256 trades +16.13R
+  Monthly R: +32.08R | Est months: 3.5
+
+  Strategy breakdown:
+    STOCH_REVERSAL      :  119 trades | WR:  37.0% |   +41.00R
+    ORB                 :  108 trades | WR:  25.9% |   +31.01R
+    MEAN_REVERT         :   88 trades | WR:  37.5% |   +28.93R
+    VWAP_REVERT         :   77 trades | WR:  16.9% |   +27.40R
+    GAP_FILL            :   12 trades | WR:  66.7% |    +0.31R
+    EMA_BOUNCE          :   61 trades | WR:  21.3% |    -5.87R
+    PREV_DAY_HL         :  143 trades | WR:  21.0% |   -12.01R
+
+  Symbol breakdown:
+    GBPUSD    :  119 trades | WR:  37.0% |   +41.00R | L:59 S:60
+    USDCHF    :   47 trades | WR:  36.2% |   +34.00R | L:26 S:21
+    USDJPY    :  108 trades | WR:  25.9% |   +31.01R | L:60 S:48
+    UK100     :   14 trades | WR:  21.4% |   +20.00R | L:3 S:11
+    GER40     :   18 trades | WR:  16.7% |   +16.00R | L:12 S:6
+    EURUSD    :   15 trades | WR:  60.0% |   +14.88R | L:8 S:7
+    EURGBP    :   16 trades | WR:  43.8% |    +6.40R | L:9 S:7
+    NZDUSD    :   12 trades | WR:  66.7% |    +0.31R | L:8 S:4
+    US100     :   27 trades | WR:  29.6% |    -2.00R | L:14 S:13
+    ETHUSD    :   72 trades | WR:  23.6% |    -2.15R | L:36 S:36
+    USOIL     :   34 trades | WR:  14.7% |    -3.87R | L:21 S:13
+    GBPJPY    :   71 trades | WR:  18.3% |    -9.85R | L:33 S:38
+    XAUUSD    :   29 trades | WR:   0.0% |   -15.00R | L:1 S:28
+    BTCUSD    :   26 trades | WR:  26.9% |   -19.94R | L:17 S:9
+
+  Exit reasons:
+    SL_HIT              : 269
+    BE_STOP             : 225
+    TP_HIT              : 112
+    END_OF_TEST         : 2
+
+  Last 15 trades:
+  Sym        Dir   Strat                Type        P&L  Hold Reason         
+  ------------------------------------------------------------------------
+  GBPJPY     LONG  PREV_DAY_HL          RUNNER   -1.00R    1b SL_HIT         
+  GBPUSD     LONG  STOCH_REVERSAL       SCALP    +2.00R    2b TP_HIT         
+  GBPJPY     SHORT PREV_DAY_HL          RUNNER   +2.89R   16b BE_STOP        
+  EURUSD     LONG  MEAN_REVERT          SCALP    +1.88R    6b TP_HIT         
+  USDCHF     SHORT MEAN_REVERT          SCALP    +3.00R    8b TP_HIT         
+  BTCUSD     LONG  MEAN_REVERT          SCALP    -1.00R    5b SL_HIT         
+  USOIL      LONG  EMA_BOUNCE           SCALP    +0.00R   24b BE_STOP        
+  BTCUSD     LONG  MEAN_REVERT          SCALP    -1.00R    6b SL_HIT         
+  US100      SHORT EMA_BOUNCE           RUNNER   -1.00R   18b SL_HIT         
+  GBPUSD     LONG  STOCH_REVERSAL       SCALP    +0.00R    7b BE_STOP        
+  USDJPY     SHORT ORB                  RUNNER   +0.00R    3b BE_STOP        
+  GBPJPY     SHORT PREV_DAY_HL          RUNNER   -1.00R    2b SL_HIT         
+  USDJPY     LONG  ORB                  RUNNER  +12.99R    2b END_OF_TEST    
+  BTCUSD     LONG  MEAN_REVERT          SCALP    -1.00R    2b SL_HIT         
+  BTCUSD     LONG  MEAN_REVERT          SCALP   -18.27R    0b END_OF_TEST    
+
+################################################################################
+  TEST 5: MONTE CARLO (1000 sims, 1.5% risk)
+################################################################################
+
+  LONG:
+
+  ===========================================================================
+  MONTE CARLO (1000 sims, 1.5% risk)
+  ===========================================================================
+  P&L: Worst:-11.1% P5:-6.9% Median:+85.5% Mean:+249.2% P95:+1070.5% Best:+2804.2%
+  DD:  Avg:10.4% P95:11.1% Worst:11.3%
+  Bust rate: 99.3% | FTMO pass rate: 0.7%
+
+  SHORT:
+
+  ===========================================================================
+  MONTE CARLO (1000 sims, 1.5% risk)
+  ===========================================================================
+  P&L: Worst:-11.2% P5:-10.1% Median:+16.2% Mean:+40.2% P95:+161.9% Best:+651.2%
+  DD:  Avg:10.4% P95:11.2% Worst:11.3%
+  Bust rate: 100.0% | FTMO pass rate: 0.0%
+
+  COMBINED:
+
+  ===========================================================================
+  MONTE CARLO (1000 sims, 1.5% risk)
+  ===========================================================================
+  P&L: Worst:-33.7% P5:-11.1% Median:+4.9% Mean:+17.2% P95:+87.3% Best:+428.5%
+  DD:  Avg:11.9% P95:28.5% Worst:33.8%
+  Bust rate: 100.0% | FTMO pass rate: 0.0%
+
+================================================================================
+  COMPARISON TABLE
+================================================================================
+
+  Test                                 Trades     WR         R     PF      DD        L/S
+  ----------------------------------------------------------------------------------
+  LONG Standalone 6mo                     715  35.4%  +234.23R  1.90  13.37%    715L/0S
+  LONG Stress 6mo                         703  37.1%   +71.33R  1.23  21.70%    703L/0S
+  SHORT Baseline 6mo                      544  29.4%  +162.24R  1.69  11.94%  244L/300S
+  COMBINED SHORT+LONG 6mo                 608  27.8%  +110.78R  1.38  36.54%  307L/301S
+
+================================================================================
+  VERDICT
+================================================================================
+  LONG standalone     : FAIL | +234.23R | DD: 13.37% | 715 trades
+  SHORT baseline      : FAIL | +162.24R | DD: 11.94% | 544 trades
+  COMBINED            : FAIL | +110.78R | DD: 36.54% | 608 trades
+
+================================================================================
+  TESTS COMPLETE
+================================================================================
+

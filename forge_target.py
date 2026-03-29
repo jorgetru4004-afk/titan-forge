@@ -503,7 +503,7 @@ def collect_key_levels(tracker, ctx) -> List[float]:
 
     # VWAP
     vwap = getattr(tracker, 'rth_vwap', 0) or getattr(tracker, 'vwap', 0)
-    if vwap > 0:
+    if vwap is not None and vwap > 0:
         levels.append(vwap)
 
     # Round numbers
