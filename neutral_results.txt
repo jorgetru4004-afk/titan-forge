@@ -1,0 +1,26 @@
+
+================================================================================
+  FORGE v22 — NEUTRAL REGIME RESEARCH
+  Finding strategies that work in CHOPPY / RANGING markets
+  ADX < 20 or BB squeeze = NEUTRAL regime
+================================================================================
+
+  Instruments: 14
+  Strategies: 8
+  Testing on: 9 months of data, NEUTRAL bars only
+
+  Fetching 9 months of hourly data...
+    USDCHF (C:USDCHF)... OK - 4580 bars
+    GER40 (EWG)... OK - 1906 bars
+    NZDUSD (C:NZDUSD)... OK - 4580 bars
+    UK100 (EWU)... OK - 1658 bars
+    US100 (QQQ)... OK - 2961 bars
+    ETHUSD (X:ETHUSD)... OK - 6503 bars
+    EURGBP (C:EURGBP)... OK - 4580 bars
+    EURUSD (C:EURUSD)... OK - 4580 bars
+    XAUUSD (C:XAUUSD)... OK - 4547 bars
+    GBPJPY (C:GBPJPY)... OK - 4549 bars
+    USDJPY (C:USDJPY)... OK - 4580 bars
+    BTCUSD (X:BTCUSD)... OK - 6503 bars
+    USOIL (USO)... OK - 2924 bars
+    GBPUSD (C:GBPUSD)... 

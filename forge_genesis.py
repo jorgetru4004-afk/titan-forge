@@ -555,3 +555,16 @@ if __name__ == "__main__":
     
     print(f"\n  ✅ GENESIS self-test passed")
     print("=" * 60 + "\n")
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# LEGACY STUBS — v21 main.py imports these
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def auto_evolve(*args, **kwargs):
+    """Legacy stub for v21 compatibility. No-op."""
+    return {}
+
+def get_calibrated_wr(*args, **kwargs):
+    """Legacy stub for v21 compatibility. Returns None."""
+    return None
