@@ -52,9 +52,9 @@ ALIASES = {
     "EURGBP":["EURGBP.sim","EURGBP"],"GBPJPY":["GBPJPY.sim","GBPJPY"],
     "NZDUSD":["NZDUSD.sim","NZDUSD"],"XAUUSD":["XAUUSD.sim","GOLD.sim","XAUUSD"],
     "US100":["US100.sim","USTEC.sim","NAS100.sim","US100"],
-    "GER40":["GER40.sim","DE40.sim","GER40"],"UK100":["UK100.sim","FTSE.sim","UK100"],
+
     "USOIL":["USOIL.sim","WTI.sim","XTIUSD.sim","OIL.sim"],
-    "BTCUSD":["BTCUSD.sim","BITCOIN.sim","BTCUSD"],"ETHUSD":["ETHUSD.sim","ETHEREUM.sim","ETHUSD"],
+    "BTCUSD":["BTCUSD.sim","BITCOIN.sim","BTCUSD"],
 }
 POLYGON_MAP = {
     "EURUSD":"C:EURUSD","GBPUSD":"C:GBPUSD","USDJPY":"C:USDJPY","USDCHF":"C:USDCHF",
@@ -64,7 +64,7 @@ POLYGON_MAP = {
 }
 ATR_FB = {"EURUSD":0.008,"GBPUSD":0.01,"USDJPY":1.0,"USDCHF":0.007,"EURGBP":0.005,
           "GBPJPY":1.5,"NZDUSD":0.006,"XAUUSD":30.0,"US100":200.0,
-          "USOIL":2.0,"BTCUSD":2000.0,"ETHUSD":100.0}
+          "USOIL":2.0,"BTCUSD":2000.0}
 CRYPTO = {"BTCUSD"}
 
 def is_open(sym):
@@ -248,15 +248,86 @@ def should_smart_exit(snap, direction, current_r):
     
     return False, ""
 
+# ═══ PEAK P&L TRACKING ═══
+_peak_pnl: Dict[str,float] = {}     # {position_id: highest unrealized $}
+_trade_meta: Dict[str,Dict] = {}    # {position_id: {type, entry, tp, sl, direction, sym}}
+_stall_cycles: Dict[str,int] = {}   # {position_id: cycles since last new high}
+
 async def manage_pos(adapter,account):
+    global _peak_pnl, _trade_meta, _stall_cycles
+    
+    # Clean up tracking for closed positions
+    open_ids = set()
+    for pos in account.open_positions:
+        open_ids.add(str(getattr(pos,'position_id','')))
+    for old_id in list(_peak_pnl.keys()):
+        if old_id not in open_ids:
+            _peak_pnl.pop(old_id, None)
+            _trade_meta.pop(old_id, None)
+            _stall_cycles.pop(old_id, None)
+    
     for pos in account.open_positions:
         try:
+            pid = str(getattr(pos,'position_id',''))
             if pos.stop_loss is None or pos.entry_price is None: continue
             risk=abs(pos.entry_price-pos.stop_loss)
             if risk<=0: continue
             il=pos.direction.value=="long"
             cur=pos.current_price or pos.entry_price
             cr=((cur-pos.entry_price)/risk) if il else ((pos.entry_price-cur)/risk)
+            
+            # Get unrealized P&L
+            unrealized = float(getattr(pos, 'unrealizedProfit', 0) or getattr(pos, 'profit', 0) or 0)
+            
+            # --- PEAK P&L TRACKING ---
+            if pid not in _peak_pnl:
+                _peak_pnl[pid] = unrealized
+                _stall_cycles[pid] = 0
+            if unrealized > _peak_pnl[pid]:
+                _peak_pnl[pid] = unrealized
+                _stall_cycles[pid] = 0
+            else:
+                _stall_cycles[pid] = _stall_cycles.get(pid, 0) + 1
+            
+            # --- RULE 1: 80% TP CLOSE (SCALP only) ---
+            tp_price = getattr(pos, 'take_profit', None)
+            if tp_price and pos.entry_price and tp_price != 0:
+                tp_dist = abs(tp_price - pos.entry_price)
+                if tp_dist > 0:
+                    if il:
+                        price_moved = cur - pos.entry_price
+                    else:
+                        price_moved = pos.entry_price - cur
+                    pct_of_tp = price_moved / tp_dist if tp_dist > 0 else 0
+                    # Check if this is a SCALP (not RUNNER) via trade_meta or default
+                    meta = _trade_meta.get(pid, {})
+                    trade_type = meta.get('type', 'SCALP')
+                    if trade_type == 'SCALP' and pct_of_tp >= 0.80 and price_moved > 0:
+                        logger.info("[80%%TP] %s closing at %.0f%% of TP (moved %.5f of %.5f)", pid, pct_of_tp*100, price_moved, tp_dist)
+                        try:
+                            await adapter.close_position(pid)
+                            logger.info("[80%%TP] CLOSED %s at $%.2f profit", pid, unrealized)
+                            send_telegram(f"💰 <b>80% TP CLOSE</b>\n{meta.get('sym','?')} closed at {pct_of_tp*100:.0f}% of target\nP&L: ${unrealized:.2f}")
+                        except Exception as e:
+                            logger.error("[80%%TP] Close failed %s: %s", pid, e)
+                        continue
+            
+            # --- RULE 2: PEAK PULLBACK (any trade) ---
+            peak = _peak_pnl.get(pid, 0)
+            if peak >= 50 and unrealized > 0:  # Peak was at least $50
+                giveback = peak - unrealized
+                giveback_pct = giveback / peak if peak > 0 else 0
+                if giveback_pct >= 0.40:
+                    logger.info("[PULLBACK] %s peak=$%.0f now=$%.0f gave back %.0f%%", pid, peak, unrealized, giveback_pct*100)
+                    try:
+                        await adapter.close_position(pid)
+                        logger.info("[PULLBACK] CLOSED %s, saved $%.2f", pid, unrealized)
+                        send_telegram(f"📉 <b>PEAK PULLBACK</b>\nPeak: ${peak:.0f} → Now: ${unrealized:.0f}\nGave back {giveback_pct*100:.0f}%\nLocked: ${unrealized:.2f}")
+                    except Exception as e:
+                        logger.error("[PULLBACK] Close failed %s: %s", pid, e)
+                    continue
+            
+            # --- TRAILING STOPS ---
             be=pos.entry_price;csl=pos.stop_loss
             def better(ns): return (ns>csl+risk*0.1) if il else (ns<csl-risk*0.1)
             ns=None
@@ -269,9 +340,29 @@ async def manage_pos(adapter,account):
             if cr>=2.5 and better(be+risk*1.7 if il else be-risk*1.7): ns=be+risk*1.7 if il else be-risk*1.7
             if cr>=3.0 and better(be+risk*2.3 if il else be-risk*2.3): ns=be+risk*2.3 if il else be-risk*2.3
             if ns:
-                try: await adapter.modify_position(pos.position_id,new_stop_loss=round(ns,5)); logger.info("[TRAIL] %s %.1fR→SL=%.5f",pos.position_id,cr,ns)
-                except Exception as e: logger.error("[TRAIL] %s: %s",pos.position_id,e)
-            # Smart exit: check if momentum is dying
+                ns_rounded = round(ns, 5)
+                logger.info("[TRAIL] Attempting SL move: %s %.1fR → SL=%.5f (was %.5f)", pid, cr, ns_rounded, csl)
+                try:
+                    # Try modify_position with both SL and TP to avoid broker rejection
+                    tp_val = getattr(pos, 'take_profit', None)
+                    if tp_val:
+                        await adapter.modify_position(pid, new_stop_loss=ns_rounded, new_take_profit=round(tp_val, 5))
+                    else:
+                        await adapter.modify_position(pid, new_stop_loss=ns_rounded)
+                    logger.info("[TRAIL] ✅ SL moved: %s → %.5f", pid, ns_rounded)
+                except Exception as e:
+                    logger.error("[TRAIL] ❌ modify_position FAILED %s: %s", pid, e)
+                    # Fallback: try with position_id as string
+                    try:
+                        if tp_val:
+                            await adapter.modify_position(str(pid), new_stop_loss=ns_rounded, new_take_profit=round(tp_val, 5))
+                        else:
+                            await adapter.modify_position(str(pid), new_stop_loss=ns_rounded)
+                        logger.info("[TRAIL] ✅ SL moved (retry): %s → %.5f", pid, ns_rounded)
+                    except Exception as e2:
+                        logger.error("[TRAIL] ❌ Retry also failed %s: %s", pid, e2)
+            
+            # Smart exit: check if momentum is dying (only for trades above 0.8R)
             if cr >= 0.8:
                 inst_name = str(getattr(pos,'instrument','') or getattr(pos,'symbol',''))
                 pos_dir = "LONG" if il else "SHORT"
@@ -284,13 +375,14 @@ async def manage_pos(adapter,account):
                                 should_exit, reason = should_smart_exit(sn, pos_dir, cr)
                                 if should_exit:
                                     try:
-                                        await adapter.close_position(pos.position_id)
-                                        logger.info("🧠 SMART EXIT: %s %.1fR — %s", pos.position_id, cr, reason)
+                                        await adapter.close_position(pid)
+                                        logger.info("[SMART_EXIT] %s %.1fR — %s", pid, cr, reason)
                                         send_telegram(f"🧠 <b>SMART EXIT</b>\n{sym} {pos_dir} closed at +{cr:.1f}R\nReason: {reason}")
                                     except Exception as e:
-                                        logger.error("[SMART_EXIT] %s: %s", pos.position_id, e)
+                                        logger.error("[SMART_EXIT] %s: %s", pid, e)
                         break
-        except: pass
+        except Exception as e:
+            logger.error("[MANAGE_POS] %s: %s", getattr(pos,'position_id','?'), e)
 
 # ══════════════════════════════════════════════════════════════════════
 # TRADING LOOP
@@ -452,6 +544,14 @@ async def trading_loop(adapter):
                 oid=getattr(result,'order_id',tid)
                 if filled:
                     logger.info("✅ FILLED: %s @ %.5f",oid,fp);cds[sig.symbol]=time.time();dt+=1
+                    # Register with smart exit tracking
+                    _trade_meta[str(oid)] = {
+                        'type': sig.trade_type.value.upper() if hasattr(sig.trade_type,'value') else 'SCALP',
+                        'entry': fp, 'tp': sig.tp_price, 'sl': sig.sl_price,
+                        'direction': sig.direction, 'sym': sig.symbol,
+                    }
+                    _peak_pnl[str(oid)] = 0.0
+                    _stall_cycles[str(oid)] = 0
                     send_telegram(f"🔫 <b>V22 TRADE</b>\n{'🟢' if sig.direction=='LONG' else '🔴'} {sig.symbol} {sig.direction}\n{sig.strategy.value}|{sig.trade_type.value}|{regime}\nEntry: {fp:.5f}\nSL: {sig.sl_price:.5f} TP: {sig.tp_price:.5f}\nLots: {lots} Conf: {sig.final_confidence:.2f}\nTrade #{dt}")
                     if _evidence and TradeFingerprint:
                         try: _evidence.log_trade(TradeFingerprint(trade_id=tid,timestamp=now.isoformat(),setup_id=f"{sig.symbol}_{sig.strategy.value}",instrument=sig.symbol,direction=sig.direction,entry_price=fp,stop_loss=sig.sl_price,take_profit=sig.tp_price,lot_size=lots,firm_id="FTMO",regime=regime,bayesian_posterior=sig.final_confidence,conviction_level="STANDARD",capital_vehicle="PROP_FIRM"))
