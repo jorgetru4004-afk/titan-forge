@@ -276,18 +276,32 @@ async def manage_pos(adapter,account):
             cur=pos.current_price or pos.entry_price
             cr=((cur-pos.entry_price)/risk) if il else ((pos.entry_price-cur)/risk)
             
-            # Get unrealized P&L
-            unrealized = float(getattr(pos, 'unrealizedProfit', 0) or getattr(pos, 'profit', 0) or 0)
+            # Get unrealized P&L — try MetaAPI attributes, fallback to R-based estimate
+            unrealized = 0.0
+            for attr in ('unrealizedProfit', 'unrealized_profit', 'profit', 'unrealizedPl', 'upl'):
+                val = getattr(pos, attr, None)
+                if val is not None and val != 0:
+                    unrealized = float(val)
+                    break
+            # Fallback: estimate from R ratio (cr) × account risk per trade
+            if unrealized == 0 and cr != 0:
+                unrealized = cr * 100000 * RISK_PCT  # cr × $1,500 per R
+                logger.debug("[PNL_EST] %s cr=%.2f est=$%.0f", pid, cr, unrealized)
             
             # --- PEAK P&L TRACKING ---
             if pid not in _peak_pnl:
                 _peak_pnl[pid] = unrealized
                 _stall_cycles[pid] = 0
+                logger.info("[PEAK] New track: %s $%.0f", pid, unrealized)
             if unrealized > _peak_pnl[pid]:
                 _peak_pnl[pid] = unrealized
                 _stall_cycles[pid] = 0
             else:
                 _stall_cycles[pid] = _stall_cycles.get(pid, 0) + 1
+            
+            # Log peak status every 10 cycles for visibility
+            if _stall_cycles.get(pid, 0) % 10 == 0 and _peak_pnl.get(pid, 0) > 50:
+                logger.info("[PEAK] %s peak=$%.0f now=$%.0f (%.0f%% of peak)", pid, _peak_pnl[pid], unrealized, (unrealized/_peak_pnl[pid]*100) if _peak_pnl[pid]>0 else 0)
             
             # --- RULE 1: 80% TP CLOSE (SCALP only) ---
             tp_price = getattr(pos, 'take_profit', None)
