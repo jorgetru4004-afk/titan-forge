@@ -32,6 +32,31 @@ except ImportError:
 from forge_signals_v22 import SignalEngine, MarketSnapshot
 from forge_instruments_v22 import SETUP_CONFIG, get_all_symbols
 from forge_correlation import CorrelationGuard
+
+# ── ADD 3 NEW INSTRUMENTS (researched: AUDNZD 85%WR/PF3.25, AUDUSD +27R, EURJPY +21R) ──
+try:
+    from forge_instruments_v22 import InstrumentSetup, StrategyType, TradeType
+    # AUDNZD: GAP_FILL SHORT, 85% WR, PF 3.25 — best config in entire system
+    SETUP_CONFIG["AUDNZD"] = InstrumentSetup(
+        strategy=StrategyType.GAP_FILL, direction="SHORT", trade_type=TradeType.SCALP,
+        risk_pct=0.015, tp_atr=1.0, sl_atr=1.5, time_of_day_edge=None,
+        session_filter=None, min_atr=0.0, notes="85% WR, PF 3.25, NEUTRAL dominant"
+    )
+    # AUDUSD: EMA_BOUNCE SHORT, +27R, solid edge
+    SETUP_CONFIG["AUDUSD"] = InstrumentSetup(
+        strategy=StrategyType.EMA_BOUNCE, direction="SHORT", trade_type=TradeType.SCALP,
+        risk_pct=0.015, tp_atr=1.5, sl_atr=1.5, time_of_day_edge=None,
+        session_filter=None, min_atr=0.0, notes="+27.2R, PF 1.50, NEUTRAL"
+    )
+    # EURJPY: GAP_FILL LONG, +21R, RUNNER type for bigger moves
+    SETUP_CONFIG["EURJPY"] = InstrumentSetup(
+        strategy=StrategyType.GAP_FILL, direction="LONG", trade_type=TradeType.RUNNER,
+        risk_pct=0.015, tp_atr=2.0, sl_atr=1.5, time_of_day_edge=None,
+        session_filter=None, min_atr=0.0, notes="+21.1R, PF 1.75, NEUTRAL RUNNER"
+    )
+    logger.info("[INSTRUMENTS] Added AUDNZD, AUDUSD, EURJPY — 14 instruments total")
+except Exception as e:
+    logger.warning("[INSTRUMENTS] Could not add new pairs: %s — they'll be skipped", e)
 try:
     from forge_genesis import create_genesis, extract_regime_indicators, auto_evolve, get_calibrated_wr
     GENESIS_OK = True
@@ -52,19 +77,22 @@ ALIASES = {
     "EURGBP":["EURGBP.sim","EURGBP"],"GBPJPY":["GBPJPY.sim","GBPJPY"],
     "NZDUSD":["NZDUSD.sim","NZDUSD"],"XAUUSD":["XAUUSD.sim","GOLD.sim","XAUUSD"],
     "US100":["US100.sim","USTEC.sim","NAS100.sim","US100"],
-
     "USOIL":["USOIL.sim","WTI.sim","XTIUSD.sim","OIL.sim"],
     "BTCUSD":["BTCUSD.sim","BITCOIN.sim","BTCUSD"],
+    "AUDNZD":["AUDNZD.sim","AUDNZD"],"AUDUSD":["AUDUSD.sim","AUDUSD"],
+    "EURJPY":["EURJPY.sim","EURJPY"],
 }
 POLYGON_MAP = {
     "EURUSD":"C:EURUSD","GBPUSD":"C:GBPUSD","USDJPY":"C:USDJPY","USDCHF":"C:USDCHF",
     "EURGBP":"C:EURGBP","GBPJPY":"C:GBPJPY","NZDUSD":"C:NZDUSD","XAUUSD":"C:XAUUSD",
     "US100":"I:NDX","USOIL":"C:XTIUSD",
     "BTCUSD":"X:BTCUSD",
+    "AUDNZD":"C:AUDNZD","AUDUSD":"C:AUDUSD","EURJPY":"C:EURJPY",
 }
 ATR_FB = {"EURUSD":0.008,"GBPUSD":0.01,"USDJPY":1.0,"USDCHF":0.007,"EURGBP":0.005,
           "GBPJPY":1.5,"NZDUSD":0.006,"XAUUSD":30.0,"US100":200.0,
-          "USOIL":2.0,"BTCUSD":2000.0}
+          "USOIL":2.0,"BTCUSD":2000.0,
+          "AUDNZD":0.006,"AUDUSD":0.007,"EURJPY":1.2}
 CRYPTO = {"BTCUSD"}
 
 def is_open(sym):
@@ -195,8 +223,8 @@ def make_snap(sym,cd,bid,ask):
 def calc_lots(sym,bal,sl_dist):
     if sl_dist<=0: return 0.01
     risk_d=bal*RISK_PCT
-    if sym in ("EURUSD","GBPUSD","NZDUSD","USDCHF","EURGBP"): lots=risk_d/(sl_dist*100000)
-    elif sym in ("USDJPY","GBPJPY"): lots=risk_d/(sl_dist*1000)
+    if sym in ("EURUSD","GBPUSD","NZDUSD","USDCHF","EURGBP","AUDNZD","AUDUSD"): lots=risk_d/(sl_dist*100000)
+    elif sym in ("USDJPY","GBPJPY","EURJPY"): lots=risk_d/(sl_dist*1000)
     elif sym=="XAUUSD": lots=risk_d/(sl_dist*100)
     elif sym in ("US100","GER40","UK100"): lots=risk_d/(sl_dist*10)
     elif sym=="USOIL": lots=risk_d/(sl_dist*1000)
@@ -252,6 +280,7 @@ def should_smart_exit(snap, direction, current_r):
 _peak_pnl: Dict[str,float] = {}     # {position_id: highest unrealized $}
 _trade_meta: Dict[str,Dict] = {}    # {position_id: {type, entry, tp, sl, direction, sym}}
 _stall_cycles: Dict[str,int] = {}   # {position_id: cycles since last new high}
+_genesis_ref = None  # Set by trading_loop, used by manage_pos
 
 async def manage_pos(adapter,account):
     global _peak_pnl, _trade_meta, _stall_cycles
@@ -327,8 +356,8 @@ async def manage_pos(adapter,account):
             # Detect regime for this instrument via GENESIS or fallback to ADX
             sym_name = str(getattr(pos,'instrument','') or getattr(pos,'symbol',''))
             pos_regime = "RANGE"  # default
-            if genesis:
-                for sym_key, state in genesis.states.items():
+            if _genesis_ref:
+                for sym_key, state in _genesis_ref.states.items():
                     mt = _resolved.get(sym_key)
                     if mt and mt in sym_name:
                         pos_regime = "TREND" if state.current_regime in ("BEAR","BULL") else "RANGE"
@@ -461,11 +490,13 @@ async def manage_pos(adapter,account):
 # ══════════════════════════════════════════════════════════════════════
 
 async def trading_loop(adapter):
+    global _genesis_ref
     sig_engine=SignalEngine();corr=CorrelationGuard()
     genesis=None
     if GENESIS_OK:
         try: genesis=create_genesis(default_regime="BEAR"); logger.info("[GENESIS] S=%d L=%d N=%d",len(genesis.short_config),len(genesis.long_config),len(genesis.neutral_config))
         except Exception as e: logger.warning("[GENESIS] %s",e)
+    _genesis_ref = genesis  # Make accessible to manage_pos
     ib=100000
     try:
         a=await adapter.get_account_state()
