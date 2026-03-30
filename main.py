@@ -434,7 +434,7 @@ async def trading_loop(adapter):
             dirn=OrderDirection.LONG if sig.direction=="LONG" else OrderDirection.SHORT
             order=OrderRequest(instrument=mt,direction=dirn,size=lots,order_type=OrderType.MARKET,
                 stop_loss=round(sig.sl_price,5),take_profit=round(sig.tp_price,5),
-                comment=f"V22|{sig.symbol}|{sig.strategy.value}|{regime}")
+                comment=f"V22|{sig.symbol[:6]}|{sig.strategy.value[:8]}|{regime[:4]}")
             logger.info("🔫 %s %s %s|%s|%s E=%.5f SL=%.5f TP=%.5f %.2flots conf=%.2f",
                 sig.symbol,sig.direction,sig.strategy.value,sig.trade_type.value,regime,
                 sig.entry_price,sig.sl_price,sig.tp_price,lots,sig.final_confidence)
