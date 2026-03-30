@@ -43,7 +43,7 @@ POLYGON_API_KEY = os.environ.get("POLYGON_API_KEY", "")
 
 # ── CONFIG ──
 MAX_OPEN = 5; MAX_DAILY = 15; COOLDOWN = 120; RISK_PCT = 0.015
-MAX_LOT = 2.0; CYCLE_SPEED = 60; CONVICTION_MIN = 0.20; DD_EMERGENCY = 0.09
+MAX_LOT = 2.0; CYCLE_SPEED = 30; CONVICTION_MIN = 0.20; DD_EMERGENCY = 0.09
 CANDLE_REFRESH = 600
 
 ALIASES = {
@@ -323,26 +323,41 @@ async def manage_pos(adapter,account):
             meta = _trade_meta.get(pid, {})
             trade_type = meta.get('type', 'SCALP')
             
-            # --- RULE 1: TIERED PEAK PULLBACK (runs on ALL positions) ---
+            # --- GENESIS SWITCH EXIT ---
+            # Detect regime for this instrument via GENESIS or fallback to ADX
+            sym_name = str(getattr(pos,'instrument','') or getattr(pos,'symbol',''))
+            pos_regime = "RANGE"  # default
+            if genesis:
+                for sym_key, state in genesis.states.items():
+                    mt = _resolved.get(sym_key)
+                    if mt and mt in sym_name:
+                        pos_regime = "TREND" if state.current_regime in ("BEAR","BULL") else "RANGE"
+                        break
+            
             peak = _peak_pnl.get(pid, 0)
-            if peak >= 50 and unrealized > 0:
-                if peak >= 500:
-                    max_giveback = 0.15
-                elif peak >= 200:
-                    max_giveback = 0.25
+            if peak >= 30 and unrealized > 0:
+                if pos_regime == "TREND":
+                    # CHANDELIER: ATR-adaptive trail — lets trends run
+                    # Trail distance = 10% of peak (wider for big moves)
+                    trail_pct = 0.90  # Keep 90% minimum
+                    if peak >= 500:
+                        trail_pct = 0.88  # Slightly looser on big trending moves
+                    max_giveback = 1.0 - trail_pct
                 else:
-                    max_giveback = 0.35
+                    # RANGE: Tight 90% trail — lock ranging profits fast
+                    max_giveback = 0.10  # Only allow 10% giveback
                 
                 giveback = peak - unrealized
                 giveback_pct = giveback / peak if peak > 0 else 0
                 if giveback_pct >= max_giveback:
-                    logger.info("[PULLBACK] %s peak=$%.0f now=$%.0f gave back %.0f%% (limit=%.0f%%)", pid, peak, unrealized, giveback_pct*100, max_giveback*100)
+                    logger.info("[GENESIS_EXIT] %s %s peak=$%.0f now=$%.0f gave back %.0f%% (limit=%.0f%% regime=%s)",
+                        pid, sym_name, peak, unrealized, giveback_pct*100, max_giveback*100, pos_regime)
                     try:
                         await adapter.close_position(pid)
-                        logger.info("[PULLBACK] CLOSED %s, saved $%.2f", pid, unrealized)
-                        send_telegram(f"📉 <b>PEAK PULLBACK</b>\nPeak: ${peak:.0f} → Now: ${unrealized:.0f}\nGave back {giveback_pct*100:.0f}%\nLocked: ${unrealized:.2f}")
+                        logger.info("[GENESIS_EXIT] CLOSED %s, saved $%.2f", pid, unrealized)
+                        send_telegram(f"🧠 <b>GENESIS EXIT</b>\n{sym_name} ({pos_regime})\nPeak: ${peak:.0f} → Locked: ${unrealized:.0f}\nGave back {giveback_pct*100:.0f}%\nRegime: {pos_regime}")
                     except Exception as e:
-                        logger.error("[PULLBACK] Close failed %s: %s", pid, e)
+                        logger.error("[GENESIS_EXIT] Close failed %s: %s", pid, e)
                     continue
             
             # === Below here requires stop_loss and entry_price ===
@@ -372,18 +387,30 @@ async def manage_pos(adapter,account):
                             logger.error("[80%%TP] Close failed %s: %s", pid, e)
                         continue
             
-            # --- TRAILING STOPS ---
+            # --- GENESIS SWITCH TRAILING STOPS (broker-side SL) ---
+            # TREND: Chandelier (peak - 0.3R × ATR ratio) — lets trends run
+            # RANGE: Dynamic 90% of peak R — locks tight
             be=entry;csl=sl
-            def better(ns): return (ns>csl+risk*0.1) if il else (ns<csl-risk*0.1)
+            def better(ns): return (ns>csl+risk*0.03) if il else (ns<csl-risk*0.03)
             ns=None
-            if cr>=0.5 and better(be): ns=be
-            if cr>=0.8 and better(be+risk*0.2 if il else be-risk*0.2): ns=be+risk*0.2 if il else be-risk*0.2
-            if cr>=1.0 and better(be+risk*0.3 if il else be-risk*0.3): ns=be+risk*0.3 if il else be-risk*0.3
-            if cr>=1.3 and better(be+risk*0.5 if il else be-risk*0.5): ns=be+risk*0.5 if il else be-risk*0.5
-            if cr>=1.5 and better(be+risk*0.7 if il else be-risk*0.7): ns=be+risk*0.7 if il else be-risk*0.7
-            if cr>=2.0 and better(be+risk*1.2 if il else be-risk*1.2): ns=be+risk*1.2 if il else be-risk*1.2
-            if cr>=2.5 and better(be+risk*1.7 if il else be-risk*1.7): ns=be+risk*1.7 if il else be-risk*1.7
-            if cr>=3.0 and better(be+risk*2.3 if il else be-risk*2.3): ns=be+risk*2.3 if il else be-risk*2.3
+            
+            if cr >= 0.4:
+                ns = be  # Breakeven at +0.4R always
+            
+            if cr >= 0.5 and pos_regime == "RANGE":
+                # RANGE: SL = entry + peak_cr * 0.90 (90% of best move)
+                target_lock = cr * 0.90
+                target_sl = be + risk * target_lock if il else be - risk * target_lock
+                if better(target_sl):
+                    ns = target_sl
+            elif cr >= 0.5 and pos_regime == "TREND":
+                # TREND: Chandelier — SL = peak - fixed R distance (widens with move)
+                # Trail distance: 0.25R for small moves, 0.35R for big moves
+                trail_r = 0.25 if cr < 2.0 else 0.35
+                target_lock = max(0.0, cr - trail_r)
+                target_sl = be + risk * target_lock if il else be - risk * target_lock
+                if better(target_sl):
+                    ns = target_sl
             if ns:
                 ns_rounded = round(ns, 5)
                 logger.info("[TRAIL] Attempting SL move: %s %.1fR → SL=%.5f (was %.5f)", pid, cr, ns_rounded, csl)
