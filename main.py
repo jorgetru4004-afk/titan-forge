@@ -321,7 +321,7 @@ async def trading_loop(adapter):
     logger.info("🔱 FORGE V22 — %d INSTRUMENTS ARMED",ok)
     send_telegram(f"🔱 <b>TITAN FORGE V22 ONLINE</b>\n{ok} instruments | GENESIS {'ON' if genesis else 'OFF'}\nBalance: ${ib:,.2f}\nAll gas first then brakes.")
 
-    cds:Dict[str,float]={};ld=date.today();dt=0;cyc=0;hb=ib
+    cds:Dict[str,float]={};ld=date.today();dt=0;cyc=0;hb=ib;prev_positions:Dict[str,float]={}
 
     while True:
         cyc+=1
@@ -342,6 +342,18 @@ async def trading_loop(adapter):
                 await asyncio.sleep(300); continue
             logger.info("[C%d] Bal=$%.2f Eq=$%.2f DD=%.1f%% Pos=%d T=%d",cyc,bal,eq,dd*100,acc.open_position_count,dt)
             await manage_pos(adapter,acc)
+            # Detect closed trades
+            curr_pos_ids={}
+            if acc.open_positions:
+                for p in acc.open_positions:
+                    pid=getattr(p,'position_id','')
+                    curr_pos_ids[pid]=getattr(p,'current_price',0) or 0
+            for pid in list(prev_positions.keys()):
+                if pid not in curr_pos_ids:
+                    pnl_change=bal-hb if bal!=hb else 0
+                    logger.info("📊 TRADE CLOSED: %s",pid)
+                    send_telegram(f"📊 <b>TRADE CLOSED</b>\nPosition {pid}\nBalance: ${bal:,.2f}")
+            prev_positions=curr_pos_ids
             if acc.open_position_count>=MAX_OPEN: await asyncio.sleep(CYCLE_SPEED); continue
             if dt>=MAX_DAILY: await asyncio.sleep(CYCLE_SPEED); continue
 
@@ -399,7 +411,23 @@ async def trading_loop(adapter):
 
             sig=best;mt=_resolved.get(sig.symbol)
             if not mt: await asyncio.sleep(CYCLE_SPEED); continue
-            sld=abs(sig.entry_price-sig.sl_price);lots=calc_lots(sig.symbol,bal,sld)
+            sld=abs(sig.entry_price-sig.sl_price)
+            tpd=abs(sig.tp_price-sig.entry_price)
+            min_dist=0.0005 if sig.symbol in ("EURUSD","GBPUSD","NZDUSD","USDCHF","EURGBP") else 0.05 if sig.symbol in ("USDJPY","GBPJPY") else 5.0
+            if sld<min_dist or tpd<min_dist:
+                logger.warning("[SKIP] %s: SL/TP too close (SL=%.5f TP=%.5f)",sig.symbol,sld,tpd)
+                cds[sig.symbol]=time.time()
+                await asyncio.sleep(CYCLE_SPEED); continue
+            # Validate TP direction: LONG=TP>entry, SHORT=TP<entry
+            if sig.direction=="LONG" and sig.tp_price<=sig.entry_price:
+                logger.warning("[SKIP] %s LONG: TP %.5f <= Entry %.5f",sig.symbol,sig.tp_price,sig.entry_price)
+                cds[sig.symbol]=time.time()
+                await asyncio.sleep(CYCLE_SPEED); continue
+            if sig.direction=="SHORT" and sig.tp_price>=sig.entry_price:
+                logger.warning("[SKIP] %s SHORT: TP %.5f >= Entry %.5f",sig.symbol,sig.tp_price,sig.entry_price)
+                cds[sig.symbol]=time.time()
+                await asyncio.sleep(CYCLE_SPEED); continue
+            lots=calc_lots(sig.symbol,bal,sld)
             regime="BEAR"
             if genesis and sig.symbol in genesis.states: regime=genesis.states[sig.symbol].current_regime
             tid=f"V22-{uuid.uuid4().hex[:6]}"
@@ -428,7 +456,9 @@ async def trading_loop(adapter):
                     if _evidence and TradeFingerprint:
                         try: _evidence.log_trade(TradeFingerprint(trade_id=tid,timestamp=now.isoformat(),setup_id=f"{sig.symbol}_{sig.strategy.value}",instrument=sig.symbol,direction=sig.direction,entry_price=fp,stop_loss=sig.sl_price,take_profit=sig.tp_price,lot_size=lots,firm_id="FTMO",regime=regime,bayesian_posterior=sig.final_confidence,conviction_level="STANDARD",capital_vehicle="PROP_FIRM"))
                         except: pass
-                else: logger.warning("❌ FAILED: %s",getattr(result,'error_message','unknown'))
+                else:
+                    logger.warning("❌ FAILED: %s",getattr(result,'error_message','unknown'))
+                    cds[sig.symbol]=time.time()
             except Exception as e: logger.error("[EXEC] %s: %s",sig.symbol,e,exc_info=True)
         except Exception as e: logger.error("[C%d] %s",cyc,e,exc_info=True)
         await asyncio.sleep(CYCLE_SPEED)
