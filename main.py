@@ -268,31 +268,48 @@ async def manage_pos(adapter,account):
     
     for pos in account.open_positions:
         try:
-            pid = str(getattr(pos,'position_id',''))
-            if pos.stop_loss is None or pos.entry_price is None: continue
-            risk=abs(pos.entry_price-pos.stop_loss)
-            if risk<=0: continue
-            il=pos.direction.value=="long"
-            cur=pos.current_price or pos.entry_price
-            cr=((cur-pos.entry_price)/risk) if il else ((pos.entry_price-cur)/risk)
+            # Diagnostic: log all attributes on first encounter
+            pid = str(getattr(pos,'position_id','') or getattr(pos,'id',''))
+            if pid not in _peak_pnl:
+                attrs = {k: str(getattr(pos,k,'?'))[:50] for k in ['position_id','id','instrument','symbol','direction','type',
+                    'entry_price','openPrice','open_price','current_price','currentPrice',
+                    'stop_loss','stopLoss','take_profit','takeProfit',
+                    'unrealizedProfit','unrealized_profit','profit','volume','magic'] if hasattr(pos,k)}
+                logger.info("[DIAG] Position %s attrs: %s", pid, attrs)
             
-            # Get unrealized P&L — try MetaAPI attributes, fallback to R-based estimate
+            cur = float(getattr(pos, 'current_price', None) or getattr(pos, 'currentPrice', None) or 0)
+            entry = float(getattr(pos, 'entry_price', None) or getattr(pos, 'openPrice', None) or getattr(pos, 'open_price', None) or 0)
+            il = False
+            try: il = pos.direction.value == "long"
+            except: il = str(getattr(pos,'type','')).lower() in ('buy','long')
+            
+            # Get unrealized P&L — try every possible MetaAPI attribute
             unrealized = 0.0
-            for attr in ('unrealizedProfit', 'unrealized_profit', 'profit', 'unrealizedPl', 'upl'):
+            for attr in ('unrealizedProfit', 'unrealized_profit', 'profit', 'unrealizedPl', 'upl', 'pnl'):
                 val = getattr(pos, attr, None)
                 if val is not None and val != 0:
                     unrealized = float(val)
                     break
-            # Fallback: estimate from R ratio (cr) × account risk per trade
-            if unrealized == 0 and cr != 0:
-                unrealized = cr * 100000 * RISK_PCT  # cr × $1,500 per R
-                logger.debug("[PNL_EST] %s cr=%.2f est=$%.0f", pid, cr, unrealized)
+            # Fallback: estimate from price movement
+            if unrealized == 0 and cur > 0 and entry > 0:
+                pip_diff = (cur - entry) if il else (entry - cur)
+                # Rough estimate: 2.0 lots × pip value
+                sym_name = str(getattr(pos,'instrument','') or getattr(pos,'symbol',''))
+                if 'BTC' in sym_name:
+                    unrealized = pip_diff * 2.0  # BTC: $1 per point per lot
+                elif 'JPY' in sym_name:
+                    unrealized = pip_diff * 2000  # JPY pairs: ~$1000 per pip per lot
+                elif 'XAU' in sym_name:
+                    unrealized = pip_diff * 200  # Gold: $100 per point per lot
+                else:
+                    unrealized = pip_diff * 200000  # Major FX: $100k per lot
+                logger.debug("[PNL_EST] %s entry=%.5f cur=%.5f est=$%.0f", pid, entry, cur, unrealized)
             
-            # --- PEAK P&L TRACKING ---
+            # --- PEAK P&L TRACKING (runs on ALL positions, even without SL) ---
             if pid not in _peak_pnl:
                 _peak_pnl[pid] = unrealized
                 _stall_cycles[pid] = 0
-                logger.info("[PEAK] New track: %s $%.0f", pid, unrealized)
+                logger.info("[PEAK] New track: %s $%.0f (entry=%.5f cur=%.5f)", pid, unrealized, entry, cur)
             if unrealized > _peak_pnl[pid]:
                 _peak_pnl[pid] = unrealized
                 _stall_cycles[pid] = 0
@@ -303,39 +320,18 @@ async def manage_pos(adapter,account):
             if _stall_cycles.get(pid, 0) % 10 == 0 and _peak_pnl.get(pid, 0) > 50:
                 logger.info("[PEAK] %s peak=$%.0f now=$%.0f (%.0f%% of peak)", pid, _peak_pnl[pid], unrealized, (unrealized/_peak_pnl[pid]*100) if _peak_pnl[pid]>0 else 0)
             
-            # --- RULE 1: 80% TP CLOSE (SCALP only) ---
-            tp_price = getattr(pos, 'take_profit', None)
-            if tp_price and pos.entry_price and tp_price != 0:
-                tp_dist = abs(tp_price - pos.entry_price)
-                if tp_dist > 0:
-                    if il:
-                        price_moved = cur - pos.entry_price
-                    else:
-                        price_moved = pos.entry_price - cur
-                    pct_of_tp = price_moved / tp_dist if tp_dist > 0 else 0
-                    # Check if this is a SCALP (not RUNNER) via trade_meta or default
-                    meta = _trade_meta.get(pid, {})
-                    trade_type = meta.get('type', 'SCALP')
-                    if trade_type == 'SCALP' and pct_of_tp >= 0.80 and price_moved > 0:
-                        logger.info("[80%%TP] %s closing at %.0f%% of TP (moved %.5f of %.5f)", pid, pct_of_tp*100, price_moved, tp_dist)
-                        try:
-                            await adapter.close_position(pid)
-                            logger.info("[80%%TP] CLOSED %s at $%.2f profit", pid, unrealized)
-                            send_telegram(f"💰 <b>80% TP CLOSE</b>\n{meta.get('sym','?')} closed at {pct_of_tp*100:.0f}% of target\nP&L: ${unrealized:.2f}")
-                        except Exception as e:
-                            logger.error("[80%%TP] Close failed %s: %s", pid, e)
-                        continue
+            meta = _trade_meta.get(pid, {})
+            trade_type = meta.get('type', 'SCALP')
             
-            # --- RULE 2: TIERED PEAK PULLBACK (no ceiling, tighter as profit grows) ---
+            # --- RULE 1: TIERED PEAK PULLBACK (runs on ALL positions) ---
             peak = _peak_pnl.get(pid, 0)
             if peak >= 50 and unrealized > 0:
-                # Tighter pullback as profit increases
                 if peak >= 500:
-                    max_giveback = 0.15   # $500+ peak: only allow 15% giveback
+                    max_giveback = 0.15
                 elif peak >= 200:
-                    max_giveback = 0.25   # $200-499 peak: allow 25% giveback
+                    max_giveback = 0.25
                 else:
-                    max_giveback = 0.35   # $50-199 peak: allow 35% giveback
+                    max_giveback = 0.35
                 
                 giveback = peak - unrealized
                 giveback_pct = giveback / peak if peak > 0 else 0
@@ -349,8 +345,35 @@ async def manage_pos(adapter,account):
                         logger.error("[PULLBACK] Close failed %s: %s", pid, e)
                     continue
             
+            # === Below here requires stop_loss and entry_price ===
+            sl = getattr(pos, 'stop_loss', None)
+            if sl is None or entry is None or entry <= 0: continue
+            risk = abs(entry - sl)
+            if risk <= 0: continue
+            cr = ((cur - entry) / risk) if il else ((entry - cur) / risk)
+            
+            # --- RULE 2: 80% TP CLOSE (SCALP only) ---
+            tp_price = getattr(pos, 'take_profit', None)
+            if tp_price and entry > 0 and tp_price != 0:
+                tp_dist = abs(tp_price - entry)
+                if tp_dist > 0:
+                    if il:
+                        price_moved = cur - entry
+                    else:
+                        price_moved = entry - cur
+                    pct_of_tp = price_moved / tp_dist if tp_dist > 0 else 0
+                    if trade_type == 'SCALP' and pct_of_tp >= 0.80 and price_moved > 0:
+                        logger.info("[80%%TP] %s closing at %.0f%% of TP (moved %.5f of %.5f)", pid, pct_of_tp*100, price_moved, tp_dist)
+                        try:
+                            await adapter.close_position(pid)
+                            logger.info("[80%%TP] CLOSED %s at $%.2f profit", pid, unrealized)
+                            send_telegram(f"💰 <b>80% TP CLOSE</b>\n{meta.get('sym','?')} closed at {pct_of_tp*100:.0f}% of target\nP&L: ${unrealized:.2f}")
+                        except Exception as e:
+                            logger.error("[80%%TP] Close failed %s: %s", pid, e)
+                        continue
+            
             # --- TRAILING STOPS ---
-            be=pos.entry_price;csl=pos.stop_loss
+            be=entry;csl=sl
             def better(ns): return (ns>csl+risk*0.1) if il else (ns<csl-risk*0.1)
             ns=None
             if cr>=0.5 and better(be): ns=be
@@ -404,7 +427,7 @@ async def manage_pos(adapter,account):
                                         logger.error("[SMART_EXIT] %s: %s", pid, e)
                         break
         except Exception as e:
-            logger.error("[MANAGE_POS] %s: %s", getattr(pos,'position_id','?'), e)
+            logger.error("[MANAGE_POS] %s: %s", getattr(pos,'position_id','?'), e, exc_info=True)
 
 # ══════════════════════════════════════════════════════════════════════
 # TRADING LOOP
