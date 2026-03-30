@@ -585,6 +585,32 @@ async def trading_loop(adapter):
 
             if genesis: SETUP_CONFIG.clear(); SETUP_CONFIG.update(saved)
 
+            # ═══ DIAGNOSTIC: Why aren't we trading? (every 20 cycles) ═══
+            if cyc % 20 == 0:
+                diag_parts = []
+                diag_parts.append(f"snaps={len(snaps)}")
+                diag_parts.append(f"sigs_raw={len(sigs)}")
+                # Show which symbols have snapshots
+                snap_syms = list(snaps.keys())
+                diag_parts.append(f"snap_syms={snap_syms[:8]}")
+                # Show candle ages
+                stale = []
+                for sym in get_all_symbols():
+                    c = _cc.get(sym)
+                    if c:
+                        age = int(time.time() - c["ts"])
+                        if age > 300: stale.append(f"{sym}:{age}s")
+                if stale: diag_parts.append(f"stale_candles={stale}")
+                # Show all raw signals with their confidence
+                if sigs:
+                    for s in sigs[:5]:
+                        diag_parts.append(f"sig:{s.symbol}|{s.strategy.value}|{s.direction}|conf={s.final_confidence:.3f}")
+                # Show what SETUP_CONFIG has
+                setup_syms = list(SETUP_CONFIG.keys())
+                missing = [s for s in snap_syms if s not in setup_syms]
+                if missing: diag_parts.append(f"NO_SETUP={missing}")
+                logger.info("[DIAG_SIG] %s", " | ".join(diag_parts))
+
             if not sigs: await asyncio.sleep(CYCLE_SPEED); continue
 
             osyms:Set[str]=set()
@@ -595,13 +621,28 @@ async def trading_loop(adapter):
                         if mt and mt in inst: osyms.add(our)
 
             best=None;bc=0
+            # DIAGNOSTIC: track filter reasons
+            filter_reasons = {"already_open":0, "cooldown":0, "corr_block":0, "low_conf":0, "passed":0}
             for s in sigs:
-                if s.symbol in osyms: continue
-                if time.time()-cds.get(s.symbol,0)<COOLDOWN: continue
+                if s.symbol in osyms: filter_reasons["already_open"]+=1; continue
+                if time.time()-cds.get(s.symbol,0)<COOLDOWN: filter_reasons["cooldown"]+=1; continue
                 ok2,_=corr.can_trade(s.symbol,osyms)
-                if not ok2: continue
-                if s.final_confidence<CONVICTION_MIN: continue
+                if not ok2: filter_reasons["corr_block"]+=1; continue
+                if s.final_confidence<CONVICTION_MIN: filter_reasons["low_conf"]+=1; continue
+                filter_reasons["passed"]+=1
                 if s.final_confidence>bc: bc=s.final_confidence;best=s
+            
+            # Log filter results every time we have signals but none pass
+            if not best and sigs:
+                logger.info("[DIAG_FILTER] %d signals filtered: %s", len(sigs), filter_reasons)
+                # Show top 3 closest to passing
+                by_conf = sorted(sigs, key=lambda s: s.final_confidence, reverse=True)[:3]
+                for s in by_conf:
+                    in_cd = time.time()-cds.get(s.symbol,0)<COOLDOWN
+                    logger.info("[DIAG_NEAR] %s %s %s conf=%.3f cd=%s open=%s",
+                        s.symbol, s.strategy.value, s.direction, s.final_confidence,
+                        "YES" if in_cd else "no", "YES" if s.symbol in osyms else "no")
+            
             if not best: await asyncio.sleep(CYCLE_SPEED); continue
 
             sig=best;mt=_resolved.get(sig.symbol)
