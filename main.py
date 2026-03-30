@@ -312,13 +312,21 @@ async def manage_pos(adapter,account):
                             logger.error("[80%%TP] Close failed %s: %s", pid, e)
                         continue
             
-            # --- RULE 2: PEAK PULLBACK (any trade) ---
+            # --- RULE 2: TIERED PEAK PULLBACK (no ceiling, tighter as profit grows) ---
             peak = _peak_pnl.get(pid, 0)
-            if peak >= 50 and unrealized > 0:  # Peak was at least $50
+            if peak >= 50 and unrealized > 0:
+                # Tighter pullback as profit increases
+                if peak >= 500:
+                    max_giveback = 0.15   # $500+ peak: only allow 15% giveback
+                elif peak >= 200:
+                    max_giveback = 0.25   # $200-499 peak: allow 25% giveback
+                else:
+                    max_giveback = 0.35   # $50-199 peak: allow 35% giveback
+                
                 giveback = peak - unrealized
                 giveback_pct = giveback / peak if peak > 0 else 0
-                if giveback_pct >= 0.40:
-                    logger.info("[PULLBACK] %s peak=$%.0f now=$%.0f gave back %.0f%%", pid, peak, unrealized, giveback_pct*100)
+                if giveback_pct >= max_giveback:
+                    logger.info("[PULLBACK] %s peak=$%.0f now=$%.0f gave back %.0f%% (limit=%.0f%%)", pid, peak, unrealized, giveback_pct*100, max_giveback*100)
                     try:
                         await adapter.close_position(pid)
                         logger.info("[PULLBACK] CLOSED %s, saved $%.2f", pid, unrealized)
