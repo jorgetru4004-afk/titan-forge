@@ -1,15 +1,8 @@
 """
-NEXUS CAPITAL — TITAN FORGE V22D — DUAL DIRECTION BUILD
-11 INSTRUMENTS | ADX GUARD | BOTH DIRECTIONS | SHADOW MODE READY
-Based on V22S. GENESIS removed, ADX trend guard added, all directions BOTH.
+NEXUS CAPITAL — TITAN FORGE V22 — LEAN BUILD
+14 INSTRUMENTS | 3 REGIMES | GENESIS | GUARANTEED TO TRADE
+Minimal v21 deps. Built-in risk. Built-in sessions.
 "All gas first then brakes." — Jorge Trujillo
-
-CHANGES FROM V22S:
-  [REMOVE] GENESIS regime router — killed trade flow mid-session
-  [ADD]    ADX trend guard — suppress counter-trend signals when ADX > 30
-  [ADD]    ADX-based trailing — TREND (ADX>25) chandelier, RANGE (ADX<25) 90% lock
-  [CHANGE] All 11 instruments set to BOTH direction
-  [KEEP]   All V22S bug fixes (error logging, PnL alerts, clean imports)
 """
 
 import asyncio, logging, os, time, uuid
@@ -27,15 +20,48 @@ try:
     from forge_core import send_telegram
 except ImportError:
     def send_telegram(msg): logger.info("[TG] %s", msg.replace("<b>","").replace("</b>",""))
-# Evidence logging removed — V21 module, not needed
-# forge_router removed — V21 code, all V22 strategies fell through to MARKET anyway
+try:
+    from forge_core import _evidence, TradeFingerprint
+except ImportError:
+    _evidence = None; TradeFingerprint = None
+try:
+    from forge_router import SmartOrderRouter; _has_router = True
+except ImportError:
+    _has_router = False
 
 from forge_signals_v22 import SignalEngine, MarketSnapshot
-from forge_instruments_v22 import SETUP_CONFIG
+from forge_instruments_v22 import SETUP_CONFIG, get_all_symbols
 from forge_correlation import CorrelationGuard
 
-# Only 11 proven instruments — all backtested, all green, all traded live
-# GENESIS removed — untested, killed trade flow by swapping to GAP_FILL mid-session
+# ── ADD 3 NEW INSTRUMENTS (researched: AUDNZD 85%WR/PF3.25, AUDUSD +27R, EURJPY +21R) ──
+try:
+    from forge_instruments_v22 import InstrumentSetup, StrategyType, TradeType
+    # AUDNZD: GAP_FILL SHORT, 85% WR, PF 3.25 — best config in entire system
+    SETUP_CONFIG["AUDNZD"] = InstrumentSetup(
+        strategy=StrategyType.GAP_FILL, direction="SHORT", trade_type=TradeType.SCALP,
+        risk_pct=0.015, tp_atr=1.0, sl_atr=1.5, time_of_day_edge=None,
+        session_filter=None, min_atr=0.0, notes="85% WR, PF 3.25, NEUTRAL dominant"
+    )
+    # AUDUSD: EMA_BOUNCE SHORT, +27R, solid edge
+    SETUP_CONFIG["AUDUSD"] = InstrumentSetup(
+        strategy=StrategyType.EMA_BOUNCE, direction="SHORT", trade_type=TradeType.SCALP,
+        risk_pct=0.015, tp_atr=1.5, sl_atr=1.5, time_of_day_edge=None,
+        session_filter=None, min_atr=0.0, notes="+27.2R, PF 1.50, NEUTRAL"
+    )
+    # EURJPY: GAP_FILL LONG, +21R, RUNNER type for bigger moves
+    SETUP_CONFIG["EURJPY"] = InstrumentSetup(
+        strategy=StrategyType.GAP_FILL, direction="LONG", trade_type=TradeType.RUNNER,
+        risk_pct=0.015, tp_atr=2.0, sl_atr=1.5, time_of_day_edge=None,
+        session_filter=None, min_atr=0.0, notes="+21.1R, PF 1.75, NEUTRAL RUNNER"
+    )
+    logger.info("[INSTRUMENTS] Added AUDNZD, AUDUSD, EURJPY — 14 instruments total")
+except Exception as e:
+    logger.warning("[INSTRUMENTS] Could not add new pairs: %s — they'll be skipped", e)
+try:
+    from forge_genesis import create_genesis, extract_regime_indicators, auto_evolve, get_calibrated_wr
+    GENESIS_OK = True
+except ImportError:
+    GENESIS_OK = False
 
 FORGE_VERSION = "v22"
 POLYGON_API_KEY = os.environ.get("POLYGON_API_KEY", "")
@@ -44,7 +70,6 @@ POLYGON_API_KEY = os.environ.get("POLYGON_API_KEY", "")
 MAX_OPEN = 5; MAX_DAILY = 15; COOLDOWN = 120; RISK_PCT = 0.015
 MAX_LOT = 2.0; CYCLE_SPEED = 30; CONVICTION_MIN = 0.20; DD_EMERGENCY = 0.09
 CANDLE_REFRESH = 600
-SHADOW_MODE = os.environ.get("SHADOW_MODE", "false").lower() == "true"
 
 ALIASES = {
     "EURUSD":["EURUSD.sim","EURUSD"],"GBPUSD":["GBPUSD.sim","GBPUSD"],
@@ -54,16 +79,20 @@ ALIASES = {
     "US100":["US100.sim","USTEC.sim","NAS100.sim","US100"],
     "USOIL":["USOIL.sim","WTI.sim","XTIUSD.sim","OIL.sim"],
     "BTCUSD":["BTCUSD.sim","BITCOIN.sim","BTCUSD"],
+    "AUDNZD":["AUDNZD.sim","AUDNZD"],"AUDUSD":["AUDUSD.sim","AUDUSD"],
+    "EURJPY":["EURJPY.sim","EURJPY"],
 }
 POLYGON_MAP = {
     "EURUSD":"C:EURUSD","GBPUSD":"C:GBPUSD","USDJPY":"C:USDJPY","USDCHF":"C:USDCHF",
     "EURGBP":"C:EURGBP","GBPJPY":"C:GBPJPY","NZDUSD":"C:NZDUSD","XAUUSD":"C:XAUUSD",
     "US100":"I:NDX","USOIL":"C:XTIUSD",
     "BTCUSD":"X:BTCUSD",
+    "AUDNZD":"C:AUDNZD","AUDUSD":"C:AUDUSD","EURJPY":"C:EURJPY",
 }
 ATR_FB = {"EURUSD":0.008,"GBPUSD":0.01,"USDJPY":1.0,"USDCHF":0.007,"EURGBP":0.005,
           "GBPJPY":1.5,"NZDUSD":0.006,"XAUUSD":30.0,"US100":200.0,
-          "USOIL":2.0,"BTCUSD":2000.0}
+          "USOIL":2.0,"BTCUSD":2000.0,
+          "AUDNZD":0.006,"AUDUSD":0.007,"EURJPY":1.2}
 CRYPTO = {"BTCUSD"}
 
 def is_open(sym):
@@ -194,12 +223,12 @@ def make_snap(sym,cd,bid,ask):
 def calc_lots(sym,bal,sl_dist):
     if sl_dist<=0: return 0.01
     risk_d=bal*RISK_PCT
-    if sym in ("EURUSD","GBPUSD","NZDUSD","USDCHF","EURGBP"): lots=risk_d/(sl_dist*100000)
-    elif sym in ("USDJPY","GBPJPY"): lots=risk_d/(sl_dist*1000)
+    if sym in ("EURUSD","GBPUSD","NZDUSD","USDCHF","EURGBP","AUDNZD","AUDUSD"): lots=risk_d/(sl_dist*100000)
+    elif sym in ("USDJPY","GBPJPY","EURJPY"): lots=risk_d/(sl_dist*1000)
     elif sym=="XAUUSD": lots=risk_d/(sl_dist*100)
-    elif sym in ("US100",): lots=risk_d/(sl_dist*10)
+    elif sym in ("US100","GER40","UK100"): lots=risk_d/(sl_dist*10)
     elif sym=="USOIL": lots=risk_d/(sl_dist*1000)
-    elif sym in ("BTCUSD",): lots=risk_d/(sl_dist*1)
+    elif sym in ("BTCUSD","ETHUSD"): lots=risk_d/(sl_dist*1)
     else: lots=risk_d/(sl_dist*100)
     return min(MAX_LOT,max(0.01,round(lots,2)))
 
@@ -251,7 +280,7 @@ def should_smart_exit(snap, direction, current_r):
 _peak_pnl: Dict[str,float] = {}     # {position_id: highest unrealized $}
 _trade_meta: Dict[str,Dict] = {}    # {position_id: {type, entry, tp, sl, direction, sym}}
 _stall_cycles: Dict[str,int] = {}   # {position_id: cycles since last new high}
-
+_genesis_ref = None  # Set by trading_loop, used by manage_pos
 
 async def manage_pos(adapter,account):
     global _peak_pnl, _trade_meta, _stall_cycles
@@ -323,41 +352,41 @@ async def manage_pos(adapter,account):
             meta = _trade_meta.get(pid, {})
             trade_type = meta.get('type', 'SCALP')
             
-            # --- ADX-BASED REGIME EXIT ---
-            # ADX > 25 = TREND (let it run), ADX < 25 = RANGE (lock tight)
+            # --- GENESIS SWITCH EXIT ---
+            # Detect regime for this instrument via GENESIS or fallback to ADX
             sym_name = str(getattr(pos,'instrument','') or getattr(pos,'symbol',''))
             pos_regime = "RANGE"  # default
-            pos_sym = None
-            for sym_key, mt in _resolved.items():
-                if mt and mt in sym_name:
-                    pos_sym = sym_key
-                    cd = get_candles(sym_key)
-                    if cd and len(cd["c"]) >= 28:
-                        adx_val = _adx(cd["h"], cd["l"], cd["c"])[0]
-                        pos_regime = "TREND" if adx_val > 25 else "RANGE"
-                    break
+            if _genesis_ref:
+                for sym_key, state in _genesis_ref.states.items():
+                    mt = _resolved.get(sym_key)
+                    if mt and mt in sym_name:
+                        pos_regime = "TREND" if state.current_regime in ("BEAR","BULL") else "RANGE"
+                        break
             
             peak = _peak_pnl.get(pid, 0)
             if peak >= 30 and unrealized > 0:
                 if pos_regime == "TREND":
-                    trail_pct = 0.90
+                    # CHANDELIER: ATR-adaptive trail — lets trends run
+                    # Trail distance = 10% of peak (wider for big moves)
+                    trail_pct = 0.90  # Keep 90% minimum
                     if peak >= 500:
-                        trail_pct = 0.85  # Let big trends breathe more
+                        trail_pct = 0.88  # Slightly looser on big trending moves
                     max_giveback = 1.0 - trail_pct
                 else:
-                    max_giveback = 0.10  # RANGE: tight 10% giveback
+                    # RANGE: Tight 90% trail — lock ranging profits fast
+                    max_giveback = 0.10  # Only allow 10% giveback
                 
                 giveback = peak - unrealized
                 giveback_pct = giveback / peak if peak > 0 else 0
                 if giveback_pct >= max_giveback:
-                    logger.info("[ADX_EXIT] %s %s peak=$%.0f now=$%.0f gave back %.0f%% (limit=%.0f%% regime=%s)",
+                    logger.info("[GENESIS_EXIT] %s %s peak=$%.0f now=$%.0f gave back %.0f%% (limit=%.0f%% regime=%s)",
                         pid, sym_name, peak, unrealized, giveback_pct*100, max_giveback*100, pos_regime)
                     try:
                         await adapter.close_position(pid)
-                        logger.info("[ADX_EXIT] CLOSED %s, saved $%.2f", pid, unrealized)
-                        send_telegram(f"🧠 <b>ADX EXIT</b>\n{pos_sym or sym_name} ({pos_regime})\nPeak: ${peak:.0f} → Locked: ${unrealized:.0f}\nGave back {giveback_pct*100:.0f}%\nRegime: {pos_regime}")
+                        logger.info("[GENESIS_EXIT] CLOSED %s, saved $%.2f", pid, unrealized)
+                        send_telegram(f"🧠 <b>GENESIS EXIT</b>\n{sym_name} ({pos_regime})\nPeak: ${peak:.0f} → Locked: ${unrealized:.0f}\nGave back {giveback_pct*100:.0f}%\nRegime: {pos_regime}")
                     except Exception as e:
-                        logger.error("[ADX_EXIT] Close failed %s: %s", pid, e)
+                        logger.error("[GENESIS_EXIT] Close failed %s: %s", pid, e)
                     continue
             
             # === Below here requires stop_loss and entry_price ===
@@ -387,9 +416,9 @@ async def manage_pos(adapter,account):
                             logger.error("[80%%TP] Close failed %s: %s", pid, e)
                         continue
             
-            # --- ADX-BASED TRAILING STOPS (broker-side SL) ---
-            # TREND (ADX>25): Chandelier — lets trends run
-            # RANGE (ADX<25): Dynamic 90% of peak R — locks tight
+            # --- GENESIS SWITCH TRAILING STOPS (broker-side SL) ---
+            # TREND: Chandelier (peak - 0.3R × ATR ratio) — lets trends run
+            # RANGE: Dynamic 90% of peak R — locks tight
             be=entry;csl=sl
             def better(ns): return (ns>csl+risk*0.03) if il else (ns<csl-risk*0.03)
             ns=None
@@ -461,7 +490,13 @@ async def manage_pos(adapter,account):
 # ══════════════════════════════════════════════════════════════════════
 
 async def trading_loop(adapter):
+    global _genesis_ref
     sig_engine=SignalEngine();corr=CorrelationGuard()
+    genesis=None
+    if GENESIS_OK:
+        try: genesis=create_genesis(default_regime="BEAR"); logger.info("[GENESIS] S=%d L=%d N=%d",len(genesis.short_config),len(genesis.long_config),len(genesis.neutral_config))
+        except Exception as e: logger.warning("[GENESIS] %s",e)
+    _genesis_ref = genesis  # Make accessible to manage_pos
     ib=100000
     try:
         a=await adapter.get_account_state()
@@ -474,14 +509,14 @@ async def trading_loop(adapter):
         if r: ok+=1; logger.info("  ✅ %s → %s",s,r)
         else: logger.warning("  ⚠️ %s",s)
     logger.info("[INIT] Fetching candles...")
-    for s in ALIASES:
+    for s in get_all_symbols():
         cd=get_candles(s)
         if cd: logger.info("  📊 %s: %d bars",s,cd["n"])
         time.sleep(0.3)
     logger.info("🔱 FORGE V22 — %d INSTRUMENTS ARMED",ok)
-    send_telegram(f"🔱 <b>TITAN FORGE V22D ONLINE</b>\n{ok} instruments | ADX GUARD\nBalance: ${ib:,.2f}\nAll gas first then brakes.")
+    send_telegram(f"🔱 <b>TITAN FORGE V22 ONLINE</b>\n{ok} instruments | GENESIS {'ON' if genesis else 'OFF'}\nBalance: ${ib:,.2f}\nAll gas first then brakes.")
 
-    cds:Dict[str,float]={};ld=date.today();dt=0;cyc=0;hb=ib;prev_bal=ib;prev_positions:Dict[str,float]={}
+    cds:Dict[str,float]={};ld=date.today();dt=0;cyc=0;hb=ib;prev_positions:Dict[str,float]={}
 
     while True:
         cyc+=1
@@ -502,7 +537,7 @@ async def trading_loop(adapter):
                 await asyncio.sleep(300); continue
             logger.info("[C%d] Bal=$%.2f Eq=$%.2f DD=%.1f%% Pos=%d T=%d",cyc,bal,eq,dd*100,acc.open_position_count,dt)
             await manage_pos(adapter,acc)
-            # Detect closed trades with P&L
+            # Detect closed trades
             curr_pos_ids={}
             if acc.open_positions:
                 for p in acc.open_positions:
@@ -510,44 +545,45 @@ async def trading_loop(adapter):
                     curr_pos_ids[pid]=getattr(p,'current_price',0) or 0
             for pid in list(prev_positions.keys()):
                 if pid not in curr_pos_ids:
-                    # Trade closed — calculate PnL from balance change
-                    pnl = bal - prev_bal if prev_bal > 0 else 0
-                    meta = _trade_meta.get(pid, {})
-                    sym = meta.get('sym', '?')
-                    direction = meta.get('direction', '?')
-                    peak = _peak_pnl.get(pid, 0)
-                    logger.info("📊 TRADE CLOSED: %s | %s %s | PnL: $%.2f | Peak: $%.0f", pid, sym, direction, pnl, peak)
-                    emoji = "✅" if pnl >= 0 else "❌"
-                    send_telegram(f"📊 <b>TRADE CLOSED</b>\n{emoji} {sym} {direction}\nP&L: <b>${pnl:.2f}</b>\nPeak: ${peak:.0f}\nBalance: ${bal:,.2f}")
-            prev_bal = bal
+                    pnl_change=bal-hb if bal!=hb else 0
+                    logger.info("📊 TRADE CLOSED: %s",pid)
+                    send_telegram(f"📊 <b>TRADE CLOSED</b>\nPosition {pid}\nBalance: ${bal:,.2f}")
             prev_positions=curr_pos_ids
             if acc.open_position_count>=MAX_OPEN: await asyncio.sleep(CYCLE_SPEED); continue
             if dt>=MAX_DAILY: await asyncio.sleep(CYCLE_SPEED); continue
 
             snaps:Dict[str,MarketSnapshot]={}
-            for sym in list(ALIASES.keys()):
+            for sym in get_all_symbols():
                 if not is_open(sym): continue
                 mt=_resolved.get(sym)
                 if not mt: continue
                 try:
                     b,a=await adapter.get_current_price(mt)
-                    if not b or b<=0:
-                        if cyc % 20 == 0: logger.debug("[SNAP] %s: price=0", sym)
-                        continue
-                except Exception as e:
-                    if cyc % 20 == 0: logger.warning("[SNAP] %s price fetch failed: %s", sym, e)
-                    continue
+                    if not b or b<=0: continue
+                except: continue
                 cd=get_candles(sym)
-                if not cd:
-                    if cyc % 20 == 0: logger.debug("[SNAP] %s: no candle data", sym)
-                    continue
+                if not cd: continue
                 sn=make_snap(sym,cd,b,a)
                 if sn: snaps[sym]=sn
             if not snaps: await asyncio.sleep(CYCLE_SPEED); continue
 
+            # GENESIS
+            if genesis:
+                saved=dict(SETUP_CONFIG)
+                for sym,sn in snaps.items():
+                    try:
+                        ind=extract_regime_indicators(sn)
+                        regime,switched=genesis.update_regime(sym,current_time=datetime.now(timezone.utc),**ind)
+                        setup=genesis.get_active_setup(sym,**ind)
+                        if setup: SETUP_CONFIG[sym]=setup
+                        if switched: logger.info("[GENESIS] 🔄 %s→%s",sym,regime); send_telegram(f"🔄 {sym}→{regime}")
+                    except: pass
+
             now=datetime.now(timezone.utc)
             try: sigs=sig_engine.generate_signals(snaps,current_time=now)
             except Exception as e: logger.error("[SIG] %s",e); sigs=[]
+
+            if genesis: SETUP_CONFIG.clear(); SETUP_CONFIG.update(saved)
 
             # ═══ DIAGNOSTIC: Why aren't we trading? (every 20 cycles) ═══
             if cyc % 20 == 0:
@@ -559,7 +595,7 @@ async def trading_loop(adapter):
                 diag_parts.append(f"snap_syms={snap_syms[:8]}")
                 # Show candle ages
                 stale = []
-                for sym in ALIASES:
+                for sym in get_all_symbols():
                     c = _cc.get(sym)
                     if c:
                         age = int(time.time() - c["ts"])
@@ -586,20 +622,13 @@ async def trading_loop(adapter):
 
             best=None;bc=0
             # DIAGNOSTIC: track filter reasons
-            filter_reasons = {"already_open":0, "cooldown":0, "corr_block":0, "low_conf":0, "trend_guard":0, "passed":0}
+            filter_reasons = {"already_open":0, "cooldown":0, "corr_block":0, "low_conf":0, "passed":0}
             for s in sigs:
                 if s.symbol in osyms: filter_reasons["already_open"]+=1; continue
                 if time.time()-cds.get(s.symbol,0)<COOLDOWN: filter_reasons["cooldown"]+=1; continue
                 ok2,_=corr.can_trade(s.symbol,osyms)
                 if not ok2: filter_reasons["corr_block"]+=1; continue
                 if s.final_confidence<CONVICTION_MIN: filter_reasons["low_conf"]+=1; continue
-                # ADX TREND GUARD: suppress counter-trend signals in strong trends
-                sn = snaps.get(s.symbol)
-                if sn and sn.adx > 30:
-                    if sn.ema_50 < sn.ema_200 and s.direction == "LONG":
-                        filter_reasons["trend_guard"]+=1; continue  # Don't buy in downtrend
-                    if sn.ema_50 > sn.ema_200 and s.direction == "SHORT":
-                        filter_reasons["trend_guard"]+=1; continue  # Don't short in uptrend
                 filter_reasons["passed"]+=1
                 if s.final_confidence>bc: bc=s.final_confidence;best=s
             
@@ -636,10 +665,7 @@ async def trading_loop(adapter):
                 await asyncio.sleep(CYCLE_SPEED); continue
             lots=calc_lots(sig.symbol,bal,sld)
             regime="BEAR"
-            regime="BOTH"
-            sn_regime = snaps.get(sig.symbol)
-            if sn_regime and sn_regime.adx > 25:
-                regime = "BEAR" if sn_regime.ema_50 < sn_regime.ema_200 else "BULL"
+            if genesis and sig.symbol in genesis.states: regime=genesis.states[sig.symbol].current_regime
             tid=f"V22-{uuid.uuid4().hex[:6]}"
             dirn=OrderDirection.LONG if sig.direction=="LONG" else OrderDirection.SHORT
             order=OrderRequest(instrument=mt,direction=dirn,size=lots,order_type=OrderType.MARKET,
@@ -648,16 +674,13 @@ async def trading_loop(adapter):
             logger.info("🔫 %s %s %s|%s|%s E=%.5f SL=%.5f TP=%.5f %.2flots conf=%.2f",
                 sig.symbol,sig.direction,sig.strategy.value,sig.trade_type.value,regime,
                 sig.entry_price,sig.sl_price,sig.tp_price,lots,sig.final_confidence)
-            
-            if SHADOW_MODE:
-                # Shadow mode — log but don't execute
-                logger.info("👻 [SHADOW] Would place: %s %s %.2f lots @ %.5f", sig.symbol, sig.direction, lots, sig.entry_price)
-                send_telegram(f"👻 <b>SHADOW TRADE</b>\n{'🟢' if sig.direction=='LONG' else '🔴'} {sig.symbol} {sig.direction}\n{sig.strategy.value}|{sig.trade_type.value}|{regime}\nEntry: {sig.entry_price:.5f}\nSL: {sig.sl_price:.5f} TP: {sig.tp_price:.5f}\nLots: {lots} Conf: {sig.final_confidence:.2f}")
-                cds[sig.symbol]=time.time();dt+=1
-                await asyncio.sleep(CYCLE_SPEED); continue
-            
             try:
-                result=await adapter.place_order(order)
+                if _has_router:
+                    router=SmartOrderRouter()
+                    result=await router.execute(adapter=adapter,order_request=order,setup_id=f"{sig.symbol}_{sig.strategy.value}",
+                        conviction_level="STANDARD",conviction_posterior=sig.final_confidence,instrument_key=sig.symbol,signal_entry=sig.entry_price)
+                else:
+                    result=await adapter.place_order(order)
                 filled=False
                 if hasattr(result,'status'):
                     filled=(result.status.value=="filled") if hasattr(result.status,'value') else str(result.status)=="filled"
@@ -674,6 +697,9 @@ async def trading_loop(adapter):
                     _peak_pnl[str(oid)] = 0.0
                     _stall_cycles[str(oid)] = 0
                     send_telegram(f"🔫 <b>V22 TRADE</b>\n{'🟢' if sig.direction=='LONG' else '🔴'} {sig.symbol} {sig.direction}\n{sig.strategy.value}|{sig.trade_type.value}|{regime}\nEntry: {fp:.5f}\nSL: {sig.sl_price:.5f} TP: {sig.tp_price:.5f}\nLots: {lots} Conf: {sig.final_confidence:.2f}\nTrade #{dt}")
+                    if _evidence and TradeFingerprint:
+                        try: _evidence.log_trade(TradeFingerprint(trade_id=tid,timestamp=now.isoformat(),setup_id=f"{sig.symbol}_{sig.strategy.value}",instrument=sig.symbol,direction=sig.direction,entry_price=fp,stop_loss=sig.sl_price,take_profit=sig.tp_price,lot_size=lots,firm_id="FTMO",regime=regime,bayesian_posterior=sig.final_confidence,conviction_level="STANDARD",capital_vehicle="PROP_FIRM"))
+                        except: pass
                 else:
                     logger.warning("❌ FAILED: %s",getattr(result,'error_message','unknown'))
                     cds[sig.symbol]=time.time()
@@ -684,12 +710,12 @@ async def trading_loop(adapter):
 async def main():
     logger.info("╔══════════════════════════════════════════════════════════╗")
     logger.info("║  NEXUS CAPITAL — TITAN FORGE V22                        ║")
-    logger.info("║  11 INSTRUMENTS | ADX GUARD | BOTH DIRECTIONS          ║")
+    logger.info("║  14 INSTRUMENTS | 3 REGIMES | GENESIS | LEAN BUILD     ║")
     logger.info("╚══════════════════════════════════════════════════════════╝")
     token=os.environ.get("METAAPI_TOKEN","");acct=os.environ.get("METAAPI_ACCOUNT_ID",os.environ.get("FTMO_ACCOUNT_ID",""))
     if not token or not acct: logger.error("Missing METAAPI credentials"); return
     if POLYGON_API_KEY: logger.info("✅ Polygon API key")
-    logger.info("✅ Instruments: %d | ADX GUARD | SHADOW: %s",len(ALIASES),"YES" if SHADOW_MODE else "no")
+    logger.info("✅ Instruments: %d | GENESIS: %s",len(ALIASES),"yes" if GENESIS_OK else "no")
     adapter=MT5Adapter(account_id=acct,server="OANDA-Demo-1",password="",is_demo=os.environ.get("FTMO_IS_DEMO","true").lower()=="true")
     logger.info("Connecting to MetaAPI...")
     connected=await adapter.connect()
