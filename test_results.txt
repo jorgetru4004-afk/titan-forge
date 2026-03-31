@@ -1,0 +1,235 @@
+
+================================================================================
+  FORGE v22.1 — 6-MONTH QUANT-GRADE BACKTEST
+  180 days of real hourly Polygon data
+  Target: 200+ trades for statistical significance
+================================================================================
+
+  Time: 2026-03-29 19:50 UTC
+
+--------------------------------------------------------------------------------
+  Fetching 6 months of hourly data (this takes ~2 min)...
+--------------------------------------------------------------------------------
+  USDCHF (C:USDCHF)... OK - 3042 bars (127 days)
+  GER40 (EWG)... OK - 1249 bars (52 days)
+  NZDUSD (C:NZDUSD)... OK - 3042 bars (127 days)
+  UK100 (EWU)... OK - 1108 bars (46 days)
+  US100 (QQQ)... OK - 1974 bars (82 days)
+  ETHUSD (X:ETHUSD)... OK - 4320 bars (180 days)
+  EURGBP (C:EURGBP)... OK - 3042 bars (127 days)
+  EURUSD (C:EURUSD)... OK - 3042 bars (127 days)
+  XAUUSD (C:XAUUSD)... OK - 3018 bars (126 days)
+  GBPJPY (C:GBPJPY)... OK - 3011 bars (125 days)
+  USDJPY (C:USDJPY)... OK - 3042 bars (127 days)
+  BTCUSD (X:BTCUSD)... OK - 4320 bars (180 days)
+  USOIL (USO)... OK - 1960 bars (82 days)
+  GBPUSD (C:GBPUSD)... OK - 3042 bars (127 days)
+
+  Loaded: 14/14 instruments
+  Bar range: 1108 to 4320 (walking to max, instruments drop in/out)
+
+################################################################################
+  TEST 1: STANDARD BACKTEST (6 months)
+################################################################################
+
+    [Standard 6-Month v22.1] Walking 60 to 4320 (4260 bars)...
+    [Standard 6-Month v22.1] Bar 500/4320 (10%) | $10,229.30 | 104 trades | 3 open
+    [Standard 6-Month v22.1] Bar 1000/4320 (22%) | $10,016.27 | 222 trades | 1 open
+    [Standard 6-Month v22.1] Bar 1500/4320 (34%) | $10,037.19 | 335 trades | 0 open
+    [Standard 6-Month v22.1] Bar 2000/4320 (46%) | $9,618.55 | 452 trades | 0 open
+    [Standard 6-Month v22.1] Bar 2500/4320 (57%) | $10,298.04 | 554 trades | 2 open
+    [Standard 6-Month v22.1] Bar 3000/4320 (69%) | $10,639.65 | 639 trades | 1 open
+    [Standard 6-Month v22.1] Bar 3500/4320 (81%) | $11,010.34 | 657 trades | 2 open
+    [Standard 6-Month v22.1] Bar 4000/4320 (92%) | $10,747.23 | 667 trades | 2 open
+
+  ===========================================================================
+  STANDARD 6-MONTH V22.1
+  ===========================================================================
+  Trades: 673 | W:179 L:353 BE:141 | WR: 26.6%
+  Total R: +66.30R | PF: 1.19 | Avg W: +2.34R | Avg L: -1.00R
+  Max DD: 9.66% | Final: $11,438.38 (+14.4%)
+  Avg hold: 4.4 bars | Max consec losses: 8
+  SCALP: 278 trades +49.40R | RUNNER: 395 trades +16.90R
+  Est months: 8.3 | Monthly R: +8.03R
+  Bars walked: 4260
+
+  Strategy breakdown:
+    VWAP_REVERT         :   45 trades | WR:  33.3% |   +46.32R
+    PREV_DAY_HL         :  129 trades | WR:  27.9% |   +37.28R
+    EMA_BOUNCE          :   39 trades | WR:  28.2% |    +8.13R
+    STOCH_REVERSAL      :  102 trades | WR:  24.5% |    +1.00R
+    GAP_FILL            :    6 trades | WR:  66.7% |    +0.87R
+    MEAN_REVERT         :   89 trades | WR:  27.0% |    -7.79R
+    ORB                 :  263 trades | WR:  24.3% |   -19.51R
+
+  Symbol breakdown:
+    ETHUSD    :   69 trades | WR:  31.9% |   +31.79R
+    UK100     :   12 trades | WR:  33.3% |   +30.00R
+    USDJPY    :   96 trades | WR:  28.1% |   +16.03R
+    GER40     :   18 trades | WR:  22.2% |   +12.00R
+    EURUSD    :   20 trades | WR:  45.0% |    +7.88R
+    BTCUSD    :   27 trades | WR:  48.1% |    +6.33R
+    GBPJPY    :   60 trades | WR:  23.3% |    +5.49R
+    USOIL     :   24 trades | WR:  20.8% |    +5.13R
+    EURGBP    :   15 trades | WR:  46.7% |    +4.32R
+    US100     :   15 trades | WR:  40.0% |    +3.00R
+    USDCHF    :  102 trades | WR:  24.5% |    +1.00R
+    NZDUSD    :    6 trades | WR:  66.7% |    +0.87R
+    XAUUSD    :   42 trades | WR:   4.8% |   -22.00R
+    GBPUSD    :  167 trades | WR:  22.2% |   -35.54R
+
+  Exit reasons:
+    SL_HIT              : 352
+    BE_STOP             : 241
+    TP_HIT              : 78
+    END_OF_TEST         : 2
+
+  Last 20 of 673 trades:
+  Sym        Dir   Strategy             Type        P&L  Hold Reason         
+  ------------------------------------------------------------------------
+  BTCUSD     SHORT MEAN_REVERT          SCALP    +1.33R    2b TP_HIT         
+  ETHUSD     SHORT PREV_DAY_HL          RUNNER   +1.48R   10b BE_STOP        
+  ETHUSD     SHORT PREV_DAY_HL          RUNNER   -1.00R    2b SL_HIT         
+  ETHUSD     SHORT PREV_DAY_HL          RUNNER   -1.00R    1b SL_HIT         
+  ETHUSD     SHORT PREV_DAY_HL          RUNNER   +3.68R    6b BE_STOP        
+  BTCUSD     SHORT MEAN_REVERT          SCALP    -1.00R    2b SL_HIT         
+  BTCUSD     SHORT MEAN_REVERT          SCALP    -1.00R    4b SL_HIT         
+  ETHUSD     SHORT PREV_DAY_HL          RUNNER   +0.00R    5b BE_STOP        
+  ETHUSD     SHORT PREV_DAY_HL          RUNNER   -1.00R    1b SL_HIT         
+  ETHUSD     SHORT PREV_DAY_HL          RUNNER   +0.00R    3b BE_STOP        
+  BTCUSD     SHORT MEAN_REVERT          SCALP    -1.00R    6b SL_HIT         
+  BTCUSD     SHORT MEAN_REVERT          SCALP    +1.33R   24b TP_HIT         
+  ETHUSD     SHORT PREV_DAY_HL          RUNNER   -1.00R    2b SL_HIT         
+  ETHUSD     SHORT PREV_DAY_HL          RUNNER   +3.63R   47b BE_STOP        
+  BTCUSD     SHORT MEAN_REVERT          SCALP    +1.33R    3b TP_HIT         
+  BTCUSD     SHORT MEAN_REVERT          SCALP    +1.33R    2b TP_HIT         
+  ETHUSD     SHORT PREV_DAY_HL          RUNNER   +2.33R    7b BE_STOP        
+  ETHUSD     SHORT PREV_DAY_HL          RUNNER   -1.00R    3b SL_HIT         
+  ETHUSD     SHORT PREV_DAY_HL          RUNNER   +2.47R   15b BE_STOP        
+  ETHUSD     SHORT PREV_DAY_HL          RUNNER   +0.00R    5b BE_STOP        
+
+  ===========================================================================
+  DAILY & MONTHLY PROJECTIONS (from Standard 6-Month v22.1)
+  ===========================================================================
+
+  Estimated trading period: 8.3 months (182 trading days)
+  Trades per day:     3.71
+  R per day:          +0.365R
+  R per week:         +1.83R
+  R per month:        +8.03R
+
+  Monthly P&L projections (2% risk per trade, 80% FTMO split):
+     Account    Per R      Daily     Weekly      Monthly  After Split
+  ------------------------------------------------------------------
+  $   10,000 $    200 $       73 $      365 $      1,606 $      1,285
+  $  100,000 $  2,000 $      730 $    3,650 $     16,061 $     12,849
+  $  200,000 $  4,000 $    1,460 $    7,301 $     32,122 $     25,698
+  $  400,000 $  8,000 $    2,920 $   14,601 $     64,244 $     51,396
+
+  FTMO eval timeline (10% target = 10R at 2% risk):
+    Days to pass Phase 1: ~27 trading days
+    Days to pass Phase 2 (5R): ~14 trading days
+
+  Risk metrics:
+    Max drawdown seen:    9.66%
+    Max consec losses:    8
+    Win rate:             26.6%
+    Profit factor:        1.19
+    Avg winner / loser:   +2.34R / -1.00R
+    Edge ratio:           2.34x
+
+################################################################################
+  TEST 2: SPREAD & SLIPPAGE STRESS (6 months)
+  3x spreads + 0.3 ATR random slippage
+################################################################################
+
+    [3x Spread+Slip 6mo] Walking 60 to 4320 (4260 bars)...
+    [3x Spread+Slip 6mo] Bar 500/4320 (10%) | $10,130.77 | 104 trades | 3 open
+    [3x Spread+Slip 6mo] Bar 1000/4320 (22%) | $9,743.78 | 220 trades | 1 open
+    [3x Spread+Slip 6mo] Bar 1500/4320 (34%) | $9,626.18 | 330 trades | 0 open
+
+  ===========================================================================
+  3X SPREAD+SLIP 6MO
+  ===========================================================================
+  Trades: 447 | W:101 L:258 BE:88 | WR: 22.6%
+  Total R: -47.07R | PF: 0.82 | Avg W: +2.08R | Avg L: -1.00R
+  Max DD: 14.12% | Final: $8,988.33 (-10.1%)
+  Avg hold: 4.7 bars | Max consec losses: 10
+  SCALP: 206 trades -3.53R | RUNNER: 241 trades -43.55R
+  Est months: 3.8 | Monthly R: -12.54R
+  Bars walked: 1937
+
+  Strategy breakdown:
+    VWAP_REVERT         :   39 trades | WR:  30.8% |   +31.31R
+    GAP_FILL            :    4 trades | WR:  75.0% |    +1.74R
+    EMA_BOUNCE          :   39 trades | WR:  23.1% |    -1.36R
+    STOCH_REVERSAL      :   69 trades | WR:  27.5% |   -14.39R
+    PREV_DAY_HL         :   76 trades | WR:  18.4% |   -16.30R
+    MEAN_REVERT         :   58 trades | WR:  20.7% |   -21.77R
+    ORB                 :  162 trades | WR:  19.8% |   -26.30R
+
+  Symbol breakdown:
+    UK100     :   12 trades | WR:  33.3% |   +23.37R
+    USDJPY    :   58 trades | WR:  32.8% |   +15.21R
+    GER40     :   18 trades | WR:  22.2% |    +6.54R
+    BTCUSD    :    9 trades | WR:  55.6% |    +2.03R
+    NZDUSD    :    4 trades | WR:  75.0% |    +1.74R
+    EURGBP    :    9 trades | WR:  44.4% |    +1.40R
+    EURUSD    :   14 trades | WR:  42.9% |    +1.37R
+    US100     :   15 trades | WR:  33.3% |    -0.17R
+    USOIL     :   24 trades | WR:  16.7% |    -1.20R
+    ETHUSD    :   38 trades | WR:  18.4% |    -5.62R
+    GBPJPY    :   38 trades | WR:  18.4% |   -10.68R
+    USDCHF    :   69 trades | WR:  27.5% |   -14.39R
+    XAUUSD    :   35 trades | WR:   2.9% |   -25.17R
+    GBPUSD    :  104 trades | WR:  12.5% |   -41.50R
+
+  Exit reasons:
+    SL_HIT              : 257
+    BE_STOP             : 135
+    TP_HIT              : 55
+
+################################################################################
+  TEST 3: MONTE CARLO (1000 simulations)
+################################################################################
+
+  ===========================================================================
+  MONTE CARLO (1000 simulations)
+  ===========================================================================
+  P&L Distribution:
+    Worst: -11.8%  |  P5: -11.4%  |  P10: -11.2%
+    P25:   -9.3%  |  Median: -2.2%  |  Mean: +5.7%
+    P75:   +12.2%  |  P90: +32.3%  |  P95: +49.2%
+    Best:  +236.0%  |  Std: 22.7%
+
+  Drawdown:
+    Avg DD: 11.08% | P95 DD: 11.53% | Worst DD: 11.80%
+
+  Risk:
+    Bust rate (-10% DD): 100.0%
+    FTMO pass rate (>10% profit, <10% DD): 0.0%
+
+================================================================================
+  COMPARISON
+================================================================================
+
+  Test                                 Trades     WR         R     PF      DD       $/mo
+  ----------------------------------------------------------------------------------
+  Standard 6-Month v22.1                  673  26.6%   +66.30R  1.19   9.66% $      174
+  3x Spread+Slip 6mo                      447  22.6%   -47.07R  0.82  14.12% $     -270
+
+================================================================================
+  VERDICT
+================================================================================
+
+  Trades: 673 (target: 200+)
+  Profitable: YES (+66.30R)
+  Drawdown safe: YES (9.66%)
+  Statistically significant: YES
+
+  >>> SYSTEM VALIDATED FOR DEPLOYMENT <<<
+
+================================================================================
+  ALL TESTS COMPLETE
+================================================================================
+

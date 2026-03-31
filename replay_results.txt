@@ -1,0 +1,300 @@
+NEXUS CAPITAL -- FORGE V21 HISTORICAL REPLAY (FIXED)
+Real Polygon candles -> V21 signals -> Bayesian conviction
+ONE best trade per candle | 25/day cap | 30min cooldowns
+
+[DATA] 7592 M1 candles loaded
+
+[REPLAY] 8 trading days, 7592 candles
+==========================================================================================
+
+==========================================================================================
+  2026-03-18 (Wednesday) | PDH:0 PDL:0
+==========================================================================================
+  + 09:31 VWAP-01    LONG  @24780 STANDARD 78% (3/5) 0.10L [LIMIT] WIN  $+84 (+2.5R) VWAP bounce
+  X 09:32 VWAP-03    LONG  @24793 STANDARD 78% (3/5) 0.10L [MARKET] LOSS $-36 (-1.0R) VWAP momentum
+  X 09:33 ICT-02     LONG  @24794 STANDARD 75% (3/5) 0.10L [MARKET] LOSS $-95 (-1.0R) FVG bull
+  + 09:34 LVL-02     LONG  @24797 STANDARD 78% (3/5) 0.10L [LIMIT] WIN  $+45 (+1.5R) Round 24800
+  X 09:35 ICT-01     LONG  @24809 HIGH     86% (4/5) 0.20L [MARKET] LOSS $-192 (-1.0R) VWAP+momentum
+  X 09:37 ORD-02     LONG  @24818 REDUCED  73% (2/5) 0.10L [MARKET] LOSS $-96 (-1.0R) ORB long
+  X 09:40 OD-01      LONG  @24835 REDUCED  73% (2/5) 0.10L [MARKET] LOSS $-123 (-1.0R) OD long
+  + 09:46 VOL-06     SHORT @24849 REDUCED  53% (1/5) 0.10L [LIMIT] WIN  $+140 (+1.6R) Noon short
+  X 09:50 VWAP-02    SHORT @24807 REDUCED  73% (2/5) 0.10L [LIMIT] LOSS $-35 (-1.0R) VWAP reject
+  X 10:01 VWAP-01    LONG  @24807 HIGH     81% (4/6) 0.20L [LIMIT] LOSS $-73 (-1.0R) VWAP bounce
+  X 10:06 VWAP-03    LONG  @24807 HIGH     86% (4/6) 0.20L [MARKET] LOSS $-36 (-1.0R) VWAP momentum
+  X 10:07 ORD-02     LONG  @24825 HIGH     87% (4/6) 0.20L [MARKET] LOSS $-131 (-1.0R) ORB long
+  X 10:08 ICT-01     LONG  @24833 HIGH     85% (4/6) 0.20L [MARKET] LOSS $-128 (-1.0R) VWAP+momentum
+  X 10:13 VOL-05     LONG  @24753 SCALP    44% (3/6) 0.10L [LIMIT] LOSS $-65 (-1.0R) MeanRev long
+  X 10:20 VOL-06     LONG  @24747 SCALP    47% (2/6) 0.10L [LIMIT] LOSS $-69 (-1.0R) Noon long
+  X 10:25 IB-01      SHORT @24716 SCALP    45% (3/6) 0.10L [MARKET] LOSS $-98 (-1.0R) IB break short
+  X 10:26 OD-01      SHORT @24677 REDUCED  62% (3/6) 0.10L [MARKET] LOSS $-144 (-0.7R) OD short
+  X 10:27 VOL-03     SHORT @24676 REDUCED  61% (3/6) 0.10L [MARKET] LOSS $-112 (-1.0R) Trend short
+  X 10:28 ICT-02     SHORT @24673 REDUCED  59% (3/6) 0.10L [MARKET] LOSS $-116 (-1.0R) FVG bear
+  X 10:36 LVL-02     LONG  @24696 SCALP    47% (2/6) 0.10L [LIMIT] LOSS $-34 (-1.0R) Round 24700
+  X 10:37 ORD-02     SHORT @24691 SCALP    49% (2/6) 0.10L [MARKET] LOSS $-116 (-1.0R) ORB short
+  + 10:54 VOL-06     LONG  @24698 SCALP    46% (2/6) 0.10L [LIMIT] WIN  $+128 (+1.2R) Noon long
+  + 10:58 ICT-02     LONG  @24726 REDUCED  59% (3/6) 0.10L [MARKET] WIN  $+77 (+0.7R) FVG bull
+  X 11:00 IB-02      LONG  @24760 REDUCED  59% (3/6) 0.10L [LIMIT] LOSS $-34 (-1.0R) IB scalp long
+  X 11:06 VWAP-03    LONG  @24777 HIGH     78% (4/6) 0.20L [MARKET] LOSS $-93 (-1.0R) VWAP momentum
+
+  DAY: 25 trades | 5W 20L | WR: 20% | P&L: $-1,353
+
+==========================================================================================
+  2026-03-19 (Thursday) | PDH:24850 PDL:24496
+==========================================================================================
+  X 09:30 OD-01      SHORT @24232 STANDARD 83% (3/5) 0.10L [MARKET] LOSS $-127 (-1.0R) OD short
+  X 09:31 GAP-02     SHORT @24217 STANDARD 82% (3/5) 0.10L [MARKET] LOSS $-94 (-1.0R) Gap short
+  X 09:32 ICT-02     SHORT @24209 STANDARD 81% (3/5) 0.10L [MARKET] LOSS $-94 (-1.0R) FVG bear
+  X 09:36 LVL-02     SHORT @24205 REDUCED  73% (2/5) 0.10L [LIMIT] LOSS $-37 (-1.0R) Round 24200
+  + 09:37 VWAP-03    LONG  @24232 REDUCED  61% (1/5) 0.10L [MARKET] WIN  $+114 (+3.3R) VWAP momentum
+  + 09:38 ICT-01     LONG  @24257 REDUCED  73% (2/5) 0.10L [MARKET] WIN  $+174 (+1.9R) VWAP+momentum
+  X 09:41 ORD-02     LONG  @24307 STANDARD 71% (3/5) 0.10L [MARKET] LOSS $-96 (-1.0R) ORB long
+  X 09:50 VOL-03     LONG  @24349 REDUCED  57% (2/5) 0.10L [MARKET] LOSS $-96 (-1.0R) Trend long
+  X 09:58 VOL-06     SHORT @24345 SCALP    51% (2/5) 0.10L [LIMIT] LOSS $-97 (-1.0R) Noon short
+  X 10:00 OD-01      LONG  @24388 REDUCED  58% (2/5) 0.10L [MARKET] LOSS $-215 (-1.0R) OD long
+  X 10:07 VWAP-03    LONG  @24367 STANDARD 77% (3/6) 0.10L [MARKET] LOSS $-170 (-1.0R) VWAP momentum
+  X 10:11 IB-01      LONG  @24401 ELITE    92% (5/6) 0.30L [MARKET] LOSS $-619 (-1.0R) IB break long
+  X 10:12 ORD-02     LONG  @24400 ELITE    92% (5/6) 0.30L [MARKET] LOSS $-410 (-1.0R) ORB long
+  X 10:15 ICT-01     LONG  @24343 STANDARD 75% (4/6) 0.10L [MARKET] LOSS $-137 (-1.0R) VWAP+momentum
+  X 10:21 VWAP-01    LONG  @24307 STANDARD 71% (3/6) 0.10L [LIMIT] LOSS $-38 (-1.0R) VWAP bounce
+  X 10:22 GAP-02     SHORT @24294 SCALP    41% (3/6) 0.10L [MARKET] LOSS $-137 (-1.0R) Gap short
+  + 10:25 ICT-02     LONG  @24306 STANDARD 73% (3/6) 0.10L [MARKET] WIN  $+231 (+1.8R) FVG bull
+  X 10:32 OD-01      LONG  @24352 HIGH     87% (4/6) 0.20L [MARKET] LOSS $-191 (-0.7R) OD long
+  X 10:35 VOL-03     LONG  @24398 HIGH     86% (4/6) 0.20L [MARKET] LOSS $-271 (-1.0R) Trend long
+  X 10:37 VWAP-03    LONG  @24354 STANDARD 77% (3/6) 0.10L [MARKET] LOSS $-105 (-1.0R) VWAP momentum
+  X 10:42 ORD-02     LONG  @24332 STANDARD 79% (3/6) 0.10L [MARKET] LOSS $-135 (-1.0R) ORB long
+  X 10:45 ICT-01     LONG  @24320 STANDARD 76% (3/6) 0.10L [MARKET] LOSS $-91 (-0.7R) VWAP+momentum
+  X 10:58 ICT-02     LONG  @24367 STANDARD 73% (3/6) 0.10L [MARKET] LOSS $-136 (-1.0R) FVG bull
+  X 11:02 OD-01      LONG  @24356 STANDARD 79% (3/6) 0.10L [MARKET] LOSS $-153 (-1.0R) OD long
+  X 11:05 IB-01      LONG  @24422 HIGH     87% (4/6) 0.20L [MARKET] LOSS $-410 (-1.0R) IB break long
+
+  DAY: 25 trades | 3W 22L | WR: 12% | P&L: $-3,339
+
+==========================================================================================
+  2026-03-20 (Friday) | PDH:24547 PDL:24188
+==========================================================================================
+  + 09:30 OD-01      SHORT @24292 REDUCED  74% (2/5) 0.10L [MARKET] WIN  $+189 (+1.5R) OD short
+  X 09:31 GAP-02     SHORT @24276 REDUCED  73% (2/5) 0.10L [MARKET] LOSS $-95 (-1.0R) Gap short
+  X 09:32 VWAP-02    SHORT @24282 STANDARD 82% (3/5) 0.10L [LIMIT] LOSS $-38 (-1.0R) VWAP reject
+  X 09:36 VWAP-01    LONG  @24282 REDUCED  62% (1/5) 0.10L [LIMIT] LOSS $-42 (-1.0R) VWAP bounce
+  + 09:37 VOL-06     LONG  @24266 REDUCED  53% (1/5) 0.10L [LIMIT] WIN  $+138 (+1.5R) Noon long
+  X 09:39 ICT-02     SHORT @24256 REDUCED  58% (1/5) 0.10L [MARKET] LOSS $-96 (-1.0R) FVG bear
+  + 09:40 VWAP-03    LONG  @24277 REDUCED  61% (1/5) 0.10L [MARKET] WIN  $+115 (+9.0R) VWAP momentum
+  X 09:41 ICT-01     LONG  @24301 REDUCED  73% (2/5) 0.10L [MARKET] LOSS $-96 (-1.0R) VWAP+momentum
+  + 09:50 ORD-02     SHORT @24231 STANDARD 71% (3/5) 0.10L [MARKET] WIN  $+176 (+1.9R) ORB short
+  + 09:57 LVL-01     SHORT @24185 REDUCED  60% (2/5) 0.10L [LIMIT] WIN  $+75 (+5.0R) PDL short
+  + 09:58 VOL-03     SHORT @24155 REDUCED  57% (2/5) 0.10L [MARKET] WIN  $+23 (+0.2R) Trend short
+  X 10:00 OD-01      SHORT @24149 STANDARD 70% (3/5) 0.10L [MARKET] LOSS $-73 (-0.2R) OD short
+  X 10:01 IB-01      SHORT @24142 ELITE    92% (5/6) 0.30L [MARKET] LOSS $-147 (-0.2R) IB break short
+  + 10:02 GAP-02     SHORT @24156 HIGH     85% (4/6) 0.20L [MARKET] WIN  $+68 (+0.2R) Gap short
+  X 10:12 ICT-02     SHORT @24131 HIGH     82% (4/6) 0.20L [MARKET] LOSS $-135 (-0.5R) FVG bear
+  + 10:20 ORD-02     SHORT @24151 STANDARD 79% (3/6) 0.10L [MARKET] WIN  $+52 (+0.4R) ORB short
+  + 10:30 OD-01      SHORT @24166 HIGH     86% (4/6) 0.20L [MARKET] WIN  $+121 (+0.2R) OD short
+  + 10:32 GAP-02     SHORT @24168 STANDARD 76% (3/6) 0.10L [MARKET] WIN  $+40 (+0.3R) Gap short
+  X 10:34 LVL-01     SHORT @24184 STANDARD 74% (3/6) 0.10L [LIMIT] LOSS $-22 (-1.0R) PDL short
+  + 10:50 ORD-02     SHORT @24147 STANDARD 79% (3/6) 0.10L [MARKET] WIN  $+0 (+0.0R) ORB short
+  X 10:51 IB-01      SHORT @24138 STANDARD 79% (3/6) 0.10L [MARKET] LOSS $-31 (-0.1R) IB break short
+  X 10:52 ICT-02     SHORT @24117 HIGH     83% (4/6) 0.20L [MARKET] LOSS $-307 (-1.0R) FVG bear
+  X 10:54 VOL-03     SHORT @24105 ELITE    91% (5/6) 0.30L [MARKET] LOSS $-480 (-1.0R) Trend short
+  X 11:00 OD-01      SHORT @24183 STANDARD 67% (3/6) 0.10L [MARKET] LOSS $-13 (-0.0R) OD short
+  X 11:02 GAP-02     SHORT @24136 STANDARD 76% (3/6) 0.10L [MARKET] LOSS $-120 (-0.8R) Gap short
+
+  DAY: 25 trades | 11W 14L | WR: 44% | P&L: $-698
+
+==========================================================================================
+  2026-03-23 (Monday) | PDH:24356 PDL:23836
+==========================================================================================
+  X 09:30 ICT-02     SHORT @24306 REDUCED  65% (2/5) 0.10L [MARKET] LOSS $-95 (-1.0R) FVG bear
+  X 09:31 VWAP-03    LONG  @24328 REDUCED  61% (1/5) 0.10L [MARKET] LOSS $-47 (-1.0R) VWAP momentum
+  X 09:32 LVL-02     SHORT @24301 STANDARD 83% (3/5) 0.10L [LIMIT] LOSS $-35 (-1.0R) Round 24300
+  X 09:33 GAP-02     LONG  @24329 REDUCED  60% (1/5) 0.10L [MARKET] LOSS $-95 (-1.0R) Gap long
+  X 09:34 VWAP-02    SHORT @24312 REDUCED  60% (1/5) 0.10L [LIMIT] LOSS $-35 (-1.0R) VWAP reject
+  + 09:36 ICT-01     LONG  @24327 REDUCED  73% (2/5) 0.10L [MARKET] WIN  $+174 (+1.9R) VWAP+momentum
+  X 09:38 LVL-01     LONG  @24363 REDUCED  75% (2/5) 0.10L [LIMIT] LOSS $-28 (-1.0R) PDH long
+  X 09:39 ORD-02     LONG  @24374 REDUCED  75% (2/5) 0.10L [MARKET] LOSS $-96 (-1.0R) ORB long
+  X 09:42 OD-01      LONG  @24386 REDUCED  57% (2/5) 0.10L [MARKET] LOSS $-130 (-1.0R) OD long
+  + 09:44 VWAP-01    LONG  @24331 REDUCED  58% (2/5) 0.10L [LIMIT] WIN  $+85 (+2.6R) VWAP bounce
+  X 09:52 VOL-03     LONG  @24426 STANDARD 70% (3/5) 0.10L [MARKET] LOSS $-95 (-1.0R) Trend long
+  + 10:01 VWAP-03    LONG  @24427 STANDARD 77% (3/6) 0.10L [MARKET] WIN  $+130 (+0.9R) VWAP momentum
+  + 10:03 GAP-02     LONG  @24411 HIGH     85% (4/6) 0.20L [MARKET] WIN  $+411 (+1.9R) Gap long
+  + 10:06 ICT-01     LONG  @24369 REDUCED  63% (3/6) 0.10L [MARKET] WIN  $+207 (+2.0R) VWAP+momentum
+  + 10:09 ORD-02     LONG  @24401 HIGH     86% (4/6) 0.20L [MARKET] WIN  $+414 (+2.0R) ORB long
+  + 10:12 OD-01      LONG  @24425 HIGH     87% (4/6) 0.20L [MARKET] WIN  $+270 (+0.7R) OD long
+  + 10:13 IB-01      LONG  @24450 HIGH     87% (4/6) 0.20L [MARKET] WIN  $+165 (+0.5R) IB break long
+  X 10:19 ICT-02     LONG  @24472 HIGH     82% (4/6) 0.20L [MARKET] LOSS $-262 (-1.0R) FVG bull
+  X 10:22 VOL-03     LONG  @24497 ELITE    91% (5/6) 0.30L [MARKET] LOSS $-433 (-1.0R) Trend long
+  X 10:31 VWAP-03    LONG  @24454 STANDARD 77% (3/6) 0.10L [MARKET] LOSS $-4 (-0.0R) VWAP momentum
+  X 10:33 GAP-02     LONG  @24485 STANDARD 76% (3/6) 0.10L [MARKET] LOSS $-155 (-1.0R) Gap long
+  X 10:36 ICT-01     LONG  @24439 STANDARD 76% (3/6) 0.10L [MARKET] LOSS $-98 (-0.7R) VWAP+momentum
+  X 10:39 ORD-02     LONG  @24448 STANDARD 79% (3/6) 0.10L [MARKET] LOSS $-156 (-1.0R) ORB long
+  X 10:42 OD-01      LONG  @24450 STANDARD 79% (3/6) 0.10L [MARKET] LOSS $-191 (-0.8R) OD long
+  X 10:43 IB-01      LONG  @24446 STANDARD 79% (3/6) 0.10L [MARKET] LOSS $-178 (-1.0R) IB break long
+
+  DAY: 25 trades | 8W 17L | WR: 32% | P&L: $-277
+
+==========================================================================================
+  2026-03-24 (Tuesday) | PDH:24517 PDL:24142
+==========================================================================================
+  X 09:30 ICT-02     LONG  @24103 REDUCED  64% (2/5) 0.10L [MARKET] LOSS $-94 (-1.0R) FVG bull
+  X 09:31 LVL-01     LONG  @24150 REDUCED  75% (2/5) 0.10L [LIMIT] LOSS $-63 (-1.0R) PDL long
+  X 09:32 VWAP-03    LONG  @24128 REDUCED  74% (2/5) 0.10L [MARKET] LOSS $-31 (-1.0R) VWAP momentum
+  X 09:33 VWAP-01    LONG  @24125 REDUCED  75% (2/5) 0.10L [LIMIT] LOSS $-43 (-1.0R) VWAP bounce
+  X 09:34 ICT-01     LONG  @24142 STANDARD 82% (3/5) 0.10L [MARKET] LOSS $-95 (-1.0R) VWAP+momentum
+  + 09:35 GAP-02     SHORT @24111 REDUCED  73% (2/5) 0.10L [MARKET] WIN  $+174 (+1.9R) Gap short
+  X 09:39 ORD-02     SHORT @24048 STANDARD 83% (3/5) 0.10L [MARKET] LOSS $-94 (-1.0R) ORB short
+  X 09:40 OD-01      SHORT @24018 STANDARD 70% (3/5) 0.10L [MARKET] LOSS $-167 (-1.0R) OD short
+  X 09:41 VOL-03     SHORT @23982 STANDARD 70% (3/5) 0.10L [MARKET] LOSS $-95 (-1.0R) Trend short
+  X 09:47 VOL-06     LONG  @24046 SCALP    51% (2/5) 0.10L [LIMIT] LOSS $-97 (-1.0R) Noon long
+  X 10:00 ICT-02     LONG  @24083 REDUCED  55% (2/5) 0.10L [MARKET] LOSS $-97 (-1.0R) FVG bull
+  X 10:03 VWAP-02    SHORT @24059 STANDARD 69% (3/6) 0.10L [LIMIT] LOSS $-42 (-1.0R) VWAP reject
+  X 10:05 GAP-02     SHORT @24051 STANDARD 76% (3/6) 0.10L [MARKET] LOSS $-113 (-1.0R) Gap short
+  X 10:07 LVL-02     SHORT @24104 SCALP    51% (2/6) 0.10L [LIMIT] LOSS $-35 (-1.0R) Round 24100
+  X 10:09 VWAP-03    LONG  @24115 SCALP    42% (3/6) 0.10L [MARKET] LOSS $-116 (-1.0R) VWAP momentum
+  X 10:10 ICT-01     LONG  @24099 SCALP    40% (3/6) 0.10L [MARKET] LOSS $-114 (-1.0R) VWAP+momentum
+  X 10:12 ORD-02     SHORT @24060 HIGH     87% (4/6) 0.20L [MARKET] LOSS $-225 (-1.0R) ORB short
+  X 10:13 OD-01      SHORT @24032 HIGH     87% (4/6) 0.20L [MARKET] LOSS $-282 (-1.0R) OD short
+  X 10:35 GAP-02     SHORT @24065 REDUCED  59% (2/6) 0.10L [MARKET] LOSS $-113 (-1.0R) Gap short
+  X 10:37 ICT-02     SHORT @24037 HIGH     83% (4/6) 0.20L [MARKET] LOSS $-224 (-1.0R) FVG bear
+  X 10:44 VWAP-03    LONG  @24090 SCALP    42% (3/6) 0.10L [MARKET] LOSS $-70 (-1.0R) VWAP momentum
+  X 10:45 ORD-02     SHORT @24053 STANDARD 79% (3/6) 0.10L [MARKET] LOSS $-113 (-1.0R) ORB short
+  X 10:49 VWAP-02    SHORT @24060 STANDARD 69% (3/6) 0.10L [LIMIT] LOSS $-43 (-1.0R) VWAP reject
+  X 10:50 OD-01      SHORT @24037 HIGH     87% (4/6) 0.20L [MARKET] LOSS $-260 (-1.0R) OD short
+  X 10:52 LVL-01     SHORT @24134 STANDARD 68% (3/6) 0.10L [LIMIT] LOSS $-29 (-1.0R) PDL short
+
+  DAY: 25 trades | 1W 24L | WR: 4% | P&L: $-2,481
+
+==========================================================================================
+  2026-03-25 (Wednesday) | PDH:24223 PDL:23976
+==========================================================================================
+  X 09:31 VWAP-01    LONG  @24302 REDUCED  68% (2/5) 0.10L [LIMIT] LOSS $-45 (-1.0R) VWAP bounce
+  X 09:32 LVL-02     LONG  @24299 STANDARD 79% (3/5) 0.10L [LIMIT] LOSS $-34 (-1.0R) Round 24300
+  X 09:34 VWAP-03    LONG  @24305 STANDARD 78% (3/5) 0.10L [MARKET] LOSS $-34 (-1.0R) VWAP momentum
+  X 09:36 ORD-02     LONG  @24354 STANDARD 83% (3/5) 0.10L [MARKET] LOSS $-97 (-1.0R) ORB long
+  X 09:37 OD-01      LONG  @24356 STANDARD 83% (3/5) 0.10L [MARKET] LOSS $-184 (-1.0R) OD long
+  X 09:38 ICT-01     LONG  @24343 STANDARD 82% (3/5) 0.10L [MARKET] LOSS $-95 (-1.0R) VWAP+momentum
+  + 09:44 ICT-02     SHORT @24292 REDUCED  71% (2/5) 0.10L [MARKET] WIN  $+158 (+1.8R) FVG bear
+  X 09:50 LVL-01     SHORT @24221 STANDARD 72% (3/5) 0.10L [LIMIT] LOSS $-49 (-1.0R) PDH short
+  X 09:51 VOL-03     SHORT @24218 STANDARD 70% (3/5) 0.10L [MARKET] LOSS $-97 (-1.0R) Trend short
+  X 09:54 ICT-03     SHORT @24211 REDUCED  56% (2/5) 0.10L [MARKET] LOSS $-247 (-0.8R) Swept PDH
+  X 10:06 ORD-02     SHORT @24254 STANDARD 79% (3/6) 0.10L [MARKET] LOSS $-121 (-1.0R) ORB short
+  X 10:12 VWAP-03    LONG  @24278 SCALP    42% (3/6) 0.10L [MARKET] LOSS $-32 (-1.0R) VWAP momentum
+  X 10:13 VWAP-02    SHORT @24268 STANDARD 69% (3/6) 0.10L [LIMIT] LOSS $-37 (-1.0R) VWAP reject
+  X 10:14 ICT-01     LONG  @24297 SCALP    40% (3/6) 0.10L [MARKET] LOSS $-122 (-1.0R) VWAP+momentum
+  + 10:22 VOL-06     SHORT @24331 REDUCED  60% (3/6) 0.10L [LIMIT] WIN  $+181 (+1.6R) Noon short
+  + 10:52 VOL-06     SHORT @24339 SCALP    47% (2/6) 0.10L [LIMIT] WIN  $+180 (+1.6R) Noon short
+  + 10:53 ICT-02     SHORT @24338 REDUCED  55% (2/6) 0.10L [MARKET] WIN  $+203 (+1.8R) FVG bear
+  + 11:09 ORD-02     SHORT @24260 ELITE    92% (5/6) 0.30L [MARKET] WIN  $+681 (+2.0R) ORB short
+  + 11:15 OD-01      SHORT @24223 ELITE    92% (5/6) 0.30L [MARKET] WIN  $+470 (+1.4R) OD short
+  X 11:16 IB-01      SHORT @24152 ELITE    92% (5/6) 0.30L [MARKET] LOSS $-596 (-1.0R) IB break short
+  X 11:17 VOL-03     SHORT @24133 ELITE    91% (5/6) 0.30L [MARKET] LOSS $-434 (-1.0R) Trend short
+  X 11:18 ICT-03     SHORT @24154 ELITE    90% (5/6) 0.30L [MARKET] LOSS $-262 (-0.2R) Swept PDH
+  X 11:22 LVL-02     SHORT @24201 HIGH     80% (4/6) 0.20L [LIMIT] LOSS $-72 (-1.0R) Round 24200
+  X 11:23 LVL-01     SHORT @24213 STANDARD 73% (4/6) 0.10L [LIMIT] LOSS $-64 (-1.0R) PDH short
+  X 11:29 VWAP-03    LONG  @24266 SCALP    42% (3/6) 0.10L [MARKET] LOSS $-15 (-1.0R) VWAP momentum
+
+  DAY: 25 trades | 6W 19L | WR: 24% | P&L: $-763
+
+==========================================================================================
+  2026-03-26 (Thursday) | PDH:24364 PDL:24130
+==========================================================================================
+  X 09:30 OD-01      SHORT @23954 REDUCED  74% (2/5) 0.10L [MARKET] LOSS $-114 (-1.0R) OD short
+  X 09:31 VWAP-01    LONG  @23957 REDUCED  62% (1/5) 0.10L [LIMIT] LOSS $-39 (-1.0R) VWAP bounce
+  X 09:32 GAP-02     SHORT @23951 STANDARD 82% (3/5) 0.10L [MARKET] LOSS $-95 (-1.0R) Gap short
+  X 09:33 VWAP-02    SHORT @23950 STANDARD 82% (3/5) 0.10L [LIMIT] LOSS $-44 (-1.0R) VWAP reject
+  X 09:34 VWAP-03    LONG  @23970 REDUCED  61% (1/5) 0.10L [MARKET] LOSS $-45 (-1.0R) VWAP momentum
+  X 09:39 ORD-02     SHORT @23917 STANDARD 83% (3/5) 0.10L [MARKET] LOSS $-95 (-1.0R) ORB short
+  + 09:42 VOL-06     LONG  @23954 REDUCED  60% (1/5) 0.10L [LIMIT] WIN  $+139 (+1.5R) Noon long
+  + 09:43 ICT-01     LONG  @23979 REDUCED  73% (2/5) 0.10L [MARKET] WIN  $+174 (+1.9R) VWAP+momentum
+  + 09:44 ICT-02     LONG  @24003 REDUCED  71% (2/5) 0.10L [MARKET] WIN  $+157 (+1.8R) FVG bull
+  X 09:53 VOL-03     LONG  @24069 STANDARD 70% (3/5) 0.10L [MARKET] LOSS $-95 (-1.0R) Trend long
+  X 10:01 OD-01      LONG  @24065 ELITE    92% (5/6) 0.30L [MARKET] LOSS $-416 (-1.0R) OD long
+  X 10:04 VWAP-03    LONG  @24046 STANDARD 77% (3/6) 0.10L [MARKET] LOSS $-103 (-1.0R) VWAP momentum
+  X 10:09 ORD-02     LONG  @24033 STANDARD 79% (3/6) 0.10L [MARKET] LOSS $-108 (-1.0R) ORB long
+  X 10:14 ICT-01     LONG  @24059 HIGH     85% (4/6) 0.20L [MARKET] LOSS $-220 (-1.0R) VWAP+momentum
+  X 10:15 ICT-02     LONG  @24070 HIGH     83% (4/6) 0.20L [MARKET] LOSS $-220 (-1.0R) FVG bull
+  + 10:29 VWAP-01    LONG  @24018 STANDARD 71% (3/6) 0.10L [LIMIT] WIN  $+99 (+3.3R) VWAP bounce
+  X 10:34 VWAP-03    LONG  @24038 STANDARD 77% (3/6) 0.10L [MARKET] LOSS $-51 (-1.0R) VWAP momentum
+  X 10:39 ORD-02     LONG  @24022 STANDARD 79% (3/6) 0.10L [MARKET] LOSS $-109 (-1.0R) ORB long
+  + 10:43 GAP-02     SHORT @23987 SCALP    41% (3/6) 0.10L [MARKET] WIN  $+202 (+1.9R) Gap short
+  X 10:52 VOL-06     LONG  @23949 SCALP    47% (2/6) 0.10L [LIMIT] LOSS $-108 (-1.0R) Noon long
+  + 10:54 VOL-05     LONG  @23918 SCALP    45% (2/6) 0.10L [LIMIT] WIN  $+71 (+0.7R) MeanRev long
+  X 10:58 ICT-02     LONG  @23949 STANDARD 69% (3/6) 0.10L [MARKET] LOSS $-28 (-0.2R) FVG bull
+  X 11:22 VOL-06     LONG  @23936 SCALP    47% (2/6) 0.10L [LIMIT] LOSS $-129 (-1.0R) Noon long
+  X 11:28 ICT-02     LONG  @23941 REDUCED  55% (2/6) 0.10L [MARKET] LOSS $-129 (-1.0R) FVG bull
+  + 11:33 IB-01      SHORT @23905 SCALP    45% (3/6) 0.10L [MARKET] WIN  $+126 (+0.8R) IB break short
+
+  DAY: 25 trades | 7W 18L | WR: 28% | P&L: $-1,179
+
+==========================================================================================
+  2026-03-27 (Friday) | PDH:24087 PDL:23625
+==========================================================================================
+  + 09:31 GAP-02     SHORT @23476 STANDARD 78% (3/5) 0.10L [MARKET] WIN  $+175 (+1.9R) Gap short
+  + 09:32 OD-01      SHORT @23470 REDUCED  74% (2/5) 0.10L [MARKET] WIN  $+154 (+1.5R) OD short
+  X 09:33 ICT-02     SHORT @23444 REDUCED  71% (2/5) 0.10L [MARKET] LOSS $-95 (-1.0R) FVG bear
+  X 09:38 VWAP-01    LONG  @23462 REDUCED  59% (2/5) 0.10L [LIMIT] LOSS $-42 (-1.0R) VWAP bounce
+  X 09:39 VWAP-02    SHORT @23458 REDUCED  56% (2/5) 0.10L [LIMIT] LOSS $-36 (-1.0R) VWAP reject
+  X 09:40 VWAP-03    LONG  @23469 REDUCED  58% (2/5) 0.10L [MARKET] LOSS $-37 (-1.0R) VWAP momentum
+  X 09:45 ICT-01     LONG  @23483 REDUCED  57% (2/5) 0.10L [MARKET] LOSS $-96 (-1.0R) VWAP+momentum
+  X 09:46 LVL-02     LONG  @23498 REDUCED  58% (2/5) 0.10L [LIMIT] LOSS $-37 (-1.0R) Round 23500
+  + 09:53 ORD-02     SHORT @23399 REDUCED  59% (2/5) 0.10L [MARKET] WIN  $+176 (+1.9R) ORB short
+  X 09:55 VOL-03     SHORT @23371 REDUCED  57% (2/5) 0.10L [MARKET] LOSS $-95 (-1.0R) Trend short
+  X 10:01 GAP-02     SHORT @23353 HIGH     85% (4/6) 0.20L [MARKET] LOSS $-251 (-1.0R) Gap short
+  X 10:02 OD-01      SHORT @23378 STANDARD 79% (3/6) 0.10L [MARKET] LOSS $-23 (-0.1R) OD short
+  + 10:17 VWAP-02    SHORT @23421 REDUCED  56% (3/6) 0.10L [LIMIT] WIN  $+116 (+3.5R) VWAP reject
+  X 10:18 LVL-02     SHORT @23401 STANDARD 70% (3/6) 0.10L [LIMIT] LOSS $-35 (-1.0R) Round 23400
+  X 10:23 ORD-02     SHORT @23355 HIGH     87% (4/6) 0.20L [MARKET] LOSS $-251 (-1.0R) ORB short
+  X 10:28 ICT-02     SHORT @23347 HIGH     82% (4/6) 0.20L [MARKET] LOSS $-251 (-1.0R) FVG bear
+  X 10:29 VOL-03     SHORT @23341 ELITE    91% (5/6) 0.30L [MARKET] LOSS $-376 (-1.0R) Trend short
+  X 10:31 GAP-02     SHORT @23369 HIGH     85% (4/6) 0.20L [MARKET] LOSS $-250 (-1.0R) Gap short
+  X 10:32 OD-01      SHORT @23349 HIGH     86% (4/6) 0.20L [MARKET] LOSS $-459 (-0.7R) OD short
+  X 10:39 IB-01      SHORT @23321 HIGH     87% (4/6) 0.20L [MARKET] LOSS $-412 (-1.0R) IB break short
+  X 10:53 ORD-02     SHORT @23369 STANDARD 79% (3/6) 0.10L [MARKET] LOSS $-139 (-1.0R) ORB short
+  X 11:01 GAP-02     SHORT @23374 STANDARD 76% (3/6) 0.10L [MARKET] LOSS $-138 (-1.0R) Gap short
+  X 11:02 OD-01      SHORT @23386 STANDARD 79% (3/6) 0.10L [MARKET] LOSS $-47 (-0.2R) OD short
+  X 11:03 VWAP-02    SHORT @23397 STANDARD 69% (3/6) 0.10L [LIMIT] LOSS $-44 (-1.0R) VWAP reject
+  X 11:05 LVL-02     SHORT @23400 STANDARD 70% (3/6) 0.10L [LIMIT] LOSS $-37 (-1.0R) Round 23400
+
+  DAY: 25 trades | 4W 21L | WR: 16% | P&L: $-2,531
+
+==========================================================================================
+  FORGE V21 REPLAY -- FINAL SUMMARY
+==========================================================================================
+  Days: 8
+  Total trades: 200
+  Wins: 45 | Losses: 155 | WR: 22.5%
+  Total P&L: $-12,621
+  Daily avg: $-1,578
+  Monthly est: $-33,131
+  Avg WIN: $+166
+  Avg LOSS: $-130
+
+  Setup           N     WR   AvgPnL   TotalPnL   Order
+  --------------------------------------------------
+  VOL-06         11  54.5% $    +37 $     +407   LIMIT
+  VOL-05          2  50.0% $     +3 $       +6   LIMIT
+  IB-02           1   0.0% $    -34 $      -34   LIMIT
+  VWAP-01        10  30.0% $     -5 $      -53   LIMIT
+  LVL-01          7  14.3% $    -26 $     -180   LIMIT
+  VWAP-02        10  10.0% $    -24 $     -240   LIMIT
+  LVL-02         10  10.0% $    -31 $     -310   LIMIT
+  ICT-03          2   0.0% $   -254 $     -508  MARKET
+  GAP-02         18  33.3% $    -33 $     -586  MARKET
+  VWAP-03        20  15.0% $    -33 $     -664  MARKET
+  ICT-01         16  25.0% $    -47 $     -756  MARKET
+  ORD-02         24  25.0% $    -45 $   -1,091  MARKET
+  ICT-02         22  22.7% $    -75 $   -1,648  MARKET
+  OD-01          24  20.8% $    -88 $   -2,109  MARKET
+  IB-01          10  20.0% $   -220 $   -2,199  MARKET
+  VOL-03         13   7.7% $   -204 $   -2,656  MARKET
+
+  Regime breakdown:
+    TREND       108t | WR 20.4% | $-9,766
+    NORMAL       92t | WR 25.0% | $-2,855
+
+  Conviction accuracy:
+    ELITE        12t | WR 16.7%
+    HIGH         31t | WR 19.4%
+    STANDARD     73t | WR 13.7%
+    REDUCED      62t | WR 35.5%
+    SCALP        22t | WR 22.7%
+
+==========================================================================================

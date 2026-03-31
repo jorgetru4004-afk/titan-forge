@@ -1,0 +1,446 @@
+
+================================================================================
+  FORGE v22 — LONG & NEUTRAL REGIME RESEARCH
+  Testing every strategy x direction x instrument x period
+  Finding LONG and NEUTRAL edges backed by real data
+================================================================================
+
+  Instruments: 14
+  Strategies: 8
+  Directions: LONG, SHORT, BOTH
+  Periods: 3
+  Total combos to test: 672
+
+################################################################################
+  PERIOD: BULL (Oct-Dec 2024) (2024-10-01 to 2024-12-31)
+################################################################################
+
+  Fetching data...
+    USDCHF (C:USDCHF)... OK - 1561 bars
+    GER40 (EWG)... OK - 585 bars
+    NZDUSD (C:NZDUSD)... OK - 1556 bars
+    UK100 (EWU)... OK - 558 bars
+    US100 (QQQ)... OK - 1014 bars
+    ETHUSD (X:ETHUSD)... OK - 2208 bars
+    EURGBP (C:EURGBP)... OK - 1561 bars
+    EURUSD (C:EURUSD)... OK - 1554 bars
+    XAUUSD (C:XAUUSD)... OK - 1526 bars
+    GBPJPY (C:GBPJPY)... OK - 1540 bars
+    USDJPY (C:USDJPY)... OK - 1558 bars
+    BTCUSD (X:BTCUSD)... OK - 2208 bars
+    USOIL (USO)... OK - 989 bars
+    GBPUSD (C:GBPUSD)... OK - 1557 bars
+  Loaded: 14 instruments
+
+  Running strategy tests...
+
+  --- TOP LONG COMBOS (BULL (Oct-Dec 2024)) ---
+  Symbol     Strategy              Trades     WR        R     PF  MaxCL
+  -----------------------------------------------------------------
+  USOIL      STOCH_REVERSAL            32  37.5%  +17.00R  3.43     2
+  USOIL      GAP_FILL                  24  66.7%  +16.20R  6.40     2
+  GER40      VWAP_REVERT                4  50.0%  +16.00R 999.00     0
+  NZDUSD     MEAN_REVERT               12  50.0%  +16.00R  9.00     1
+  GBPUSD     STOCH_REVERSAL            48  25.0%  +16.00R  3.00     1
+  GER40      GAP_FILL                  35  57.1%  +13.00R  2.18     4
+  USDJPY     EMA_BOUNCE                15  33.3%  +13.00R  7.50     1
+  UK100      GAP_FILL                  28  60.7%  +12.40R  2.55     2
+  EURGBP     GAP_FILL                  12  91.7%  +12.20R 13.20     1
+  UK100      STOCH_REVERSAL            26  38.5%  +12.00R  2.50     3
+  XAUUSD     STOCH_REVERSAL            43  27.9%  +11.00R  1.85     3
+  UK100      MEAN_REVERT                8  50.0%  +10.00R  6.00     1
+  US100      GAP_FILL                  12  75.0%   +8.80R  5.40     1
+  EURUSD     GAP_FILL                  11  81.8%   +8.80R  5.40     1
+  UK100      VWAP_REVERT                4  25.0%   +8.00R 999.00     0
+  ETHUSD     VWAP_REVERT                5  20.0%   +8.00R 999.00     0
+  BTCUSD     STOCH_REVERSAL            49  22.4%   +8.00R  1.57     3
+  XAUUSD     GAP_FILL                   8  87.5%   +7.40R  8.40     1
+  GER40      ORB                       22  36.4%   +7.00R  1.88     3
+  EURGBP     MEAN_REVERT                9  33.3%   +7.00R  4.50     2
+
+  --- TOP SHORT COMBOS (BULL (Oct-Dec 2024)) ---
+  Symbol     Strategy              Trades     WR        R     PF  MaxCL
+  -----------------------------------------------------------------
+  NZDUSD     STOCH_REVERSAL            54  38.9%  +29.00R  3.23     2
+  GER40      GAP_FILL                  34  70.6%  +20.80R  3.60     2
+  EURGBP     VWAP_REVERT                4  50.0%  +16.00R 999.00     0
+  USOIL      VWAP_REVERT                4  50.0%  +16.00R 999.00     0
+  UK100      GAP_FILL                  30  66.7%  +15.00R  2.67     2
+  NZDUSD     GAP_FILL                  12 100.0%  +14.40R 999.00     0
+  USOIL      GAP_FILL                  26  61.5%  +14.20R  3.84     2
+  USDCHF     STOCH_REVERSAL            69  23.2%  +13.00R  1.68     5
+  US100      STOCH_REVERSAL            52  30.8%  +13.00R  1.68     5
+  GBPJPY     STOCH_REVERSAL            61  24.6%  +13.00R  1.76     3
+  BTCUSD     STOCH_REVERSAL            79  22.8%  +13.00R  1.57     3
+  NZDUSD     EMA_BOUNCE                31  19.4%  +12.00R  3.00     1
+  EURUSD     STOCH_REVERSAL            41  26.8%  +11.00R  2.00     2
+  EURGBP     EMA_BOUNCE                18  22.2%  +10.00R  6.00     1
+  GBPUSD     STOCH_REVERSAL            53  28.3%  +10.00R  1.50     6
+  NZDUSD     CONFLUENCE               137  24.1%   +9.26R  1.19     5
+  US100      GAP_FILL                  20  55.0%   +9.20R  3.30     2
+  UK100      EMA_BOUNCE                 5  60.0%   +9.00R 999.00     0
+  USDCHF     MEAN_REVERT               22  22.7%   +8.00R  2.14     2
+  EURGBP     STOCH_REVERSAL            60  18.3%   +8.00R  1.57     2
+
+################################################################################
+  PERIOD: MIXED (Jul-Sep 2024) (2024-07-01 to 2024-09-30)
+################################################################################
+
+  Fetching data...
+    USDCHF (C:USDCHF)... OK - 1578 bars
+    GER40 (EWG)... OK - 538 bars
+    NZDUSD (C:NZDUSD)... OK - 1578 bars
+    UK100 (EWU)... OK - 559 bars
+    US100 (QQQ)... OK - 1019 bars
+    ETHUSD (X:ETHUSD)... OK - 2208 bars
+    EURGBP (C:EURGBP)... OK - 1578 bars
+    EURUSD (C:EURUSD)... OK - 1578 bars
+    XAUUSD (C:XAUUSD)... OK - 1568 bars
+    GBPJPY (C:GBPJPY)... OK - 1578 bars
+    USDJPY (C:USDJPY)... OK - 1578 bars
+    BTCUSD (X:BTCUSD)... OK - 2208 bars
+    USOIL (USO)... OK - 976 bars
+    GBPUSD (C:GBPUSD)... OK - 1578 bars
+  Loaded: 14 instruments
+
+  Running strategy tests...
+
+  --- TOP LONG COMBOS (MIXED (Jul-Sep 2024)) ---
+  Symbol     Strategy              Trades     WR        R     PF  MaxCL
+  -----------------------------------------------------------------
+  EURGBP     MEAN_REVERT               19  68.4%  +38.00R 39.00     1
+  BTCUSD     STOCH_REVERSAL            61  34.4%  +28.00R  3.00     4
+  USOIL      GAP_FILL                  31  74.2%  +23.60R  6.90     2
+  ETHUSD     STOCH_REVERSAL            59  27.1%  +18.00R  2.29     2
+  NZDUSD     MEAN_REVERT               12  50.0%  +16.00R  9.00     1
+  XAUUSD     STOCH_REVERSAL            33  33.3%  +12.00R  2.20     2
+  GER40      GAP_FILL                  21  66.7%  +11.80R  3.36     2
+  EURGBP     GAP_FILL                  16  75.0%  +11.40R  4.80     1
+  UK100      EMA_BOUNCE                 4  75.0%   +9.00R 999.00     0
+  UK100      MEAN_REVERT                5  60.0%   +8.00R  9.00     1
+  EURUSD     STOCH_REVERSAL            30  20.0%   +7.00R  2.40     1
+  UK100      GAP_FILL                  24  50.0%   +6.40R  1.80     2
+  GBPUSD     GAP_FILL                   7  85.7%   +6.20R  7.20     1
+  GER40      VWAP_REVERT                3  33.3%   +6.00R  4.00     2
+  US100      STOCH_REVERSAL            24  33.3%   +6.00R  1.60     2
+  EURUSD     MEAN_REVERT                4  50.0%   +6.00R 999.00     0
+  USDJPY     GAP_FILL                   5 100.0%   +6.00R 999.00     0
+  USOIL      MEAN_REVERT               15  26.7%   +6.00R  2.00     2
+  GER40      ORB                       26  34.6%   +5.88R  1.53     2
+  US100      GAP_FILL                  11  63.6%   +5.40R  2.80     2
+
+  --- TOP SHORT COMBOS (MIXED (Jul-Sep 2024)) ---
+  Symbol     Strategy              Trades     WR        R     PF  MaxCL
+  -----------------------------------------------------------------
+  NZDUSD     STOCH_REVERSAL            91  34.1%  +33.00R  2.14     3
+  USOIL      STOCH_REVERSAL            31  45.2%  +26.00R 14.00     2
+  USOIL      GAP_FILL                  34  67.6%  +20.60R  3.94     2
+  EURGBP     STOCH_REVERSAL            76  23.7%  +19.00R  2.12     2
+  NZDUSD     VWAP_REVERT               15  20.0%  +17.00R  3.43     2
+  EURGBP     EMA_BOUNCE                19  31.6%  +15.00R  6.00     1
+  USDJPY     STOCH_REVERSAL            59  30.5%  +15.00R  1.71     3
+  NZDUSD     CONFLUENCE                72  29.2%  +14.60R  1.59     3
+  NZDUSD     EMA_BOUNCE                12  50.0%  +14.00R  4.50     2
+  US100      STOCH_REVERSAL            47  31.9%  +12.00R  1.67     4
+  GBPUSD     STOCH_REVERSAL            60  26.7%  +12.00R  1.60     6
+  UK100      GAP_FILL                  28  53.6%  +10.00R  2.25     3
+  UK100      STOCH_REVERSAL            30  33.3%   +9.00R  1.82     3
+  EURGBP     GAP_FILL                  13  61.5%   +8.60R  9.60     1
+  US100      GAP_FILL                  16  62.5%   +8.00R  3.00     2
+  ETHUSD     VWAP_REVERT               19  10.5%   +8.00R  2.00     2
+  USOIL      EMA_BOUNCE                 7  42.9%   +8.00R  9.00     1
+  GER40      VWAP_REVERT                6  16.7%   +7.00R  8.00     1
+  GBPUSD     MEAN_REVERT               31  22.6%   +7.00R  1.50     6
+  US100      EMA_BOUNCE                 7  28.6%   +6.00R 999.00     0
+
+################################################################################
+  PERIOD: BEAR (Jan-Mar 2025) (2025-01-01 to 2025-03-28)
+################################################################################
+
+  Fetching data...
+    USDCHF (C:USDCHF)... OK - 1481 bars
+    GER40 (EWG)... OK - 660 bars
+    NZDUSD (C:NZDUSD)... OK - 1489 bars
+    UK100 (EWU)... OK - 530 bars
+    US100 (QQQ)... OK - 944 bars
+    ETHUSD (X:ETHUSD)... OK - 2088 bars
+    EURGBP (C:EURGBP)... OK - 1489 bars
+    EURUSD (C:EURUSD)... OK - 1466 bars
+    XAUUSD (C:XAUUSD)... OK - 1483 bars
+    GBPJPY (C:GBPJPY)... OK - 1412 bars
+    USDJPY (C:USDJPY)... OK - 1489 bars
+    BTCUSD (X:BTCUSD)... OK - 2088 bars
+    USOIL (USO)... OK - 909 bars
+    GBPUSD (C:GBPUSD)... C:\Users\jorge\AppData\Local\Programs\Python\Python313\Lib\site-packages\numpy\_core\fromnumeric.py:3824: RuntimeWarning: Mean of empty slice
+  return _methods._mean(a, axis=axis, dtype=dtype,
+C:\Users\jorge\AppData\Local\Programs\Python\Python313\Lib\site-packages\numpy\_core\_methods.py:142: RuntimeWarning: invalid value encountered in scalar divide
+  ret = ret.dtype.type(ret / rcount)
+OK - 1480 bars
+  Loaded: 14 instruments
+
+  Running strategy tests...
+
+  --- TOP LONG COMBOS (BEAR (Jan-Mar 2025)) ---
+  Symbol     Strategy              Trades     WR        R     PF  MaxCL
+  -----------------------------------------------------------------
+  USOIL      STOCH_REVERSAL            36  41.7%  +19.00R  2.73     3
+  BTCUSD     STOCH_REVERSAL            65  30.8%  +18.00R  1.82     3
+  UK100      GAP_FILL                  23  73.9%  +16.40R  5.10     1
+  US100      STOCH_REVERSAL            28  42.9%  +15.00R  2.67     5
+  EURGBP     GAP_FILL                  16  87.5%  +14.80R  8.40     1
+  USOIL      GAP_FILL                  25  64.0%  +13.20R  3.20     2
+  EURUSD     VWAP_REVERT               11  18.2%  +13.00R  5.33     1
+  ETHUSD     STOCH_REVERSAL            67  28.4%  +10.00R  1.36     4
+  XAUUSD     GAP_FILL                   9  88.9%   +9.60R 999.00     0
+  EURUSD     MEAN_REVERT                8  50.0%   +9.00R  4.00     2
+  USDJPY     VWAP_REVERT               30   6.7%   +9.00R  2.29     3
+  BTCUSD     VWAP_REVERT               19  10.5%   +9.00R  2.29     2
+  US100      GAP_FILL                  12  66.7%   +8.60R  9.60     1
+  GBPUSD     GAP_FILL                   8  87.5%   +8.40R 999.00     0
+  XAUUSD     STOCH_REVERSAL            21  38.1%   +8.00R  2.00     2
+  GER40      CONFLUENCE                62  27.4%   +7.88R  1.33     3
+  GER40      ORB                       31  35.5%   +7.62R  1.59     3
+  GER40      GAP_FILL                  19  57.9%   +7.20R  2.20     3
+  US100      VWAP_REVERT                5  20.0%   +7.00R  8.00     1
+  NZDUSD     GAP_FILL                   7  85.7%   +6.20R  7.20     1
+
+  --- TOP SHORT COMBOS (BEAR (Jan-Mar 2025)) ---
+  Symbol     Strategy              Trades     WR        R     PF  MaxCL
+  -----------------------------------------------------------------
+  EURUSD     STOCH_REVERSAL            57  35.1%  +24.00R  2.50     2
+  USDJPY     STOCH_REVERSAL            59  28.8%  +17.00R  2.00     3
+  GBPJPY     VWAP_REVERT               11  18.2%  +14.00R  8.00     1
+  USOIL      MEAN_REVERT                9  55.6%  +14.00R 15.00     1
+  US100      GAP_FILL                  11  90.9%  +11.00R 12.00     1
+  GBPJPY     MEAN_REVERT                6  66.7%  +11.00R 12.00     1
+  EURGBP     GAP_FILL                  10  90.0%  +10.80R 999.00     0
+  USOIL      GAP_FILL                  27  51.9%   +9.80R  2.40     2
+  GBPUSD     STOCH_REVERSAL            59  22.0%   +8.00R  1.44     3
+  USDCHF     GAP_FILL                   9  77.8%   +7.40R  8.40     1
+  USDCHF     VWAP_REVERT                3  33.3%   +7.00R  8.00     1
+  USDCHF     STOCH_REVERSAL            63  19.0%   +6.00R  1.33     3
+  NZDUSD     STOCH_REVERSAL            61  24.6%   +6.00R  1.25     4
+  EURGBP     STOCH_REVERSAL            60  25.0%   +6.00R  1.25     3
+  USDJPY     EMA_BOUNCE                27  18.5%   +6.00R  1.67     2
+  GER40      GAP_FILL                  35  45.7%   +5.20R  1.37     5
+  NZDUSD     VWAP_REVERT               10  10.0%   +5.00R  2.67     1
+  EURUSD     VWAP_REVERT               14   7.1%   +5.00R  2.67     2
+  GBPJPY     STOCH_REVERSAL            56  23.2%   +5.00R  1.24     3
+  ETHUSD     MEAN_REVERT               11  27.3%   +4.00R  1.80     2
+
+================================================================================
+  CROSS-PERIOD ANALYSIS — LONG COMBOS THAT WORK IN MULTIPLE PERIODS
+================================================================================
+
+  LONG combos profitable in 2+ periods:
+  Symbol     Strategy              Periods  Trades     WR        R     PF
+  -------------------------------------------------------------------
+  BTCUSD     STOCH_REVERSAL              3     175  29.7%  +54.00R  2.13
+    -> BULL (Oct-Dec 2024)           :  49 trades   +8.00R WR:22%
+    -> MIXED (Jul-Sep 2024)          :  61 trades  +28.00R WR:34%
+    -> BEAR (Jan-Mar 2025)           :  65 trades  +18.00R WR:31%
+  USOIL      GAP_FILL                    3      80  68.8%  +53.00R  5.50
+    -> BULL (Oct-Dec 2024)           :  24 trades  +16.20R WR:67%
+    -> MIXED (Jul-Sep 2024)          :  31 trades  +23.60R WR:74%
+    -> BEAR (Jan-Mar 2025)           :  25 trades  +13.20R WR:64%
+  EURGBP     MEAN_REVERT                 3      33  51.5%  +46.00R 15.00
+    -> BULL (Oct-Dec 2024)           :   9 trades   +7.00R WR:33%
+    -> MIXED (Jul-Sep 2024)          :  19 trades  +38.00R WR:68%
+    -> BEAR (Jan-Mar 2025)           :   5 trades   +1.00R WR:20%
+  EURGBP     GAP_FILL                    3      44  84.1%  +38.40R  8.80
+    -> BULL (Oct-Dec 2024)           :  12 trades  +12.20R WR:92%
+    -> MIXED (Jul-Sep 2024)          :  16 trades  +11.40R WR:75%
+    -> BEAR (Jan-Mar 2025)           :  16 trades  +14.80R WR:88%
+  USOIL      STOCH_REVERSAL              2      68  39.7%  +36.00R  3.08
+    -> BULL (Oct-Dec 2024)           :  32 trades  +17.00R WR:38%
+    -> BEAR (Jan-Mar 2025)           :  36 trades  +19.00R WR:42%
+  UK100      GAP_FILL                    3      75  61.3%  +35.20R  3.15
+    -> BULL (Oct-Dec 2024)           :  28 trades  +12.40R WR:61%
+    -> MIXED (Jul-Sep 2024)          :  24 trades   +6.40R WR:50%
+    -> BEAR (Jan-Mar 2025)           :  23 trades  +16.40R WR:74%
+  NZDUSD     MEAN_REVERT                 3      32  43.8%  +34.00R  6.50
+    -> BULL (Oct-Dec 2024)           :  12 trades  +16.00R WR:50%
+    -> MIXED (Jul-Sep 2024)          :  12 trades  +16.00R WR:50%
+    -> BEAR (Jan-Mar 2025)           :   8 trades   +2.00R WR:25%
+  ETHUSD     STOCH_REVERSAL              3     172  25.0%  +34.00R  1.75
+    -> BULL (Oct-Dec 2024)           :  46 trades   +6.00R WR:17%
+    -> MIXED (Jul-Sep 2024)          :  59 trades  +18.00R WR:27%
+    -> BEAR (Jan-Mar 2025)           :  67 trades  +10.00R WR:28%
+  GER40      GAP_FILL                    3      75  60.0%  +32.00R  2.58
+    -> BULL (Oct-Dec 2024)           :  35 trades  +13.00R WR:57%
+    -> MIXED (Jul-Sep 2024)          :  21 trades  +11.80R WR:67%
+    -> BEAR (Jan-Mar 2025)           :  19 trades   +7.20R WR:58%
+  XAUUSD     STOCH_REVERSAL              3      97  32.0%  +31.00R  2.02
+    -> BULL (Oct-Dec 2024)           :  43 trades  +11.00R WR:28%
+    -> MIXED (Jul-Sep 2024)          :  33 trades  +12.00R WR:33%
+    -> BEAR (Jan-Mar 2025)           :  21 trades   +8.00R WR:38%
+  US100      STOCH_REVERSAL              3      73  35.6%  +27.00R  2.09
+    -> BULL (Oct-Dec 2024)           :  21 trades   +6.00R WR:29%
+    -> MIXED (Jul-Sep 2024)          :  24 trades   +6.00R WR:33%
+    -> BEAR (Jan-Mar 2025)           :  28 trades  +15.00R WR:43%
+  UK100      STOCH_REVERSAL              3      58  36.2%  +23.00R  2.24
+    -> BULL (Oct-Dec 2024)           :  26 trades  +12.00R WR:38%
+    -> MIXED (Jul-Sep 2024)          :  20 trades   +5.00R WR:30%
+    -> BEAR (Jan-Mar 2025)           :  12 trades   +6.00R WR:42%
+  US100      GAP_FILL                    3      35  68.6%  +22.80R  5.93
+    -> BULL (Oct-Dec 2024)           :  12 trades   +8.80R WR:75%
+    -> MIXED (Jul-Sep 2024)          :  11 trades   +5.40R WR:64%
+    -> BEAR (Jan-Mar 2025)           :  12 trades   +8.60R WR:67%
+  XAUUSD     GAP_FILL                    3      27  81.5%  +22.40R  5.60
+    -> BULL (Oct-Dec 2024)           :   8 trades   +7.40R WR:88%
+    -> MIXED (Jul-Sep 2024)          :  10 trades   +5.40R WR:70%
+    -> BEAR (Jan-Mar 2025)           :   9 trades   +9.60R WR:89%
+  GER40      VWAP_REVERT                 2       7  42.9%  +22.00R  4.00
+    -> BULL (Oct-Dec 2024)           :   4 trades  +16.00R WR:50%
+    -> MIXED (Jul-Sep 2024)          :   3 trades   +6.00R WR:33%
+  GBPUSD     STOCH_REVERSAL              2      96  21.9%  +21.00R  2.19
+    -> BULL (Oct-Dec 2024)           :  48 trades  +16.00R WR:25%
+    -> BEAR (Jan-Mar 2025)           :  48 trades   +5.00R WR:19%
+  GER40      ORB                         3      79  35.4%  +20.50R  1.67
+    -> BULL (Oct-Dec 2024)           :  22 trades   +7.00R WR:36%
+    -> MIXED (Jul-Sep 2024)          :  26 trades   +5.88R WR:35%
+    -> BEAR (Jan-Mar 2025)           :  31 trades   +7.62R WR:35%
+  GBPUSD     GAP_FILL                    3      19  84.2%  +18.20R  7.20
+    -> BULL (Oct-Dec 2024)           :   4 trades   +3.60R WR:75%
+    -> MIXED (Jul-Sep 2024)          :   7 trades   +6.20R WR:86%
+    -> BEAR (Jan-Mar 2025)           :   8 trades   +8.40R WR:88%
+  UK100      MEAN_REVERT                 2      13  53.8%  +18.00R  7.50
+    -> BULL (Oct-Dec 2024)           :   8 trades  +10.00R WR:50%
+    -> MIXED (Jul-Sep 2024)          :   5 trades   +8.00R WR:60%
+  USDJPY     EMA_BOUNCE                  3      26  30.8%  +18.00R  4.17
+    -> BULL (Oct-Dec 2024)           :  15 trades  +13.00R WR:33%
+    -> MIXED (Jul-Sep 2024)          :   6 trades   +3.00R WR:33%
+    -> BEAR (Jan-Mar 2025)           :   5 trades   +2.00R WR:20%
+  USOIL      MEAN_REVERT                 3      33  30.3%  +17.00R  2.42
+    -> BULL (Oct-Dec 2024)           :   9 trades   +6.00R WR:33%
+    -> MIXED (Jul-Sep 2024)          :  15 trades   +6.00R WR:27%
+    -> BEAR (Jan-Mar 2025)           :   9 trades   +5.00R WR:33%
+  GBPJPY     GAP_FILL                    3      16  81.2%  +15.60R   nan
+    -> BULL (Oct-Dec 2024)           :   6 trades   +6.00R WR:83%
+    -> MIXED (Jul-Sep 2024)          :   4 trades   +4.80R WR:100%
+    -> BEAR (Jan-Mar 2025)           :   6 trades   +4.80R WR:67%
+  EURUSD     MEAN_REVERT                 2      12  50.0%  +15.00R  4.00
+    -> MIXED (Jul-Sep 2024)          :   4 trades   +6.00R WR:50%
+    -> BEAR (Jan-Mar 2025)           :   8 trades   +9.00R WR:50%
+  NZDUSD     GAP_FILL                    3      29  69.0%  +15.00R  3.89
+    -> BULL (Oct-Dec 2024)           :  10 trades   +5.40R WR:70%
+    -> MIXED (Jul-Sep 2024)          :  12 trades   +3.40R WR:58%
+    -> BEAR (Jan-Mar 2025)           :   7 trades   +6.20R WR:86%
+  EURUSD     GAP_FILL                    2      17  82.4%  +13.80R  5.70
+    -> BULL (Oct-Dec 2024)           :  11 trades   +8.80R WR:82%
+    -> MIXED (Jul-Sep 2024)          :   6 trades   +5.00R WR:83%
+  GBPUSD     MEAN_REVERT                 3      49  18.4%  +13.00R  2.17
+    -> BULL (Oct-Dec 2024)           :  23 trades   +4.00R WR:17%
+    -> MIXED (Jul-Sep 2024)          :  12 trades   +3.00R WR:17%
+    -> BEAR (Jan-Mar 2025)           :  14 trades   +6.00R WR:21%
+  USDJPY     VWAP_REVERT                 2      53   7.5%  +13.00R  1.81
+    -> MIXED (Jul-Sep 2024)          :  23 trades   +4.00R WR:9%
+    -> BEAR (Jan-Mar 2025)           :  30 trades   +9.00R WR:7%
+  BTCUSD     EMA_BOUNCE                  3      37  21.6%  +12.00R  2.25
+    -> BULL (Oct-Dec 2024)           :  13 trades   +5.00R WR:23%
+    -> MIXED (Jul-Sep 2024)          :  14 trades   +3.00R WR:21%
+    -> BEAR (Jan-Mar 2025)           :  10 trades   +4.00R WR:20%
+  USDCHF     GAP_FILL                    3      21  66.7%  +11.80R  3.40
+    -> BULL (Oct-Dec 2024)           :   5 trades   +2.60R WR:60%
+    -> MIXED (Jul-Sep 2024)          :   8 trades   +4.00R WR:62%
+    -> BEAR (Jan-Mar 2025)           :   8 trades   +5.20R WR:75%
+  ETHUSD     VWAP_REVERT                 2      22   9.1%  +11.00R  1.60
+    -> BULL (Oct-Dec 2024)           :   5 trades   +8.00R WR:20%
+    -> BEAR (Jan-Mar 2025)           :  17 trades   +3.00R WR:6%
+  GBPJPY     STOCH_REVERSAL              2      83  20.5%  +10.00R  1.43
+    -> BULL (Oct-Dec 2024)           :  43 trades   +7.00R WR:21%
+    -> BEAR (Jan-Mar 2025)           :  40 trades   +3.00R WR:20%
+  USDCHF     VWAP_REVERT                 2      33   9.1%   +9.00R  2.62
+    -> BULL (Oct-Dec 2024)           :   4 trades   +6.00R WR:25%
+    -> MIXED (Jul-Sep 2024)          :  29 trades   +3.00R WR:7%
+  USDJPY     MEAN_REVERT                 2      13  30.8%   +9.00R  3.75
+    -> BULL (Oct-Dec 2024)           :   6 trades   +7.00R WR:50%
+    -> BEAR (Jan-Mar 2025)           :   7 trades   +2.00R WR:14%
+  GER40      STOCH_REVERSAL              2      37  29.7%   +8.00R  1.57
+    -> BULL (Oct-Dec 2024)           :  21 trades   +5.00R WR:29%
+    -> MIXED (Jul-Sep 2024)          :  16 trades   +3.00R WR:31%
+  EURUSD     STOCH_REVERSAL              2      65  20.0%   +8.00R  1.74
+    -> MIXED (Jul-Sep 2024)          :  30 trades   +7.00R WR:20%
+    -> BEAR (Jan-Mar 2025)           :  35 trades   +1.00R WR:20%
+  USDJPY     GAP_FILL                    2       9  77.8%   +7.40R  2.40
+    -> BULL (Oct-Dec 2024)           :   4 trades   +1.40R WR:50%
+    -> MIXED (Jul-Sep 2024)          :   5 trades   +6.00R WR:100%
+  GER40      MEAN_REVERT                 2      13  30.8%   +7.00R  2.50
+    -> BULL (Oct-Dec 2024)           :   8 trades   +4.00R WR:25%
+    -> MIXED (Jul-Sep 2024)          :   5 trades   +3.00R WR:40%
+  ETHUSD     EMA_BOUNCE                  2      31  19.4%   +5.00R  2.05
+    -> BULL (Oct-Dec 2024)           :  21 trades   +1.00R WR:19%
+    -> BEAR (Jan-Mar 2025)           :  10 trades   +4.00R WR:20%
+  XAUUSD     EMA_BOUNCE                  2      23  17.4%   +5.00R  2.25
+    -> BULL (Oct-Dec 2024)           :   6 trades   +2.00R WR:17%
+    -> BEAR (Jan-Mar 2025)           :  17 trades   +3.00R WR:18%
+  GER40      EMA_BOUNCE                  2      12  25.0%   +5.00R  1.50
+    -> MIXED (Jul-Sep 2024)          :   3 trades   +3.00R WR:33%
+    -> BEAR (Jan-Mar 2025)           :   9 trades   +2.00R WR:22%
+  XAUUSD     MEAN_REVERT                 2       6  33.3%   +4.00R  3.00
+    -> MIXED (Jul-Sep 2024)          :   3 trades   +2.00R WR:33%
+    -> BEAR (Jan-Mar 2025)           :   3 trades   +2.00R WR:33%
+
+  SHORT combos profitable in ALL 3 periods (validation):
+  Symbol     Strategy              Periods  Trades     WR        R     PF
+  -------------------------------------------------------------------
+  NZDUSD     STOCH_REVERSAL              3     206  32.5%  +68.00R  2.21
+  USOIL      GAP_FILL                    3      87  60.9%  +44.60R  3.39
+  USDJPY     STOCH_REVERSAL              3     197  26.4%  +40.00R  1.67
+  USOIL      STOCH_REVERSAL              3     110  30.0%  +36.00R  5.57
+  EURUSD     STOCH_REVERSAL              2      98  31.6%  +35.00R  2.25
+  EURGBP     STOCH_REVERSAL              3     196  22.4%  +33.00R  1.65
+  GBPUSD     STOCH_REVERSAL              3     172  25.6%  +30.00R  1.51
+  NZDUSD     EMA_BOUNCE                  3      47  27.7%  +29.00R  3.75
+  US100      GAP_FILL                    3      47  66.0%  +28.20R  6.10
+  US100      STOCH_REVERSAL              3     136  28.7%  +27.00R  1.50
+  EURGBP     GAP_FILL                    3      30  76.7%  +26.60R  9.60
+  GER40      GAP_FILL                    2      69  58.0%  +26.00R  2.49
+  UK100      GAP_FILL                    2      58  60.3%  +25.00R  2.46
+  EURGBP     EMA_BOUNCE                  2      37  27.0%  +25.00R  6.00
+  GBPJPY     STOCH_REVERSAL              3     180  23.3%  +24.00R  1.43
+
+================================================================================
+  REGIME-NEUTRAL COMBOS — Work in BOTH bull and bear markets
+================================================================================
+
+  Instruments where LONG works in BULL + SHORT works in BEAR:
+  Symbol     Strategy              BULL LONG R  BEAR SHORT R   Combined
+  ----------------------------------------------------------------------
+  USOIL      GAP_FILL                  +16.20R        +9.80R    +26.00R
+  GBPUSD     STOCH_REVERSAL            +16.00R        +8.00R    +24.00R
+  EURGBP     GAP_FILL                  +12.20R       +10.80R    +23.00R
+  USOIL      STOCH_REVERSAL            +17.00R        +4.00R    +21.00R
+  USOIL      MEAN_REVERT                +6.00R       +14.00R    +20.00R
+  US100      GAP_FILL                   +8.80R       +11.00R    +19.80R
+  USDJPY     EMA_BOUNCE                +13.00R        +6.00R    +19.00R
+  GER40      GAP_FILL                  +13.00R        +5.20R    +18.20R
+  GBPJPY     MEAN_REVERT                +2.00R       +11.00R    +13.00R
+  USDCHF     VWAP_REVERT                +6.00R        +7.00R    +13.00R
+  GBPJPY     STOCH_REVERSAL             +7.00R        +5.00R    +12.00R
+  UK100      MEAN_REVERT               +10.00R        +2.00R    +12.00R
+  XAUUSD     GAP_FILL                   +7.40R        +3.60R    +11.00R
+  USDCHF     GAP_FILL                   +2.60R        +7.40R    +10.00R
+  GBPJPY     GAP_FILL                   +6.00R        +2.80R     +8.80R
+  US100      STOCH_REVERSAL             +6.00R        +2.00R     +8.00R
+  NZDUSD     GAP_FILL                   +5.40R        +2.40R     +7.80R
+  ETHUSD     STOCH_REVERSAL             +6.00R        +1.00R     +7.00R
+  GBPUSD     MEAN_REVERT                +4.00R        +3.00R     +7.00R
+
+================================================================================
+  RESEARCH SUMMARY
+================================================================================
+
+  Total combos tested: 623
+  Profitable LONG combos: 124
+  Profitable SHORT combos: 115
+  LONG combos in 2+ periods: 41
+  Regime-neutral combos: 19
+
+  >>> LONG EDGE FOUND — 41 combos work across periods <<<
+  >>> REGIME-NEUTRAL POSSIBLE — 19 combos adapt to bull/bear <<<
+
+================================================================================
+  RESEARCH COMPLETE
+================================================================================
+
