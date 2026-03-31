@@ -103,53 +103,26 @@ SETUP_CONFIG: Dict[str, InstrumentSetup] = {
         expectancy=0.225, win_rate=0.55, profit_factor=2.07,
     ),
 
-    # 2. GER40 — VWAP Revert | BOTH | SCALP (direction-specific SL/TP)
-    "GER40": InstrumentSetup(
-        symbol="GER40", strategy=Strategy.VWAP_REVERT,
-        direction=Direction.BOTH, sl_atr=0.5, tp_atr=4.0,
-        risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
-        expectancy=0.358, win_rate=0.47, profit_factor=1.27,
-        long_sl=0.5, long_tp=2.0, short_sl=0.5, short_tp=4.0,
-    ),
-
-    # 3. NZDUSD — Gap Fill | SHORT only | SCALP
+    # NZDUSD — Gap Fill | SHORT only | SCALP
     "NZDUSD": InstrumentSetup(
         symbol="NZDUSD", strategy=Strategy.GAP_FILL,
-        direction=Direction.SHORT, sl_atr=2.5, tp_atr=3.0,
+        direction=Direction.BOTH, sl_atr=2.5, tp_atr=3.0,
         risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
         expectancy=0.555, win_rate=0.80, profit_factor=4.19,
     ),
 
-    # 4. UK100 — VWAP Revert | SHORT only | SCALP
-    #    v22.1 FIX: Was BOTH direction, both LONG trades lost -2.00R.
-    #    Instrument in structural downtrend. SHORT only.
-    "UK100": InstrumentSetup(
-        symbol="UK100", strategy=Strategy.VWAP_REVERT,
-        direction=Direction.SHORT, sl_atr=0.5, tp_atr=4.0,
-        risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
-        expectancy=0.358, win_rate=0.47, profit_factor=1.19,
-    ),
-
-    # 5. US100 — EMA Bounce | SHORT only | SCALP (can upgrade to RUNNER)
+    # US100 — EMA Bounce | SHORT only | SCALP (can upgrade to RUNNER)
     "US100": InstrumentSetup(
         symbol="US100", strategy=Strategy.EMA_BOUNCE,
-        direction=Direction.SHORT, sl_atr=2.0, tp_atr=3.0,
+        direction=Direction.BOTH, sl_atr=2.0, tp_atr=3.0,
         risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
         expectancy=0.425, win_rate=0.48, profit_factor=1.56,
     ),
 
-    # 6. ETHUSD — Prev Day HL | SHORT only | RUNNER
-    "ETHUSD": InstrumentSetup(
-        symbol="ETHUSD", strategy=Strategy.PREV_DAY_HL,
-        direction=Direction.BOTH, sl_atr=1.0, tp_atr=1.5,
-        risk_pct=1.2, trade_type=TradeType.RUNNER, order_type=OrderType.MARKET,
-        expectancy=0.481, win_rate=0.56, profit_factor=1.93,
-    ),
-
-    # 7. EURGBP — VWAP Revert | SHORT only | SCALP
+    # EURGBP — VWAP Revert | SHORT only | SCALP
     "EURGBP": InstrumentSetup(
         symbol="EURGBP", strategy=Strategy.VWAP_REVERT,
-        direction=Direction.SHORT, sl_atr=2.5, tp_atr=3.0,
+        direction=Direction.BOTH, sl_atr=2.5, tp_atr=3.0,
         risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
         expectancy=0.307, win_rate=0.46, profit_factor=1.14,
     ),
@@ -170,7 +143,7 @@ SETUP_CONFIG: Dict[str, InstrumentSetup] = {
     #    deviation PLUS rejection candle — filters out trend continuation.
     "XAUUSD": InstrumentSetup(
         symbol="XAUUSD", strategy=Strategy.VWAP_REVERT,
-        direction=Direction.SHORT, sl_atr=0.5, tp_atr=4.0,
+        direction=Direction.BOTH, sl_atr=0.5, tp_atr=4.0,
         risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
         expectancy=0.481, win_rate=0.52, profit_factor=1.18,
     ),
@@ -178,7 +151,7 @@ SETUP_CONFIG: Dict[str, InstrumentSetup] = {
     # 10. GBPJPY — Prev Day HL | SHORT only | RUNNER
     "GBPJPY": InstrumentSetup(
         symbol="GBPJPY", strategy=Strategy.PREV_DAY_HL,
-        direction=Direction.SHORT, sl_atr=0.5, tp_atr=0.8,
+        direction=Direction.BOTH, sl_atr=0.5, tp_atr=0.8,
         risk_pct=1.5, trade_type=TradeType.RUNNER, order_type=OrderType.MARKET,
         expectancy=0.404, win_rate=0.53, profit_factor=1.45,
     ),
@@ -202,7 +175,7 @@ SETUP_CONFIG: Dict[str, InstrumentSetup] = {
     # 13. USOIL — EMA Bounce | LONG only | SCALP
     "USOIL": InstrumentSetup(
         symbol="USOIL", strategy=Strategy.EMA_BOUNCE,
-        direction=Direction.LONG, sl_atr=1.0, tp_atr=3.0,
+        direction=Direction.BOTH, sl_atr=1.0, tp_atr=3.0,
         risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
         expectancy=0.308, win_rate=0.44, profit_factor=1.06,
     ),
@@ -227,7 +200,6 @@ TIME_OF_DAY_EDGES: Dict[int, List[Tuple[str, str, float]]] = {
     2:  [("US500", "SHORT", 0.030)],  # US500 dropped but keep for reference
     15: [("EURJPY", "LONG", 0.037)],
     17: [("US30", "SHORT", 0.045)],
-    18: [("ETHUSD", "LONG", 0.038)],
     19: [("USDJPY", "SHORT", 0.017), ("XAGUSD", "LONG", 0.042)],
     20: [
         ("NZDUSD", "SHORT", 0.001),
@@ -266,9 +238,7 @@ CORRELATION_GROUPS = {
 # Format: {month: [(symbol, direction, size_boost), ...]}
 
 MONTHLY_SEASONALITY: Dict[int, List[Tuple[str, str, float]]] = {
-    2:  [("UK100", "LONG", 0.15)],
     5:  [
-        ("UK100", "LONG", 0.20),
         ("GBPJPY", "LONG", 0.20),
         ("GBPUSD", "LONG", 0.20),
         ("XAUUSD", "LONG", 0.20),
@@ -292,14 +262,11 @@ INSTRUMENT_META = {
     "USDJPY":  {"type": "forex", "pip_size": 0.01,   "lot_size": 100000, "ftmo_suffix": ".sim"},
     "GBPUSD":  {"type": "forex", "pip_size": 0.0001, "lot_size": 100000, "ftmo_suffix": ".sim"},
     # Indices
-    "GER40":   {"type": "index", "pip_size": 0.1,    "lot_size": 1,      "ftmo_suffix": ".sim"},
-    "UK100":   {"type": "index", "pip_size": 0.1,    "lot_size": 1,      "ftmo_suffix": ".sim"},
     "US100":   {"type": "index", "pip_size": 0.1,    "lot_size": 1,      "ftmo_suffix": ".sim"},
     # Commodities
     "XAUUSD":  {"type": "commodity", "pip_size": 0.01, "lot_size": 100,  "ftmo_suffix": ".sim"},
     "USOIL":   {"type": "commodity", "pip_size": 0.01, "lot_size": 1000, "ftmo_suffix": ".sim"},
     # Crypto
-    "ETHUSD":  {"type": "crypto", "pip_size": 0.01,   "lot_size": 1,     "ftmo_suffix": ""},
     "BTCUSD":  {"type": "crypto", "pip_size": 0.01,   "lot_size": 1,     "ftmo_suffix": ""},
 }
 
@@ -319,7 +286,7 @@ def get_setup(symbol: str) -> Optional[InstrumentSetup]:
 def get_sl_tp_for_direction(setup: InstrumentSetup, direction: str) -> Tuple[float, float]:
     """Get SL/TP in ATR multiples for a specific direction.
     
-    Handles instruments with direction-specific overrides (like GER40).
+    Handles instruments with direction-specific overrides.
     """
     if direction == "LONG" and setup.long_sl is not None:
         return setup.long_sl, setup.long_tp
