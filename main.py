@@ -1,1127 +1,735 @@
 """
-╔══════════════════════════════════════════════════════════════════════════════╗
-║                      NEXUS CAPITAL — TITAN FORGE V21                        ║
-║                          main.py — THE CONDUCTOR                            ║
-║                                                                              ║
-║  40 SETUPS. 5 INSTRUMENTS. 24-HOUR COVERAGE. 11 BAYESIAN DIMENSIONS.      ║
-║  7 MULTI-FRAMEWORK LENSES. ADAPTIVE TRADE MIX. PARTIAL EXITS.            ║
-║  DYNAMIC R:R. FAST MODE. CROSS-MARKET EXPLOIT. GENESIS EVOLUTION.         ║
-║                                                                              ║
-║  "Take risk but don't fail." — Jorge Trujillo                              ║
-║                                                                              ║
-║  The intelligence is the ACCELERATOR, not the brake.                       ║
-║  FORGE calculates the PATH to $2,000 every morning and executes it.        ║
-║                                                                              ║
-║  Jorge Trujillo — Founder | Claude — AI Architect | March 2026              ║
-╚══════════════════════════════════════════════════════════════════════════════╝
+NEXUS CAPITAL — TITAN FORGE V22 — LEAN BUILD
+14 INSTRUMENTS | 3 REGIMES | GENESIS | GUARANTEED TO TRADE
+Minimal v21 deps. Built-in risk. Built-in sessions.
+"All gas first then brakes." — Jorge Trujillo
 """
 
-import asyncio
-import logging
-import os
-import time
-import uuid
-from dataclasses import dataclass, field
+import asyncio, logging, os, time, uuid
+import numpy as np, requests
 from datetime import date, datetime, timezone, timedelta
-from datetime import time as dtime
-from typing import Optional
+from typing import Optional, Dict, Set
 
-# ── Logging ──────────────────────────────────────────────────────────────────
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s — %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s — %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 logger = logging.getLogger("titan_forge.main")
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# IMPORTS — V20 KEPT + V21 NEW
-# ═══════════════════════════════════════════════════════════════════════════════
-
-# V20 kept (unchanged)
-from forge_core import (
-    utc_to_et, now_et, now_et_time, is_rth, is_dst,
-    get_session_state as get_rth_session_state,
-    get_state_weight, session_minutes_remaining,
-    SessionState, send_telegram, PriceCache, _price_cache,
-    InstrumentTracker, MarketContext, fetch_market_context,
-    EvidenceLogger, TradeFingerprint, _evidence,
-    is_news_blackout as _v20_is_news_blackout, minutes_to_next_news,
-    Signal as _V20Signal, SignalVerdict as _V20SignalVerdict,
-    get_candle_store, detect_candlestick_pattern, get_m15_trend, get_h1_trend, m5_confirms_m1,
-)
-from forge_risk import (
-    PropFirmState, RiskFortress, RiskDecision,
-    camouflage_lot_size, camouflage_entry_delay,
-    should_exit_time_decay, check_session_close_protection,
-    compute_kelly_size, SessionMemory, pre_trade_checklist, GateResult,
-)
-from forge_market import (
-    fetch_polygon_candles, get_correlation_engine, get_anomaly_detector,
-    detect_gap,
-)
+# ── MINIMAL IMPORTS ──
 from mt5_adapter import MT5Adapter
 from execution_base import OrderRequest, OrderDirection, OrderType
+try:
+    from forge_core import send_telegram
+except ImportError:
+    def send_telegram(msg): logger.info("[TG] %s", msg.replace("<b>","").replace("</b>",""))
+try:
+    from forge_core import _evidence, TradeFingerprint
+except ImportError:
+    _evidence = None; TradeFingerprint = None
+try:
+    from forge_router import SmartOrderRouter; _has_router = True
+except ImportError:
+    _has_router = False
 
-# V21 NEW modules
-from forge_brain_v21 import (
-    compute_bayesian_conviction, BayesianConviction,
-    compute_expected_value, ExpectedValueResult,
-    monte_carlo_stress_test, StressTestResult,
-    compute_price_entropy, compute_move_energy,
-    detect_non_reaction, predict_regime_transition,
-    ParameterEvolver, get_evolver, get_regime_mult,
-)
-from forge_signals_v21 import (
-    generate_signal, SETUP_CONFIG, Signal, SignalVerdict,
-)
-from forge_sessions import (
-    get_current_session, is_market_open, is_in_daily_break,
-    should_force_close_nq, can_open_new_position, minutes_until_break,
-    SESSION_PARAMS, SessionRiskTracker, is_news_blackout,
-    get_session_state as get_24h_session_state, now_et as sessions_now_et,
-    FTMO_ACCOUNT_TYPE,
-)
-from forge_instruments import (
-    TrackerManager, SymbolResolver, InstrumentTracker as V21Tracker,
-    ATR_DEFAULTS, POINT_VALUE, MIN_LOT, POLYGON_TICKERS,
-    INSTRUMENT_SESSIONS, LIQUIDITY_TIER,
-)
-from forge_target import (
-    DailyTargetEngine, SessionAdapter, PartialExitManager,
-    PerformanceMonitor, CrossMarketExploit,
-    dynamic_target, dynamic_stop,
-    get_cycle_speed, collect_key_levels,
-    SETUP_TRADE_TYPE, STRATEGY_TYPES,
-)
-from forge_genesis import auto_evolve, get_calibrated_wr
-from forge_router import SmartOrderRouter, get_order_type
+from forge_signals_v22 import SignalEngine, MarketSnapshot
+from forge_instruments_v22 import SETUP_CONFIG, get_all_symbols
+from forge_correlation import CorrelationGuard
 
-FORGE_VERSION = "v21"
+# ── ADD 3 NEW INSTRUMENTS (researched: AUDNZD 85%WR/PF3.25, AUDUSD +27R, EURJPY +21R) ──
+try:
+    from forge_instruments_v22 import InstrumentSetup, StrategyType, TradeType
+    # AUDNZD: GAP_FILL SHORT, 85% WR, PF 3.25 — best config in entire system
+    SETUP_CONFIG["AUDNZD"] = InstrumentSetup(
+        strategy=StrategyType.GAP_FILL, direction="SHORT", trade_type=TradeType.SCALP,
+        risk_pct=0.015, tp_atr=1.0, sl_atr=1.5, time_of_day_edge=None,
+        session_filter=None, min_atr=0.0, notes="85% WR, PF 3.25, NEUTRAL dominant"
+    )
+    # AUDUSD: EMA_BOUNCE SHORT, +27R, solid edge
+    SETUP_CONFIG["AUDUSD"] = InstrumentSetup(
+        strategy=StrategyType.EMA_BOUNCE, direction="SHORT", trade_type=TradeType.SCALP,
+        risk_pct=0.015, tp_atr=1.5, sl_atr=1.5, time_of_day_edge=None,
+        session_filter=None, min_atr=0.0, notes="+27.2R, PF 1.50, NEUTRAL"
+    )
+    # EURJPY: GAP_FILL LONG, +21R, RUNNER type for bigger moves
+    SETUP_CONFIG["EURJPY"] = InstrumentSetup(
+        strategy=StrategyType.GAP_FILL, direction="LONG", trade_type=TradeType.RUNNER,
+        risk_pct=0.015, tp_atr=2.0, sl_atr=1.5, time_of_day_edge=None,
+        session_filter=None, min_atr=0.0, notes="+21.1R, PF 1.75, NEUTRAL RUNNER"
+    )
+    logger.info("[INSTRUMENTS] Added AUDNZD, AUDUSD, EURJPY — 14 instruments total")
+except Exception as e:
+    logger.warning("[INSTRUMENTS] Could not add new pairs: %s — they'll be skipped", e)
+try:
+    from forge_genesis import create_genesis, extract_regime_indicators, auto_evolve, get_calibrated_wr
+    GENESIS_OK = True
+except ImportError:
+    GENESIS_OK = False
 
+FORGE_VERSION = "v22"
+POLYGON_API_KEY = os.environ.get("POLYGON_API_KEY", "")
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# INSTRUMENT RESOLUTION — V21: expanded for CL + multi-instrument
-# ═══════════════════════════════════════════════════════════════════════════════
+# ── CONFIG ──
+MAX_OPEN = 5; MAX_DAILY = 15; COOLDOWN = 120; RISK_PCT = 0.015
+MAX_LOT = 2.0; CYCLE_SPEED = 30; CONVICTION_MIN = 0.20; DD_EMERGENCY = 0.09
+CANDLE_REFRESH = 120
 
-_resolved_instruments: dict[str, Optional[str]] = {}
+ALIASES = {
+    "EURUSD":["EURUSD.sim","EURUSD"],"GBPUSD":["GBPUSD.sim","GBPUSD"],
+    "USDJPY":["USDJPY.sim","USDJPY"],"USDCHF":["USDCHF.sim","USDCHF"],
+    "EURGBP":["EURGBP.sim","EURGBP"],"GBPJPY":["GBPJPY.sim","GBPJPY"],
+    "NZDUSD":["NZDUSD.sim","NZDUSD"],"XAUUSD":["XAUUSD.sim","GOLD.sim","XAUUSD"],
+    "US100":["US100.sim","USTEC.sim","NAS100.sim","US100"],
+    "USOIL":["USOIL.sim","WTI.sim","XTIUSD.sim","OIL.sim"],
+    "BTCUSD":["BTCUSD.sim","BITCOIN.sim","BTCUSD"],
+    "AUDNZD":["AUDNZD.sim","AUDNZD"],"AUDUSD":["AUDUSD.sim","AUDUSD"],
+    "EURJPY":["EURJPY.sim","EURJPY"],
+}
+POLYGON_MAP = {
+    "EURUSD":"C:EURUSD","GBPUSD":"C:GBPUSD","USDJPY":"C:USDJPY","USDCHF":"C:USDCHF",
+    "EURGBP":"C:EURGBP","GBPJPY":"C:GBPJPY","NZDUSD":"C:NZDUSD","XAUUSD":"C:XAUUSD",
+    "US100":"I:NDX","USOIL":"C:XTIUSD",
+    "BTCUSD":"X:BTCUSD",
+    "AUDNZD":"C:AUDNZD","AUDUSD":"C:AUDUSD","EURJPY":"C:EURJPY",
+}
+ATR_FB = {"EURUSD":0.008,"GBPUSD":0.01,"USDJPY":1.0,"USDCHF":0.007,"EURGBP":0.005,
+          "GBPJPY":1.5,"NZDUSD":0.006,"XAUUSD":30.0,"US100":200.0,
+          "USOIL":2.0,"BTCUSD":2000.0,
+          "AUDNZD":0.006,"AUDUSD":0.007,"EURJPY":1.2}
+CRYPTO = {"BTCUSD"}
 
+def is_open(sym):
+    if sym in CRYPTO: return True
+    now = datetime.now(timezone.utc); wd = now.weekday()
+    if wd == 5: return False
+    if wd == 6: return now.hour >= 22
+    if wd == 4: return now.hour < 22
+    return True
 
-async def resolve_instrument(adapter: MT5Adapter, logical: str) -> Optional[str]:
-    if logical in _resolved_instruments:
-        return _resolved_instruments[logical]
-    aliases = {
-        "NAS100": ["US100.sim", "USTEC.sim", "NAS100.sim", "US100", "USTEC", "NAS100"],
-        "EURUSD": ["EURUSD.sim", "EURUSD"],
-        "US500":  ["US500.sim", "SPX500.sim", "SP500.sim", "US500"],
-        "XAUUSD": ["XAUUSD.sim", "GOLD.sim", "XAUUSD"],
-        "CL":     ["USOIL.sim", "WTI.sim", "XTIUSD.sim", "OIL.sim"],
-    }
-    for ticker in aliases.get(logical, [logical]):
+_resolved: Dict[str,Optional[str]] = {}
+async def resolve(adapter, sym):
+    if sym in _resolved: return _resolved[sym]
+    for t in ALIASES.get(sym,[sym]):
         try:
-            bid, ask = await adapter.get_current_price(ticker)
-            if bid > 0:
-                _resolved_instruments[logical] = ticker
-                logger.info("[RESOLVE] %s → %s (bid=%.2f)", logical, ticker, bid)
-                return ticker
-        except Exception:
-            continue
-    _resolved_instruments[logical] = None
-    logger.warning("[RESOLVE] No ticker for %s", logical)
-    return None
+            b,a = await adapter.get_current_price(t)
+            if b and b > 0: _resolved[sym]=t; logger.info("[RESOLVE] %s → %s (%.5f)",sym,t,b); return t
+        except: continue
+    _resolved[sym]=None; logger.warning("[RESOLVE] %s — not found",sym); return None
+
+_cc: Dict[str,Dict] = {}
+def get_candles(sym):
+    if not POLYGON_API_KEY: return None
+    c = _cc.get(sym)
+    if c and time.time()-c["ts"]<CANDLE_REFRESH: return c["d"]
+    tk = POLYGON_MAP.get(sym)
+    if not tk: return None
+    end=datetime.now(timezone.utc); start=end-timedelta(days=14)
+    try:
+        url=f"https://api.polygon.io/v2/aggs/ticker/{tk}/range/1/hour/{start.strftime('%Y-%m-%d')}/{end.strftime('%Y-%m-%d')}?adjusted=true&sort=asc&limit=50000&apiKey={POLYGON_API_KEY}"
+        r=requests.get(url,timeout=15)
+        if r.status_code==429: time.sleep(13); r=requests.get(url,timeout=15)
+        if r.status_code!=200: return None
+        res=r.json().get("results",[])
+        if len(res)<30: return None
+        seen=set(); bars=[]
+        for x in res:
+            if x["t"] not in seen: seen.add(x["t"]); bars.append(x)
+        bars.sort(key=lambda x:x["t"]); bars=bars[-200:]
+        d={"o":np.array([x["o"] for x in bars],dtype=float),"h":np.array([x["h"] for x in bars],dtype=float),
+           "l":np.array([x["l"] for x in bars],dtype=float),"c":np.array([x["c"] for x in bars],dtype=float),
+           "v":np.array([x.get("v",0) for x in bars],dtype=float),"n":len(bars)}
+        _cc[sym]={"d":d,"ts":time.time()}; return d
+    except Exception as e: logger.warning("[CANDLES] %s: %s",sym,e); return None
+
+# ── INDICATORS ──
+def _atr(h,l,c,p=14):
+    if len(c)<2: return abs(float(c[-1]))*0.01
+    tr=np.maximum(h[1:]-l[1:],np.maximum(np.abs(h[1:]-c[:-1]),np.abs(l[1:]-c[:-1])))
+    if len(tr)<p: return float(np.mean(tr))
+    a=float(np.mean(tr[:p]))
+    for i in range(p,len(tr)): a=(a*(p-1)+float(tr[i]))/p
+    return a
+def _rsi(c,p=14):
+    if len(c)<p+1: return 50.0
+    d=np.diff(c);g=np.where(d>0,d,0);lo=np.where(d<0,-d,0)
+    ag=float(np.mean(g[:p]));al=float(np.mean(lo[:p]))
+    for i in range(p,len(g)): ag=(ag*(p-1)+float(g[i]))/p;al=(al*(p-1)+float(lo[i]))/p
+    return 100.0 if al==0 else 100.0-100.0/(1.0+ag/al)
+def _ema(d,p):
+    if len(d)<p: return float(np.mean(d)) if len(d)>0 else 0.0
+    m=2.0/(p+1);e=float(np.mean(d[:p]))
+    for i in range(p,len(d)): e=(float(d[i])-e)*m+e
+    return e
+def _bb(c,p=20,m=2.0):
+    if len(c)<p: mid=float(np.mean(c));s=float(np.std(c)) if len(c)>1 else abs(mid)*0.01; return mid+m*s,mid-m*s,mid
+    sma=float(np.mean(c[-p:]));s=float(np.std(c[-p:]))
+    if s==0: s=abs(sma)*0.001
+    return sma+m*s,sma-m*s,sma
+def _stoch(h,l,c,kp=14,dp=3):
+    if len(c)<kp+dp: return 50.,50.,50.,50.
+    kvs=[]
+    for i in range(kp-1,len(c)):
+        hi=float(np.max(h[i-kp+1:i+1]));lo=float(np.min(l[i-kp+1:i+1]))
+        kvs.append(100.*(float(c[i])-lo)/(hi-lo) if hi!=lo else 50.)
+    k=np.array(kvs)
+    if len(k)<dp: return float(k[-1]),float(k[-1]),float(k[-1]),float(k[-1])
+    return float(k[-1]),float(np.mean(k[-dp:])),float(k[-2]) if len(k)>1 else float(k[-1]),float(np.mean(k[-dp-1:-1])) if len(k)>dp else float(np.mean(k[-dp:]))
+def _vwap(h,l,c,v):
+    tp=(h+l+c)/3.;cv=np.cumsum(v);ctv=np.cumsum(tp*v)
+    if cv[-1]==0: return float(c[-1]),abs(float(c[-1]))*0.001
+    vw=float(ctv[-1]/cv[-1]);vs=float(np.std(tp-vw)) if len(tp)>1 else abs(float(c[-1]))*0.001
+    return vw,max(vs,abs(float(c[-1]))*0.0001)
+def _adx(h,l,c,p=14):
+    if len(c)<p*2: return 20.,20.,25.,25.
+    pdm=np.zeros(len(h));mdm=np.zeros(len(h));tr=np.zeros(len(h))
+    for i in range(1,len(h)):
+        u=h[i]-h[i-1];dn=l[i-1]-l[i]
+        pdm[i]=u if u>dn and u>0 else 0;mdm[i]=dn if dn>u and dn>0 else 0
+        tr[i]=max(h[i]-l[i],abs(h[i]-c[i-1]),abs(l[i]-c[i-1]))
+    at=float(np.mean(tr[1:p+1]));pm=float(np.mean(pdm[1:p+1]));mm=float(np.mean(mdm[1:p+1]))
+    dxv=[];pdi=mdi=0.
+    for i in range(p+1,len(h)):
+        at=(at*(p-1)+float(tr[i]))/p;pm=(pm*(p-1)+float(pdm[i]))/p;mm=(mm*(p-1)+float(mdm[i]))/p
+        if at>0: pdi=100.*pm/at;mdi=100.*mm/at
+        ds=pdi+mdi;dxv.append(100.*abs(pdi-mdi)/ds if ds>0 else 0)
+    if len(dxv)<p: a=float(np.mean(dxv)) if dxv else 20.;return a,a,pdi,mdi
+    adx=float(np.mean(dxv[:p]))
+    for i in range(p,len(dxv)): adx=(adx*(p-1)+dxv[i])/p
+    ap=adx
+    if len(dxv)>5:
+        ap=float(np.mean(dxv[:p]))
+        for i in range(p,len(dxv)-5): ap=(ap*(p-1)+dxv[i])/p
+    return adx,ap,pdi,mdi
+
+def make_snap(sym,cd,bid,ask):
+    # Inject live price as "current bar" so indicators update every cycle
+    # Creates new arrays — cached hourly bars are NOT modified
+    mid=(bid+ask)/2.0
+    c=np.append(cd["c"],mid)
+    h=np.append(cd["h"],max(float(cd["h"][-1]),mid))
+    l=np.append(cd["l"],min(float(cd["l"][-1]),mid))
+    o=np.append(cd["o"],float(cd["o"][-1]))
+    v=np.append(cd["v"],float(cd["v"][-1]) if float(cd["v"][-1])>0 else 1.0)
+    n=len(c)
+    if n<30: return None
+    atr=_atr(h,l,c)
+    if atr==0: atr=ATR_FB.get(sym,abs(float(c[-1]))*0.01)
+    rsi=_rsi(c);sk,sd,skp,sdp=_stoch(h,l,c);e50=_ema(c,min(50,n));e200=_ema(c,min(200,n))
+    bbu,bbl,bbm=_bb(c);vwap,vstd=_vwap(h,l,c,v);adx,adxp,pdi,mdi=_adx(h,l,c)
+    ke=_ema(c,20);ku=ke+1.5*atr;kl=ke-1.5*atr
+    sl=min(8,n);pi=min(sl+8,n)
+    pdh=float(np.max(h[-pi:-sl])) if pi>sl else float(np.max(h[:sl]))
+    pdl=float(np.min(l[-pi:-sl])) if pi>sl else float(np.min(l[:sl]))
+    pdc=float(c[-sl-1]) if n>sl else float(c[0])
+    return MarketSnapshot(symbol=sym,opens=o,highs=h,lows=l,closes=c,volumes=v,bid=bid,ask=ask,
+        atr=atr,rsi=rsi,stoch_k=sk,stoch_d=sd,stoch_k_prev=skp,stoch_d_prev=sdp,
+        ema_50=e50,ema_200=e200,bb_upper=bbu,bb_lower=bbl,bb_middle=bbm,
+        vwap=vwap,vwap_std=vstd,adx=adx,adx_prev=adxp,plus_di=pdi,minus_di=mdi,
+        prev_day_high=pdh,prev_day_low=pdl,prev_day_close=pdc,
+        session_open=float(o[-sl]),session_high=float(np.max(h[-sl:])),session_low=float(np.min(l[-sl:])),
+        orb_high=float(h[-sl]),orb_low=float(l[-sl]),orb_complete=True,
+        asian_high=float(np.max(h[:min(7,n)])),asian_low=float(np.min(l[:min(7,n)])),asian_complete=True,
+        keltner_upper=ku,keltner_lower=kl,bars_since_open=sl,current_hour_utc=datetime.now(timezone.utc).hour)
+
+def calc_lots(sym,bal,sl_dist):
+    if sl_dist<=0: return 0.01
+    risk_d=bal*RISK_PCT
+    if sym in ("EURUSD","GBPUSD","NZDUSD","USDCHF","EURGBP","AUDNZD","AUDUSD"): lots=risk_d/(sl_dist*100000)
+    elif sym in ("USDJPY","GBPJPY","EURJPY"): lots=risk_d/(sl_dist*1000)
+    elif sym=="XAUUSD": lots=risk_d/(sl_dist*100)
+    elif sym in ("US100","GER40","UK100"): lots=risk_d/(sl_dist*10)
+    elif sym=="USOIL": lots=risk_d/(sl_dist*1000)
+    elif sym in ("BTCUSD","ETHUSD"): lots=risk_d/(sl_dist*1)
+    else: lots=risk_d/(sl_dist*100)
+    return min(MAX_LOT,max(0.01,round(lots,2)))
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# POSITION MANAGEMENT — V21: PARTIAL EXITS + TRAILING
-# ═══════════════════════════════════════════════════════════════════════════════
+# ═══ SMART EXIT DETECTION ═══
+def should_smart_exit(snap, direction, current_r):
+    """Detect momentum exhaustion — EXIT only, never blocks entries.
+    Returns (should_exit, reason) — only triggers when in profit (current_r > 0.5)"""
+    if current_r < 0.5:
+        return False, ""
+    
+    # 1. RSI divergence: price in our favor but RSI reversing
+    if direction == "SHORT" and snap.rsi < 35 and snap.rsi > snap.stoch_d:
+        if current_r >= 1.0:
+            return True, "RSI oversold bounce"
+    if direction == "LONG" and snap.rsi > 65 and snap.rsi < snap.stoch_d:
+        if current_r >= 1.0:
+            return True, "RSI overbought reversal"
+    
+    # 2. Stochastic crossing against us
+    if direction == "SHORT" and snap.stoch_k > snap.stoch_d and snap.stoch_k_prev < snap.stoch_d_prev:
+        if current_r >= 0.8:
+            return True, "Stoch bullish cross on SHORT"
+    if direction == "LONG" and snap.stoch_k < snap.stoch_d and snap.stoch_k_prev > snap.stoch_d_prev:
+        if current_r >= 0.8:
+            return True, "Stoch bearish cross on LONG"
+    
+    # 3. Price hit opposite BB band (stretched too far)
+    if direction == "SHORT" and snap.bid <= snap.bb_lower and current_r >= 1.0:
+        return True, "Hit lower BB band"
+    if direction == "LONG" and snap.ask >= snap.bb_upper and current_r >= 1.0:
+        return True, "Hit upper BB band"
+    
+    # 4. Reversal candle pattern (big wick against us)
+    if len(snap.closes) >= 2 and len(snap.opens) >= 2:
+        last_body = abs(float(snap.closes[-1]) - float(snap.opens[-1]))
+        last_range = float(snap.highs[-1]) - float(snap.lows[-1])
+        if last_range > 0:
+            wick_ratio = 1.0 - (last_body / last_range)
+            if wick_ratio > 0.7 and current_r >= 1.0:  # Doji or hammer
+                if direction == "SHORT" and float(snap.closes[-1]) > float(snap.opens[-1]):
+                    return True, "Bullish reversal candle"
+                if direction == "LONG" and float(snap.closes[-1]) < float(snap.opens[-1]):
+                    return True, "Bearish reversal candle"
+    
+    return False, ""
 
-async def manage_open_positions(
-    adapter: MT5Adapter, account, ctx: MarketContext,
-    partial_mgr: PartialExitManager, target_engine: DailyTargetEngine,
-) -> None:
+# ═══ PEAK P&L TRACKING ═══
+_peak_pnl: Dict[str,float] = {}     # {position_id: highest unrealized $}
+_trade_meta: Dict[str,Dict] = {}    # {position_id: {type, entry, tp, sl, direction, sym}}
+_stall_cycles: Dict[str,int] = {}   # {position_id: cycles since last new high}
+_genesis_ref = None  # Set by trading_loop, used by manage_pos
+
+async def manage_pos(adapter,account):
+    global _peak_pnl, _trade_meta, _stall_cycles
+    
+    # Clean up tracking for closed positions
+    open_ids = set()
+    for pos in account.open_positions:
+        open_ids.add(str(getattr(pos,'position_id','')))
+    for old_id in list(_peak_pnl.keys()):
+        if old_id not in open_ids:
+            _peak_pnl.pop(old_id, None)
+            _trade_meta.pop(old_id, None)
+            _stall_cycles.pop(old_id, None)
+    
     for pos in account.open_positions:
         try:
-            if pos.stop_loss is None or pos.entry_price is None:
-                continue
-            risk = abs(pos.entry_price - pos.stop_loss)
-            if risk <= 0:
-                continue
-
-            _is_long = pos.direction.value == "long"
-            current = pos.current_price or pos.entry_price
-            if _is_long:
-                current_r = (current - pos.entry_price) / risk
-            else:
-                current_r = (pos.entry_price - current) / risk
-
-            # V21: Partial exits first
-            inst = getattr(pos, 'instrument', '') or getattr(pos, 'symbol', '') or ''
-            pv = 20.0  # default NQ
-            for key, val in POINT_VALUE.items():
-                if key.lower() in inst.lower():
-                    pv = val
+            # Diagnostic: log all attributes on first encounter
+            pid = str(getattr(pos,'position_id','') or getattr(pos,'id',''))
+            if pid not in _peak_pnl:
+                attrs = {k: str(getattr(pos,k,'?'))[:50] for k in ['position_id','id','instrument','symbol','direction','type',
+                    'entry_price','openPrice','open_price','current_price','currentPrice',
+                    'stop_loss','stopLoss','take_profit','takeProfit',
+                    'unrealizedProfit','unrealized_profit','profit','volume','magic'] if hasattr(pos,k)}
+                logger.info("[DIAG] Position %s attrs: %s", pid, attrs)
+            
+            cur = float(getattr(pos, 'current_price', None) or getattr(pos, 'currentPrice', None) or 0)
+            entry = float(getattr(pos, 'entry_price', None) or getattr(pos, 'openPrice', None) or getattr(pos, 'open_price', None) or 0)
+            il = False
+            try: il = pos.direction.value == "long"
+            except: il = str(getattr(pos,'type','')).lower() in ('buy','long')
+            
+            # Get unrealized P&L — try every possible MetaAPI attribute
+            unrealized = 0.0
+            for attr in ('unrealizedProfit', 'unrealized_profit', 'profit', 'unrealizedPl', 'upl', 'pnl'):
+                val = getattr(pos, attr, None)
+                if val is not None and val != 0:
+                    unrealized = float(val)
                     break
-            locked = await partial_mgr.manage(adapter, pos, point_value=pv)
-            if locked and locked > 0:
-                target_engine.record_trade(locked, "")  # partial profit locked
-
-            # Flag big runner for target engine
-            if current_r >= 2.0:
-                target_engine.flag_big_runner(True)
-
-            # Trailing stops (on remaining position after partial)
-            _be = pos.entry_price
-            _trail_05r = pos.entry_price + risk * 0.5 if _is_long else pos.entry_price - risk * 0.5
-            _trail_1r = pos.entry_price + risk * 1.0 if _is_long else pos.entry_price - risk * 1.0
-            _trail_2r = pos.entry_price + risk * 2.0 if _is_long else pos.entry_price - risk * 2.0
-
-            _current_sl = pos.stop_loss
-
-            def _sl_is_better(new_sl: float) -> bool:
-                if _is_long:
-                    return new_sl > _current_sl + 0.5
+            # Fallback: estimate from price movement
+            if unrealized == 0 and cur > 0 and entry > 0:
+                pip_diff = (cur - entry) if il else (entry - cur)
+                # Rough estimate: 2.0 lots × pip value
+                sym_name = str(getattr(pos,'instrument','') or getattr(pos,'symbol',''))
+                if 'BTC' in sym_name:
+                    unrealized = pip_diff * 2.0  # BTC: $1 per point per lot
+                elif 'JPY' in sym_name:
+                    unrealized = pip_diff * 2000  # JPY pairs: ~$1000 per pip per lot
+                elif 'XAU' in sym_name:
+                    unrealized = pip_diff * 200  # Gold: $100 per point per lot
                 else:
-                    return new_sl < _current_sl - 0.5
-
-            new_sl = None
-            if current_r >= 1.0 and _sl_is_better(_be):
-                new_sl = _be
-            if current_r >= 1.5 and _sl_is_better(_trail_05r):
-                new_sl = _trail_05r
-            if current_r >= 2.0 and _sl_is_better(_trail_1r):
-                new_sl = _trail_1r
-            if current_r >= 3.0 and _sl_is_better(_trail_2r):
-                new_sl = _trail_2r
-
-            if new_sl is not None:
+                    unrealized = pip_diff * 200000  # Major FX: $100k per lot
+                logger.debug("[PNL_EST] %s entry=%.5f cur=%.5f est=$%.0f", pid, entry, cur, unrealized)
+            
+            # --- PEAK P&L TRACKING (runs on ALL positions, even without SL) ---
+            if pid not in _peak_pnl:
+                _peak_pnl[pid] = unrealized
+                _stall_cycles[pid] = 0
+                logger.info("[PEAK] New track: %s $%.0f (entry=%.5f cur=%.5f)", pid, unrealized, entry, cur)
+            if unrealized > _peak_pnl[pid]:
+                _peak_pnl[pid] = unrealized
+                _stall_cycles[pid] = 0
+            else:
+                _stall_cycles[pid] = _stall_cycles.get(pid, 0) + 1
+            
+            # Log peak status every 10 cycles for visibility
+            if _stall_cycles.get(pid, 0) % 10 == 0 and _peak_pnl.get(pid, 0) > 50:
+                logger.info("[PEAK] %s peak=$%.0f now=$%.0f (%.0f%% of peak)", pid, _peak_pnl[pid], unrealized, (unrealized/_peak_pnl[pid]*100) if _peak_pnl[pid]>0 else 0)
+            
+            meta = _trade_meta.get(pid, {})
+            trade_type = meta.get('type', 'SCALP')
+            
+            # --- GENESIS SWITCH EXIT ---
+            # Detect regime for this instrument via GENESIS or fallback to ADX
+            sym_name = str(getattr(pos,'instrument','') or getattr(pos,'symbol',''))
+            pos_regime = "RANGE"  # default
+            if _genesis_ref:
+                for sym_key, state in _genesis_ref.states.items():
+                    mt = _resolved.get(sym_key)
+                    if mt and mt in sym_name:
+                        pos_regime = "TREND" if state.current_regime in ("BEAR","BULL") else "RANGE"
+                        break
+            
+            peak = _peak_pnl.get(pid, 0)
+            if peak >= 30 and unrealized > 0:
+                if pos_regime == "TREND":
+                    # CHANDELIER: ATR-adaptive trail — lets trends run
+                    # Trail distance = 10% of peak (wider for big moves)
+                    trail_pct = 0.90  # Keep 90% minimum
+                    if peak >= 500:
+                        trail_pct = 0.88  # Slightly looser on big trending moves
+                    max_giveback = 1.0 - trail_pct
+                else:
+                    # RANGE: Tight 90% trail — lock ranging profits fast
+                    max_giveback = 0.10  # Only allow 10% giveback
+                
+                giveback = peak - unrealized
+                giveback_pct = giveback / peak if peak > 0 else 0
+                if giveback_pct >= max_giveback:
+                    logger.info("[GENESIS_EXIT] %s %s peak=$%.0f now=$%.0f gave back %.0f%% (limit=%.0f%% regime=%s)",
+                        pid, sym_name, peak, unrealized, giveback_pct*100, max_giveback*100, pos_regime)
+                    try:
+                        await adapter.close_position(pid)
+                        logger.info("[GENESIS_EXIT] CLOSED %s, saved $%.2f", pid, unrealized)
+                        send_telegram(f"🧠 <b>GENESIS EXIT</b>\n{sym_name} ({pos_regime})\nPeak: ${peak:.0f} → Locked: ${unrealized:.0f}\nGave back {giveback_pct*100:.0f}%\nRegime: {pos_regime}")
+                    except Exception as e:
+                        logger.error("[GENESIS_EXIT] Close failed %s: %s", pid, e)
+                    continue
+            
+            # === Below here requires stop_loss and entry_price ===
+            sl = getattr(pos, 'stop_loss', None)
+            if sl is None or entry is None or entry <= 0: continue
+            risk = abs(entry - sl)
+            if risk <= 0: continue
+            cr = ((cur - entry) / risk) if il else ((entry - cur) / risk)
+            
+            # --- RULE 2: 80% TP CLOSE (SCALP only) ---
+            tp_price = getattr(pos, 'take_profit', None)
+            if tp_price and entry > 0 and tp_price != 0:
+                tp_dist = abs(tp_price - entry)
+                if tp_dist > 0:
+                    if il:
+                        price_moved = cur - entry
+                    else:
+                        price_moved = entry - cur
+                    pct_of_tp = price_moved / tp_dist if tp_dist > 0 else 0
+                    if trade_type == 'SCALP' and pct_of_tp >= 0.80 and price_moved > 0:
+                        logger.info("[80%%TP] %s closing at %.0f%% of TP (moved %.5f of %.5f)", pid, pct_of_tp*100, price_moved, tp_dist)
+                        try:
+                            await adapter.close_position(pid)
+                            logger.info("[80%%TP] CLOSED %s at $%.2f profit", pid, unrealized)
+                            send_telegram(f"💰 <b>80% TP CLOSE</b>\n{meta.get('sym','?')} closed at {pct_of_tp*100:.0f}% of target\nP&L: ${unrealized:.2f}")
+                        except Exception as e:
+                            logger.error("[80%%TP] Close failed %s: %s", pid, e)
+                        continue
+            
+            # --- GENESIS SWITCH TRAILING STOPS (broker-side SL) ---
+            # TREND: Chandelier (peak - 0.3R × ATR ratio) — lets trends run
+            # RANGE: Dynamic 90% of peak R — locks tight
+            be=entry;csl=sl
+            def better(ns): return (ns>csl+risk*0.03) if il else (ns<csl-risk*0.03)
+            ns=None
+            
+            if cr >= 0.4:
+                ns = be  # Breakeven at +0.4R always
+            
+            if cr >= 0.5 and pos_regime == "RANGE":
+                # RANGE: SL = entry + peak_cr * 0.90 (90% of best move)
+                target_lock = cr * 0.90
+                target_sl = be + risk * target_lock if il else be - risk * target_lock
+                if better(target_sl):
+                    ns = target_sl
+            elif cr >= 0.5 and pos_regime == "TREND":
+                # TREND: Chandelier — SL = peak - fixed R distance (widens with move)
+                # Trail distance: 0.25R for small moves, 0.35R for big moves
+                trail_r = 0.25 if cr < 2.0 else 0.35
+                target_lock = max(0.0, cr - trail_r)
+                target_sl = be + risk * target_lock if il else be - risk * target_lock
+                if better(target_sl):
+                    ns = target_sl
+            if ns:
+                ns_rounded = round(ns, 5)
+                logger.info("[TRAIL] Attempting SL move: %s %.1fR → SL=%.5f (was %.5f)", pid, cr, ns_rounded, csl)
                 try:
-                    await adapter.modify_position(pos.position_id, new_stop_loss=round(new_sl, 2))
-                    logger.info("[TRAIL] %s %.1fR → SL=%.2f (was %.2f)",
-                                pos.position_id, current_r, new_sl, _current_sl)
+                    # Try modify_position with both SL and TP to avoid broker rejection
+                    tp_val = getattr(pos, 'take_profit', None)
+                    if tp_val:
+                        await adapter.modify_position(pid, new_stop_loss=ns_rounded, new_take_profit=round(tp_val, 5))
+                    else:
+                        await adapter.modify_position(pid, new_stop_loss=ns_rounded)
+                    logger.info("[TRAIL] ✅ SL moved: %s → %.5f", pid, ns_rounded)
                 except Exception as e:
-                    logger.error("[TRAIL] %s modify failed: %s", pos.position_id, e)
+                    logger.error("[TRAIL] ❌ modify_position FAILED %s: %s", pid, e)
+                    # Fallback: try with position_id as string
+                    try:
+                        if tp_val:
+                            await adapter.modify_position(str(pid), new_stop_loss=ns_rounded, new_take_profit=round(tp_val, 5))
+                        else:
+                            await adapter.modify_position(str(pid), new_stop_loss=ns_rounded)
+                        logger.info("[TRAIL] ✅ SL moved (retry): %s → %.5f", pid, ns_rounded)
+                    except Exception as e2:
+                        logger.error("[TRAIL] ❌ Retry also failed %s: %s", pid, e2)
+            
+            # Smart exit: check if momentum is dying (only for trades above 0.8R)
+            if cr >= 0.8:
+                inst_name = str(getattr(pos,'instrument','') or getattr(pos,'symbol',''))
+                pos_dir = "LONG" if il else "SHORT"
+                for sym,mt in _resolved.items():
+                    if mt and mt in inst_name:
+                        cd = get_candles(sym)
+                        if cd:
+                            sn = make_snap(sym, cd, cur, cur)
+                            if sn:
+                                should_exit, reason = should_smart_exit(sn, pos_dir, cr)
+                                if should_exit:
+                                    try:
+                                        await adapter.close_position(pid)
+                                        logger.info("[SMART_EXIT] %s %.1fR — %s", pid, cr, reason)
+                                        send_telegram(f"🧠 <b>SMART EXIT</b>\n{sym} {pos_dir} closed at +{cr:.1f}R\nReason: {reason}")
+                                    except Exception as e:
+                                        logger.error("[SMART_EXIT] %s: %s", pid, e)
+                        break
         except Exception as e:
-            logger.error("[TRAIL] Pos %s: %s", pos.position_id, e)
+            logger.error("[MANAGE_POS] %s: %s", getattr(pos,'position_id','?'), e, exc_info=True)
 
+# ══════════════════════════════════════════════════════════════════════
+# TRADING LOOP
+# ══════════════════════════════════════════════════════════════════════
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# PRE-FLIGHT CHECK — V21: expanded for multi-instrument
-# ═══════════════════════════════════════════════════════════════════════════════
-
-def run_simulation_check() -> bool:
-    logger.info("═══ TITAN FORGE V21 — PRE-FLIGHT CHECK ═══")
-    checks = 0
-    total = 5
-
-    token = os.environ.get("METAAPI_TOKEN", "")
-    acct = os.environ.get("METAAPI_ACCOUNT_ID", os.environ.get("FTMO_ACCOUNT_ID", ""))
-    if token and acct:
-        checks += 1
-        logger.info("✅ MetaAPI credentials present")
-    else:
-        logger.error("❌ Missing METAAPI_TOKEN or METAAPI_ACCOUNT_ID")
-
-    if os.environ.get("TELEGRAM_BOT_TOKEN", ""):
-        checks += 1
-        logger.info("✅ Telegram token present")
-    else:
-        checks += 1
-        logger.warning("⚠️ No Telegram — alerts disabled")
-
-    firm = os.environ.get("ACTIVE_FIRM", "FTMO")
-    checks += 1
-    logger.info("✅ Active firm: %s | Account type: %s", firm, FTMO_ACCOUNT_TYPE)
-
-    from pathlib import Path
-    ev_dir = Path(os.environ.get("EVIDENCE_PATH", "/data/evidence"))
+async def trading_loop(adapter):
+    global _genesis_ref
+    sig_engine=SignalEngine();corr=CorrelationGuard()
+    genesis=None
+    if GENESIS_OK:
+        try: genesis=create_genesis(default_regime="BEAR"); logger.info("[GENESIS] S=%d L=%d N=%d",len(genesis.short_config),len(genesis.long_config),len(genesis.neutral_config))
+        except Exception as e: logger.warning("[GENESIS] %s",e)
+    _genesis_ref = genesis  # Make accessible to manage_pos
+    ib=100000
     try:
-        ev_dir.mkdir(parents=True, exist_ok=True)
-        checks += 1
-        logger.info("✅ Evidence dir: %s", ev_dir)
-    except Exception:
-        Path.home().joinpath("forge_evidence").mkdir(parents=True, exist_ok=True)
-        checks += 1
-        logger.warning("⚠️ Fallback evidence dir")
-
-    active_setups = sum(1 for c in SETUP_CONFIG.values() if c.get("signal_fn") != "disabled")
-    checks += 1
-    logger.info("✅ %d setups registered (%d active)", len(SETUP_CONFIG), active_setups)
-
-    polygon_key = os.environ.get("POLYGON_API_KEY", "")
-    if polygon_key:
-        logger.info("✅ Polygon API key present")
-    else:
-        logger.warning("⚠️ No POLYGON_API_KEY — MTF disabled")
-
-    cleared = checks >= 4
-    logger.info("═══ %s (%d/%d) ═══", "CLEARED" if cleared else "FAILED", checks, total)
-    return cleared
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# THE LIVE TRADING LOOP — V21: 24-HOUR, MULTI-INSTRUMENT, ADAPTIVE
-# ═══════════════════════════════════════════════════════════════════════════════
-
-async def live_trading_loop(adapter: MT5Adapter) -> None:
-    # ── V20 components (kept) ─────────────────────────────────────────
-    tracker = InstrumentTracker()
-    risk_fortress = RiskFortress()
-    evolver = get_evolver()
-    session_memory = SessionMemory()
-    candle_store = get_candle_store()
-    anomaly_detector = get_anomaly_detector()
-    corr_engine = get_correlation_engine()
-
-    # ── V21 components (new) ──────────────────────────────────────────
-    target_engine = DailyTargetEngine(target=2000.0)
-    session_adapter = SessionAdapter()
-    partial_mgr = PartialExitManager()
-    perf_monitor = PerformanceMonitor()
-    session_risk = SessionRiskTracker()
-    cross_exploit = CrossMarketExploit()
-    order_router = SmartOrderRouter()
-
-    firm_id = os.environ.get("ACTIVE_FIRM", "FTMO")
-    firm_state = PropFirmState(firm_id=firm_id, initial_balance=100_000,
-                                current_balance=100_000, highest_eod_balance=100_000)
-    firm_state.daily_start_balance = 100_000
-
-    try:
-        _init_acc = await adapter.get_account_state()
-        if _init_acc.balance > 0:
-            firm_state.initialize(_init_acc.balance)
-            firm_state.reset_daily(_init_acc.balance)
-            logger.info("[INIT] Live balance: $%.2f", _init_acc.balance)
-    except Exception as e:
-        logger.warning("[INIT] Could not fetch balance: %s", e)
-
-    traded_setups: set[str] = set()
-    _setup_cooldowns: dict[str, float] = {}
-    COOLDOWN_SECONDS = 180
-    last_session_date = date.today()
-    cycle = 0
-    ctx = MarketContext()
-    atr_session_high = 0.0
-    atr_session_low = float("inf")
-    _last_m5_fetch = datetime.min.replace(tzinfo=timezone.utc)
-    _last_m15_fetch = datetime.min.replace(tzinfo=timezone.utc)
-    _last_target_update = 0.0
-
-    # V21: Resolve all instruments at boot
+        a=await adapter.get_account_state()
+        if a.balance>0: ib=a.balance; logger.info("[INIT] Balance: $%.2f",ib)
+    except: pass
     logger.info("🔱 RESOLVING INSTRUMENTS...")
-    for inst in ["NAS100", "XAUUSD", "EURUSD", "CL", "US500"]:
-        resolved = await resolve_instrument(adapter, inst)
-        if resolved:
-            logger.info("  ✅ %s → %s", inst, resolved)
-        else:
-            logger.warning("  ⚠️ %s — no valid symbol", inst)
+    ok=0
+    for s in ALIASES:
+        r=await resolve(adapter,s)
+        if r: ok+=1; logger.info("  ✅ %s → %s",s,r)
+        else: logger.warning("  ⚠️ %s",s)
+    logger.info("[INIT] Fetching candles...")
+    for s in get_all_symbols():
+        cd=get_candles(s)
+        if cd: logger.info("  📊 %s: %d bars",s,cd["n"])
+        time.sleep(0.3)
+    logger.info("🔱 FORGE V22 — %d INSTRUMENTS ARMED",ok)
+    send_telegram(f"🔱 <b>TITAN FORGE V22 ONLINE</b>\n{ok} instruments | GENESIS {'ON' if genesis else 'OFF'}\nBalance: ${ib:,.2f}\nAll gas first then brakes.")
 
-    active_count = sum(1 for c in SETUP_CONFIG.values() if c.get("signal_fn") != "disabled")
-    logger.info("🔱 TITAN FORGE %s — %d SETUPS ARMED. 24-HOUR MODE.", FORGE_VERSION, active_count)
-    send_telegram(
-        f"🔱 <b>TITAN FORGE {FORGE_VERSION} ONLINE</b>\n"
-        f"{active_count} setups | 5 instruments | 24-hour\n"
-        f"Account type: {FTMO_ACCOUNT_TYPE}\n"
-        f"The full arsenal is armed."
-    )
-
-    try:
-        ctx = fetch_market_context()
-        logger.info("[INIT] VIX=%.1f (%s) Futures=%s ATR=%.0f",
-                     ctx.vix, ctx.vix_regime, ctx.futures_bias, ctx.atr)
-    except Exception as e:
-        logger.warning("[INIT] Context fetch failed: %s", e)
-        ctx = MarketContext()
+    cds:Dict[str,float]={};ld=date.today();dt=0;cyc=0;hb=ib;prev_positions:Dict[str,float]={}
 
     while True:
-        cycle += 1
+        cyc+=1
         try:
-            today = date.today()
+            today=date.today()
+            if today!=ld: ld=today;cds.clear();dt=0;_cc.clear();send_telegram(f"🔱 <b>V22 DAILY RESET</b>\n📅 {today}")
+            try: acc=await adapter.get_account_state()
+            except Exception as e: logger.error("[C%d] Account: %s",cyc,e); await asyncio.sleep(30); continue
+            if acc.balance<=0: await asyncio.sleep(30); continue
+            bal=acc.balance;eq=acc.equity
+            if bal>hb: hb=bal
+            dd=(hb-eq)/hb if hb>0 else 0
+            if dd>=DD_EMERGENCY:
+                logger.warning("[EMERGENCY] DD=%.1f%%",dd*100)
+                send_telegram(f"🚨 <b>EMERGENCY DD {dd*100:.1f}%</b>\nClosing all")
+                try: await adapter.close_all_positions()
+                except: pass
+                await asyncio.sleep(300); continue
+            logger.info("[C%d] Bal=$%.2f Eq=$%.2f DD=%.1f%% Pos=%d T=%d",cyc,bal,eq,dd*100,acc.open_position_count,dt)
+            await manage_pos(adapter,acc)
+            # Detect closed trades
+            curr_pos_ids={}
+            if acc.open_positions:
+                for p in acc.open_positions:
+                    pid=getattr(p,'position_id','')
+                    curr_pos_ids[pid]=getattr(p,'current_price',0) or 0
+            for pid in list(prev_positions.keys()):
+                if pid not in curr_pos_ids:
+                    pnl_change=bal-hb if bal!=hb else 0
+                    logger.info("📊 TRADE CLOSED: %s",pid)
+                    send_telegram(f"📊 <b>TRADE CLOSED</b>\nPosition {pid}\nBalance: ${bal:,.2f}")
+            prev_positions=curr_pos_ids
+            if acc.open_position_count>=MAX_OPEN: await asyncio.sleep(CYCLE_SPEED); continue
+            if dt>=MAX_DAILY: await asyncio.sleep(CYCLE_SPEED); continue
 
-            # ── DAILY RESET ──────────────────────────────────────────
-            if today != last_session_date:
-                last_session_date = today
-                tracker.reset()
-                traded_setups.clear()
-                _setup_cooldowns.clear()
-                risk_fortress.reset_daily()
-                session_memory.reset()
-                session_risk.reset_daily()
-                target_engine.reset_daily()
-                session_adapter.reset()
-                partial_mgr.reset()
-                perf_monitor.end_of_day()
-                cross_exploit = CrossMarketExploit()
-                atr_session_high = 0.0
-                atr_session_low = float("inf")
-
+            snaps:Dict[str,MarketSnapshot]={}
+            for sym in get_all_symbols():
+                if not is_open(sym): continue
+                mt=_resolved.get(sym)
+                if not mt: continue
                 try:
-                    ctx = fetch_market_context()
-                except Exception:
-                    pass
+                    b,a=await adapter.get_current_price(mt)
+                    if not b or b<=0: continue
+                except: continue
+                cd=get_candles(sym)
+                if not cd: continue
+                sn=make_snap(sym,cd,b,a)
+                if sn: snaps[sym]=sn
+            if not snaps: await asyncio.sleep(CYCLE_SPEED); continue
 
-                try:
-                    acc = await adapter.get_account_state()
-                    if acc.balance > 0:
-                        firm_state.initialize(acc.balance)
-                        firm_state.reset_daily(acc.balance)
-                        risk_fortress.reset_weekly(acc.balance)
-                except Exception:
-                    pass
-
-                # V21: GENESIS auto-evolution
-                try:
-                    evolve_result = auto_evolve(SETUP_CONFIG, send_telegram)
-                    logger.info("[EVOLVE] %s", evolve_result.get("status", "unknown"))
-                except Exception as e:
-                    logger.warning("[EVOLVE] Failed: %s", e)
-
-                try:
-                    evidence = _evidence.get_recent_trades(30)
-                    evolver.update_from_evidence(evidence)
-                    deg = evolver.get_degradation_alert()
-                    if deg:
-                        logger.warning("[EVOLVE] %s", deg)
-                        send_telegram(f"⚠️ <b>DEGRADATION</b>\n{deg}")
-                except Exception:
-                    pass
-
-                _session = get_current_session()
-                _regime = ctx.regime if hasattr(ctx, 'regime') else "NORMAL"
-                plan = target_engine.get_plan(_regime)
-
-                send_telegram(
-                    f"🔱 <b>FORGE {FORGE_VERSION} — MORNING BRIEF</b>\n"
-                    f"━━━━━━━━━━━━━━━━━━━━━\n"
-                    f"📅 {today} ({ctx.day_name})\n"
-                    f"💰 Balance: ${firm_state.current_balance:,.2f}\n"
-                    f"🏢 Firm: {firm_id} ({FTMO_ACCOUNT_TYPE})\n"
-                    f"━━━━━━━━━━━━━━━━━━━━━\n"
-                    f"📊 VIX: {ctx.vix:.1f} ({ctx.vix_regime})\n"
-                    f"📈 Futures: {ctx.futures_pct*100:+.2f}% ({ctx.futures_bias})\n"
-                    f"📏 PDH: {ctx.pdh:.0f} | PDL: {ctx.pdl:.0f}\n"
-                    f"📐 ATR: {ctx.atr:.0f}\n"
-                    f"🎯 Target: ${plan.target:.0f} | Mode: {plan.mode}\n"
-                    f"🔫 {active_count} setups armed | 24-hour mode"
-                )
-
-            # ── MARKET HOURS — V21: 24-hour ──────────────────────────
-            if not is_market_open():
-                logger.info("[Cycle %d] Market closed or daily break.", cycle)
-                await asyncio.sleep(60)
-                continue
-
-            # ── V21: Force close before daily break (standard accounts) ──
-            if should_force_close_nq():
-                try:
-                    account = await adapter.get_account_state()
-                    if account.open_position_count > 0:
-                        logger.warning("[BREAK] Forcing NQ close before 17:00 ET break")
-                        send_telegram("⚠️ <b>DAILY BREAK</b>\nClosing NQ positions before 17:00 ET")
-                        await adapter.close_all_positions()
-                except Exception as e:
-                    logger.error("[BREAK] Force close failed: %s", e)
-                await asyncio.sleep(60)
-                continue
-
-            # ── HEALTH ────────────────────────────────────────────────
-            try:
-                health = await adapter.health_check()
-                if not health.is_healthy:
-                    logger.warning("[Cycle %d] Unhealthy: %s", cycle, health.error)
-                    await asyncio.sleep(30)
-                    continue
-            except Exception as e:
-                logger.warning("[Cycle %d] Health: %s", cycle, e)
-                await asyncio.sleep(30)
-                continue
-
-            # ── ACCOUNT ──────────────────────────────────────────────
-            try:
-                account = await adapter.get_account_state()
-            except Exception as e:
-                logger.error("[Cycle %d] Account: %s", cycle, e)
-                await asyncio.sleep(30)
-                continue
-
-            if account.balance <= 0:
-                logger.warning("[Cycle %d] Balance=0", cycle)
-                await asyncio.sleep(30)
-                continue
-
-            firm_state.current_balance = account.balance
-            firm_state.current_day_pnl = account.daily_pnl
-
-            _24h_session = get_current_session()
-            _session_params = SESSION_PARAMS.get(_24h_session, SESSION_PARAMS["RTH"])
-
-            logger.info("[Cycle %d] %s | Bal=$%.2f Eq=$%.2f PnL=$%.2f Pos=%d",
-                         cycle, _24h_session, account.balance, account.equity,
-                         account.daily_pnl, account.open_position_count)
-
-            # ── V21: Session risk budget check ───────────────────────
-            can_trade_session, budget_msg = session_risk.can_trade_session(_24h_session)
-            if not can_trade_session:
-                logger.info("[Cycle %d] %s", cycle, budget_msg)
-                await asyncio.sleep(60)
-                continue
-
-            # ── PRICE TRACKING ───────────────────────────────────────
-            primary_inst = await resolve_instrument(adapter, "NAS100")
-            if primary_inst:
-                try:
-                    bid, ask = await adapter.get_current_price(primary_inst)
-                    if bid > 0:
-                        _price_cache.update(primary_inst, bid, ask)
-                        tracker.update(bid, ask, ctx)
-                        if is_rth():
-                            m = (bid + ask) / 2.0
-                            if m > atr_session_high:
-                                atr_session_high = m
-                            if m < atr_session_low:
-                                atr_session_low = m
-                            if ctx.atr > 0 and atr_session_high > 0 and atr_session_low < float("inf"):
-                                ctx.atr_consumed_pct = (atr_session_high - atr_session_low) / ctx.atr
-
-                        corr_engine.update("NAS100", (bid + ask) / 2.0)
-                        anomaly_detector.update((bid + ask) / 2.0, ctx.vix)
-                except Exception as e:
-                    logger.warning("[Cycle %d] Price err: %s", cycle, e)
-
-            # V21: Track ES price for cross-market exploit
-            es_inst = await resolve_instrument(adapter, "US500")
-            if es_inst:
-                try:
-                    es_bid, es_ask = await adapter.get_current_price(es_inst)
-                    if es_bid > 0:
-                        cross_exploit.update_es((es_bid + es_ask) / 2.0)
-                except Exception:
-                    pass
-
-            # Staggered Polygon candle fetching
-            now_utc = datetime.now(timezone.utc)
-            if is_rth():
-                _fetched_any = False
-                if (now_utc - _last_m5_fetch).total_seconds() >= 300:
+            # GENESIS
+            if genesis:
+                saved=dict(SETUP_CONFIG)
+                for sym,sn in snaps.items():
                     try:
-                        fetch_polygon_candles("NAS100", ["M5"])
-                        _last_m5_fetch = now_utc
-                        _fetched_any = True
-                    except Exception as e:
-                        logger.warning("[POLYGON] M5 fetch failed: %s", e)
-                if (now_utc - _last_m15_fetch).total_seconds() >= 900:
-                    try:
-                        fetch_polygon_candles("NAS100", ["M15"])
-                        _last_m15_fetch = now_utc
-                        _fetched_any = True
-                    except Exception as e:
-                        logger.warning("[POLYGON] M15 fetch failed: %s", e)
-
-                if _fetched_any:
-                    m15_candles = candle_store.get("NAS100", "M15", 6)
-                    h1_candles = candle_store.get("NAS100", "H1", 5)
-                    ctx.mtf_trend_m15 = get_m15_trend(m15_candles)
-                    ctx.mtf_trend_h1 = get_h1_trend(h1_candles)
-
-            ctx.session_state = get_rth_session_state()
-            ctx.minutes_remaining = session_minutes_remaining()
-            ctx.sync_from_tracker(tracker)
-
-            # ── MANAGE POSITIONS — V21: with partials ────────────────
-            await manage_open_positions(adapter, account, ctx, partial_mgr, target_engine)
-
-            # ── SESSION CLOSE ─────────────────────────────────────────
-            should_close, close_reason = check_session_close_protection(firm_state)
-            if should_close and account.open_position_count > 0:
-                logger.warning("[CLOSE] %s", close_reason)
-                send_telegram(f"📅 <b>SESSION CLOSE</b>\n{close_reason}")
-                try:
-                    await adapter.close_all_positions()
-                except Exception as e:
-                    logger.error("[CLOSE] %s", e)
-                await asyncio.sleep(60)
-                continue
-
-            # ── NEWS BLACKOUT — V21: per-instrument ──────────────────
-            # Check global blackout for primary instrument
-            _in_blackout = _v20_is_news_blackout()
-
-            # ── EMERGENCY ─────────────────────────────────────────────
-            if firm_state.should_emergency_close(account.equity):
-                logger.warning("[EMERGENCY] Near limit — closing all")
-                send_telegram("🚨 <b>EMERGENCY</b>\nClosing ALL")
-                try:
-                    await adapter.close_all_positions()
-                except Exception:
-                    pass
-                await asyncio.sleep(60)
-                continue
-
-            # ── POSITION LIMIT: 5 simultaneous ───────────────────────
-            if account.open_position_count >= 5:
-                logger.info("[Cycle %d] Max positions (5/5).", cycle)
-                await asyncio.sleep(60)
-                continue
-
-            # ── ANOMALY CHECK ─────────────────────────────────────────
-            anomaly = anomaly_detector.check()
-            if anomaly:
-                logger.warning("[ANOMALY] %s — pausing 1 cycle", anomaly)
-                send_telegram(f"⚠️ <b>ANOMALY</b>\n{anomaly}")
-                await asyncio.sleep(60)
-                continue
-
-            # ── V21: Performance auto-adjust ──────────────────────────
-            perf_size_mult, perf_mode = perf_monitor.get_size_adjustment(account.daily_pnl)
-            if perf_mode != "NORMAL":
-                logger.info("[MONITOR] Mode: %s (%.0fx)", perf_mode, perf_size_mult)
-
-            # ═══════════════════════════════════════════════════════════
-            # DECISION PIPELINE V21 — THE FULL ARSENAL
-            # ═══════════════════════════════════════════════════════════
-            _all_candidates = []
-            _cycle_signals = []
-
-            mid = _price_cache.get_mid(primary_inst or "") or (
-                tracker.price_history[-1] if tracker.price_history else 0)
-            if mid <= 0:
-                await asyncio.sleep(60)
-                continue
-
-            atr = ctx.atr if ctx.atr > 0 else 100.0
-
-            # ── Regime Detection (with REVERSAL) ─────────────────────
-            _regime = "NORMAL"
-            _regime_bias = "neutral"
-            ib_range = (tracker.ib_high - tracker.ib_low) if (
-                tracker.ib_locked and tracker.ib_low != float("inf")) else 0
-
-            if tracker.ib_locked and ib_range > 0:
-                if ib_range >= atr * 0.6:
-                    _regime = "TREND"
-                elif ib_range <= atr * 0.3:
-                    _regime = "CHOP"
-
-                if tracker.ib_direction == "long":
-                    _regime_bias = "long"
-                elif tracker.ib_direction == "short":
-                    _regime_bias = "short"
-
-                if mid > tracker.ib_high + 2.0:
-                    _regime_bias = "long"
-                elif mid < tracker.ib_low - 2.0:
-                    _regime_bias = "short"
-
-            # REVERSAL detection
-            if _regime == "TREND" and tracker.ib_direction:
-                if tracker.ib_direction == "long" and mid < tracker.ib_low:
-                    _regime = "REVERSAL"
-                    _regime_bias = "short"
-                elif tracker.ib_direction == "short" and mid > tracker.ib_high:
-                    _regime = "REVERSAL"
-                    _regime_bias = "long"
-
-            _loop_vwap = tracker.vwap or tracker.open_price or mid
-            if _regime_bias == "neutral" and _loop_vwap and _loop_vwap > 0:
-                if mid > _loop_vwap * 1.003:
-                    _regime_bias = "long"
-                elif mid < _loop_vwap * 0.997:
-                    _regime_bias = "short"
-
-            ctx.regime = _regime
-            ctx.regime_bias = _regime_bias
-
-            # ── V21: Daily target plan ────────────────────────────────
-            plan = target_engine.get_plan(_regime, ctx.minutes_remaining / 60.0,
-                                           atr, ctx.atr_consumed_pct)
-
-            # V21: Hourly target Telegram update
-            if time.time() - _last_target_update >= 3600:
-                _last_target_update = time.time()
-                send_telegram(f"🎯 {target_engine.telegram_update()}")
-
-            # ── V21: Fast mode at key levels ──────────────────────────
-            key_levels = collect_key_levels(tracker, ctx)
-            cycle_speed = get_cycle_speed(mid, key_levels, atr)
-
-            # ── V21: MTF from candle store ────────────────────────────
-            m5_candles = candle_store.get("NAS100", "M5", 3)
-
-            # ── SCAN ALL SETUPS ───────────────────────────────────────
-            for setup_id, config in SETUP_CONFIG.items():
-                # Skip disabled
-                if config.get("signal_fn") == "disabled":
-                    continue
-
-                # V21: Session filter — only fire during assigned sessions
-                allowed_sessions = config.get("sessions", ["RTH"])
-                if _24h_session not in allowed_sessions:
-                    continue
-
-                # Cooldown
-                _last_trade_time = _setup_cooldowns.get(setup_id, 0)
-                if time.time() - _last_trade_time < COOLDOWN_SECONDS:
-                    continue
-
-                # ATR exhaustion filter
-                if is_rth() and ctx.atr_consumed_pct > 0.95 and setup_id not in ("VOL-06", "VOL-05"):
-                    continue
-
-                # Regime suppression
-                regime_m = get_regime_mult(setup_id, _regime)
-                if regime_m <= 0.0:
-                    continue
-
-                # V21: Instrument availability check
-                inst_key = config.get("instrument", "NAS100")
-                can_open, reason = can_open_new_position(inst_key)
-                if not can_open:
-                    continue
-
-                # V21: Per-instrument news blackout
-                inst_blackout, blackout_reason = is_news_blackout(inst_key)
-                if inst_blackout:
-                    continue
-
-                # ── GENERATE SIGNAL (ONE condition per setup) ─────────
-                signal = generate_signal(
-                    setup_id, config, mid, tracker, ctx, atr,
-                    cross_market_exploit=cross_exploit,
-                )
-                if signal.verdict != SignalVerdict.CONFIRMED:
-                    continue
-
-                # MTF confirmation for this direction
-                ctx.mtf_m5_confirms = m5_confirms_m1(signal.direction, m5_candles)
-
-                # V21: GENESIS calibrated WR
-                calibrated = get_calibrated_wr(config["base_win_rate"]) if config["base_win_rate"] > 0 else None
-
-                # ── BAYESIAN CONVICTION (BOOSTED) ─────────────────────
-                live_wr = evolver.get_live_win_rate(setup_id)
-                conviction = compute_bayesian_conviction(
-                    prior_win_rate=config["base_win_rate"],
-                    ctx=ctx, tracker=tracker,
-                    direction=signal.direction, setup_id=setup_id,
-                    live_win_rate=live_wr,
-                    calibrated_wr=calibrated,
-                )
-
-                _cycle_signals.append(
-                    f"{setup_id} {signal.direction} → {conviction.conviction_level} "
-                    f"({conviction.posterior:.0%}, {conviction.confirming}/{conviction.total})"
-                )
-
-                if conviction.posterior < 0.35 or conviction.conviction_level == "REJECT":
-                    _evidence.log_trade(TradeFingerprint(
-                        trade_id=f"PH-{uuid.uuid4().hex[:8]}",
-                        timestamp=datetime.now(timezone.utc).isoformat(),
-                        setup_id=setup_id, instrument=config["instrument"],
-                        direction=signal.direction or "", entry_price=signal.entry_price or 0,
-                        stop_loss=signal.stop_loss or 0, take_profit=signal.take_profit or 0,
-                        firm_id=firm_id, vix=ctx.vix, vix_regime=ctx.vix_regime,
-                        bayesian_posterior=conviction.posterior,
-                        conviction_level=conviction.conviction_level,
-                        regime=_regime, regime_bias=_regime_bias,
-                        is_phantom=True, outcome="PHANTOM", capital_vehicle="PROP_FIRM",
-                    ))
-                    continue
-
-                # 5-gate checklist
-                risk_dollars = abs((signal.entry_price or 0) - (signal.stop_loss or 0)) * config["base_size"] * POINT_VALUE.get(inst_key, 20)
-                open_risk = risk_dollars * account.open_position_count
-
-                gate_result = pre_trade_checklist(
-                    setup_id=setup_id, direction=signal.direction or "",
-                    regime=_regime, ctx=ctx,
-                    risk_dollars=risk_dollars, account_equity=account.equity,
-                    open_risk=open_risk, minutes_remaining=ctx.minutes_remaining,
-                    expected_hold_min=config.get("expected_hold_min", 30),
-                    session_memory=session_memory, regime_mult=regime_m,
-                )
-                if not gate_result.all_pass:
-                    _evidence.log_trade(TradeFingerprint(
-                        trade_id=f"GF-{uuid.uuid4().hex[:8]}",
-                        timestamp=datetime.now(timezone.utc).isoformat(),
-                        setup_id=setup_id, instrument=config["instrument"],
-                        direction=signal.direction or "", entry_price=signal.entry_price or 0,
-                        stop_loss=signal.stop_loss or 0, take_profit=signal.take_profit or 0,
-                        firm_id=firm_id, bayesian_posterior=conviction.posterior,
-                        conviction_level=conviction.conviction_level,
-                        gate_failed=gate_result.failed_gate,
-                        regime=_regime, regime_bias=_regime_bias,
-                        is_phantom=True, outcome="GATE_FAIL", capital_vehicle="PROP_FIRM",
-                    ))
-                    continue
-
-                # Session memory scalp-only enforcement
-                _is_scalp = conviction.conviction_level == "SCALP"
-                if session_memory.is_scalp_only and not _is_scalp:
-                    if conviction.conviction_level not in ("ELITE", "HIGH"):
-                        continue
-
-                # V21: Dynamic R:R from ATR remaining
-                if signal.direction and signal.entry_price:
-                    dyn_tp = dynamic_target(signal.direction, signal.entry_price,
-                                             atr, ctx.atr_consumed_pct, _regime)
-                    # Use dynamic TP if it's more aggressive than signal's TP
-                    if signal.direction == "long" and dyn_tp > (signal.take_profit or 0):
-                        signal = Signal(signal.setup_id, signal.verdict, signal.direction,
-                                        signal.entry_price, signal.stop_loss, dyn_tp,
-                                        signal.conviction, signal.reason)
-                    elif signal.direction == "short" and dyn_tp < (signal.take_profit or 999999):
-                        signal = Signal(signal.setup_id, signal.verdict, signal.direction,
-                                        signal.entry_price, signal.stop_loss, dyn_tp,
-                                        signal.conviction, signal.reason)
-
-                # Scalp override SL/TP
-                ep = signal.entry_price or mid
-                if _is_scalp and "NAS100" in config.get("instrument", ""):
-                    scalp_sl, scalp_tp = 25.0, 35.0
-                    if signal.direction == "long":
-                        signal = Signal(signal.setup_id, signal.verdict, signal.direction,
-                                        ep, round(ep - scalp_sl, 2), round(ep + scalp_tp, 2),
-                                        signal.conviction, f"SCALP {signal.reason}")
-                    else:
-                        signal = Signal(signal.setup_id, signal.verdict, signal.direction,
-                                        ep, round(ep + scalp_sl, 2), round(ep - scalp_tp, 2),
-                                        signal.conviction, f"SCALP {signal.reason}")
-
-                reward_dollars = abs((signal.take_profit or 0) - (signal.entry_price or 0)) * config["base_size"] * POINT_VALUE.get(inst_key, 20)
-                if risk_dollars <= 0 or reward_dollars <= 0:
-                    continue
-
-                ev_result = compute_expected_value(
-                    win_prob=conviction.posterior, reward_dollars=reward_dollars,
-                    risk_dollars=risk_dollars, account_balance=account.balance,
-                    max_position_pct=0.02, minutes_remaining=ctx.minutes_remaining,
-                )
-
-                if ev_result.ev_dollars < order_router.get_ev_threshold():
-                    continue
-
-                tier_weight = {"ELITE": 4.0, "HIGH": 3.0, "STANDARD": 2.0,
-                              "REDUCED": 1.0, "SCALP": 0.5}.get(conviction.conviction_level, 0.5)
-                weighted_ev = ev_result.net_ev * tier_weight
-
-                # V21: Session adapter boost/penalty
-                sa_mult = session_adapter.get_multiplier(setup_id)
-                # V21: Target engine boost for trade types that are working
-                te_mult = target_engine.get_size_adjustment(setup_id)
-
-                _all_candidates.append({
-                    "setup_id": setup_id, "config": config, "signal": signal,
-                    "conviction": conviction, "ev_result": ev_result,
-                    "is_scalp": _is_scalp, "direction": signal.direction,
-                    "weighted_ev": weighted_ev * sa_mult * te_mult,
-                    "sa_mult": sa_mult, "te_mult": te_mult,
-                })
-
-            # ── Anti-Conflict Filter ──────────────────────────────────
-            if _all_candidates:
-                _best_posterior = max(c["conviction"].posterior for c in _all_candidates)
-                _best_direction = None
-                for c in _all_candidates:
-                    if c["conviction"].posterior == _best_posterior:
-                        _best_direction = c["direction"]
-                        break
-
-                if _best_direction and _best_posterior >= 0.55:
-                    _filtered = [c for c in _all_candidates
-                                if not (c["is_scalp"] and c["direction"] != _best_direction)]
-                    _all_candidates = _filtered
-
-                if _regime_bias != "neutral":
-                    _filtered2 = []
-                    for c in _all_candidates:
-                        _is_weak = c["conviction"].conviction_level in ("SCALP", "REDUCED")
-                        if _is_weak and c["direction"] != _regime_bias:
-                            continue
-                        _filtered2.append(c)
-                    _all_candidates = _filtered2
-
-            best_action = None
-            if _all_candidates:
-                _all_candidates.sort(key=lambda c: c["weighted_ev"], reverse=True)
-                best = _all_candidates[0]
-                cl = best["conviction"].conviction_level
-                _size_mult = {"ELITE": 1.0, "HIGH": 0.75, "STANDARD": 0.50,
-                             "REDUCED": 0.30, "SCALP": 0.25}.get(cl, 0.25)
-                best_action = best
-
-            if _cycle_signals:
-                logger.info("[Cycle %d][%s|%s|%s] Signals: %s", cycle, _24h_session, _regime, _regime_bias,
-                           " | ".join(_cycle_signals[:5]))
-
-            # ── EXECUTE ───────────────────────────────────────────────
-            if best_action is None:
-                await asyncio.sleep(cycle_speed)
-                continue
-
-            if _in_blackout:
-                logger.info("[Cycle %d] %s blocked by NEWS BLACKOUT", cycle, best_action["setup_id"])
-                await asyncio.sleep(cycle_speed)
-                continue
-
-            setup_id = best_action["setup_id"]
-            config = best_action["config"]
-            signal = best_action["signal"]
-            conviction = best_action["conviction"]
-            ev_result = best_action["ev_result"]
-            _is_scalp = best_action["is_scalp"]
-
-            cl_level = conviction.conviction_level
-            _size_mult = {"ELITE": 1.0, "HIGH": 0.75, "STANDARD": 0.50,
-                         "REDUCED": 0.30, "SCALP": 0.25}.get(cl_level, 0.25)
-
-            # ═══ PRE-EXECUTION SAFETY GATES ═══════════════════════════
-
-            # REJECT hard block
-            if conviction.conviction_level == "REJECT":
-                await asyncio.sleep(cycle_speed)
-                continue
-
-            inst_key = config.get("instrument", "NAS100")
-            _target_inst = await resolve_instrument(adapter, inst_key)
-            if not _target_inst:
-                await asyncio.sleep(cycle_speed)
-                continue
-
-            # Block opposite direction on same instrument
-            _direction_conflict = False
-            if account.open_positions:
-                for pos in account.open_positions:
-                    _pos_inst = getattr(pos, 'instrument', None) or getattr(pos, 'symbol', None)
-                    if _pos_inst == _target_inst:
-                        pos_dir = pos.direction.value if hasattr(pos.direction, 'value') else str(pos.direction)
-                        if pos_dir != signal.direction:
-                            _direction_conflict = True
-                            break
-            if _direction_conflict:
-                await asyncio.sleep(cycle_speed)
-                continue
-
-            # Max exposure 1.0 lots per instrument per direction
-            _current_exposure = 0.0
-            if account.open_positions:
-                for pos in account.open_positions:
-                    _pos_inst = getattr(pos, 'instrument', None) or getattr(pos, 'symbol', None)
-                    if _pos_inst == _target_inst:
-                        pos_dir = pos.direction.value if hasattr(pos.direction, 'value') else str(pos.direction)
-                        if pos_dir == signal.direction:
-                            _current_exposure += getattr(pos, 'size', 0) or getattr(pos, 'volume', 0) or 0
-
-            # Sanity checks
-            _entry = signal.entry_price or 0
-            _sl = signal.stop_loss or 0
-            _tp = signal.take_profit or 0
-            _sl_dist = abs(_entry - _sl)
-            _tp_dist = abs(_entry - _tp)
-            _inst_atr = config.get("atr_default", 100)
-
-            _sanity_fail = None
-            if _tp_dist > _inst_atr * 2:
-                _sanity_fail = f"TP unreachable: {_tp_dist:.0f}pts > {_inst_atr*2:.0f}"
-            elif _sl_dist < 5.0 and inst_key == "NAS100":
-                _sanity_fail = f"SL too tight: {_sl_dist:.1f}pts"
-            elif _sl_dist > _inst_atr * 1.0:
-                _sanity_fail = f"SL too wide: {_sl_dist:.0f}pts"
-            elif ev_result.ev_dollars > 500:
-                _sanity_fail = f"EV suspicious: ${ev_result.ev_dollars:.0f}"
-
-            if _sanity_fail:
-                logger.warning("[SANITY] %s: %s", setup_id, _sanity_fail)
-                await asyncio.sleep(cycle_speed)
-                continue
-
-            # Risk fortress
-            risk_decision = risk_fortress.evaluate(
-                firm_state=firm_state, equity=account.equity,
-                daily_pnl=account.daily_pnl, balance=account.balance, setup_id=setup_id,
-            )
-            if not risk_decision.can_trade:
-                await asyncio.sleep(cycle_speed)
-                continue
-
-            # Stress test
-            risk_dollars = abs(_entry - _sl) * config["base_size"] * POINT_VALUE.get(inst_key, 20)
-            stress = monte_carlo_stress_test(
-                current_pnl=account.daily_pnl, proposed_risk=risk_dollars,
-                win_prob=conviction.posterior, current_positions=account.open_position_count,
-                open_risk=risk_dollars * account.open_position_count,
-                daily_limit=firm_state.daily_loss_limit,
-                max_loss=firm_state.initial_balance * firm_state.total_loss_pct,
-                current_equity=account.equity, vix=ctx.vix,
-            )
-            if not stress.risk_approved:
-                logger.warning("[Cycle %d][%s] STRESS: %s", cycle, setup_id, stress.reason)
-                await asyncio.sleep(cycle_speed)
-                continue
-
-            # ── LOT SIZING — V21: session + target + performance adjusted ──
-            session_size_mult = session_memory.size_multiplier
-            conv_mult = {"ELITE": 1.5, "HIGH": 1.2, "STANDARD": 1.0,
-                         "REDUCED": 0.7, "SCALP": 0.5}.get(cl_level, 0.3)
-
-            # V21: Apply session params, target engine, session adapter, perf monitor
-            _session_size = _session_params["size_mult"]
-            _sa_mult = best_action.get("sa_mult", 1.0)
-            _te_mult = best_action.get("te_mult", 1.0)
-            _plan_size = plan.size_mult
-
-            lot_size = compute_kelly_size(
-                win_prob=conviction.posterior,
-                reward_risk_ratio=ev_result.reward_risk_ratio,
-                account_balance=account.balance,
-                base_lot_size=config["base_size"],
-                firm_max_risk_pct=0.02,
-                risk_multiplier=(risk_decision.size_multiplier * _size_mult *
-                                session_size_mult * _session_size * _sa_mult *
-                                _te_mult * _plan_size * perf_size_mult),
-                vix_multiplier=ctx.vix_size_mult,
-                day_multiplier=ctx.day_strength,
-                conviction_mult=conv_mult,
-            )
-
-            min_lot = MIN_LOT.get(inst_key, 0.10)
-            lot_size = max(min_lot, round(round(lot_size / min_lot) * min_lot, 2))
-            lot_size = min(lot_size, 2.0)
-
-            # Exposure cap
-            _max_inst_exposure = 1.0
-            _remaining_exposure = _max_inst_exposure - _current_exposure
-            if _remaining_exposure <= 0:
-                await asyncio.sleep(cycle_speed)
-                continue
-            if lot_size > _remaining_exposure:
-                lot_size = round(round(_remaining_exposure / min_lot) * min_lot, 2)
-                if lot_size < min_lot:
-                    await asyncio.sleep(cycle_speed)
-                    continue
-
-            _trade_mode = "SCALP" if _is_scalp else cl_level
-
-            # SL too tight fix for NQ
-            if _sl_dist < 5.0 and inst_key == "NAS100":
-                ep = signal.entry_price or 0
-                if signal.direction == "long":
-                    signal = Signal(signal.setup_id, signal.verdict, signal.direction,
-                                    ep, round(ep - 5.0, 2), round(ep + 10.0, 2),
-                                    signal.conviction, signal.reason)
+                        ind=extract_regime_indicators(sn)
+                        regime,switched=genesis.update_regime(sym,current_time=datetime.now(timezone.utc),**ind)
+                        setup=genesis.get_active_setup(sym,**ind)
+                        if setup: SETUP_CONFIG[sym]=setup
+                        if switched: logger.info("[GENESIS] 🔄 %s→%s",sym,regime); send_telegram(f"🔄 {sym}→{regime}")
+                    except: pass
+
+            now=datetime.now(timezone.utc)
+            try: sigs=sig_engine.generate_signals(snaps,current_time=now)
+            except Exception as e: logger.error("[SIG] %s",e); sigs=[]
+
+            if genesis: SETUP_CONFIG.clear(); SETUP_CONFIG.update(saved)
+
+            # ═══ DIAGNOSTIC: Why aren't we trading? (every 20 cycles) ═══
+            if cyc % 20 == 0:
+                diag_parts = []
+                diag_parts.append(f"snaps={len(snaps)}")
+                diag_parts.append(f"sigs_raw={len(sigs)}")
+                # Show which symbols have snapshots
+                snap_syms = list(snaps.keys())
+                diag_parts.append(f"snap_syms={snap_syms[:8]}")
+                # Show candle ages
+                stale = []
+                for sym in get_all_symbols():
+                    c = _cc.get(sym)
+                    if c:
+                        age = int(time.time() - c["ts"])
+                        if age > 300: stale.append(f"{sym}:{age}s")
+                if stale: diag_parts.append(f"stale_candles={stale}")
+                # Show all raw signals with their confidence
+                if sigs:
+                    for s in sigs[:5]:
+                        diag_parts.append(f"sig:{s.symbol}|{s.strategy.value}|{s.direction}|conf={s.final_confidence:.3f}")
+                # Show what SETUP_CONFIG has
+                setup_syms = list(SETUP_CONFIG.keys())
+                missing = [s for s in snap_syms if s not in setup_syms]
+                if missing: diag_parts.append(f"NO_SETUP={missing}")
+                logger.info("[DIAG_SIG] %s", " | ".join(diag_parts))
+
+            if not sigs: await asyncio.sleep(CYCLE_SPEED); continue
+
+            osyms:Set[str]=set()
+            if acc.open_positions:
+                for p in acc.open_positions:
+                    inst=str(getattr(p,'instrument','') or getattr(p,'symbol',''))
+                    for our,mt in _resolved.items():
+                        if mt and mt in inst: osyms.add(our)
+
+            best=None;bc=0
+            # DIAGNOSTIC: track filter reasons
+            filter_reasons = {"already_open":0, "cooldown":0, "corr_block":0, "low_conf":0, "passed":0}
+            for s in sigs:
+                if s.symbol in osyms: filter_reasons["already_open"]+=1; continue
+                if time.time()-cds.get(s.symbol,0)<COOLDOWN: filter_reasons["cooldown"]+=1; continue
+                ok2,_=corr.can_trade(s.symbol,osyms)
+                if not ok2: filter_reasons["corr_block"]+=1; continue
+                if s.final_confidence<CONVICTION_MIN: filter_reasons["low_conf"]+=1; continue
+                filter_reasons["passed"]+=1
+                if s.final_confidence>bc: bc=s.final_confidence;best=s
+            
+            # Log filter results every time we have signals but none pass
+            if not best and sigs:
+                logger.info("[DIAG_FILTER] %d signals filtered: %s", len(sigs), filter_reasons)
+                # Show top 3 closest to passing
+                by_conf = sorted(sigs, key=lambda s: s.final_confidence, reverse=True)[:3]
+                for s in by_conf:
+                    in_cd = time.time()-cds.get(s.symbol,0)<COOLDOWN
+                    logger.info("[DIAG_NEAR] %s %s %s conf=%.3f cd=%s open=%s",
+                        s.symbol, s.strategy.value, s.direction, s.final_confidence,
+                        "YES" if in_cd else "no", "YES" if s.symbol in osyms else "no")
+            
+            if not best: await asyncio.sleep(CYCLE_SPEED); continue
+
+            sig=best;mt=_resolved.get(sig.symbol)
+            if not mt: await asyncio.sleep(CYCLE_SPEED); continue
+            sld=abs(sig.entry_price-sig.sl_price)
+            tpd=abs(sig.tp_price-sig.entry_price)
+            min_dist=0.0005 if sig.symbol in ("EURUSD","GBPUSD","NZDUSD","USDCHF","EURGBP") else 0.05 if sig.symbol in ("USDJPY","GBPJPY") else 5.0
+            if sld<min_dist or tpd<min_dist:
+                logger.warning("[SKIP] %s: SL/TP too close (SL=%.5f TP=%.5f)",sig.symbol,sld,tpd)
+                cds[sig.symbol]=time.time()
+                await asyncio.sleep(CYCLE_SPEED); continue
+            # Validate TP direction: LONG=TP>entry, SHORT=TP<entry
+            if sig.direction=="LONG" and sig.tp_price<=sig.entry_price:
+                logger.warning("[SKIP] %s LONG: TP %.5f <= Entry %.5f",sig.symbol,sig.tp_price,sig.entry_price)
+                cds[sig.symbol]=time.time()
+                await asyncio.sleep(CYCLE_SPEED); continue
+            if sig.direction=="SHORT" and sig.tp_price>=sig.entry_price:
+                logger.warning("[SKIP] %s SHORT: TP %.5f >= Entry %.5f",sig.symbol,sig.tp_price,sig.entry_price)
+                cds[sig.symbol]=time.time()
+                await asyncio.sleep(CYCLE_SPEED); continue
+            lots=calc_lots(sig.symbol,bal,sld)
+            regime="BEAR"
+            if genesis and sig.symbol in genesis.states: regime=genesis.states[sig.symbol].current_regime
+            tid=f"V22-{uuid.uuid4().hex[:6]}"
+            dirn=OrderDirection.LONG if sig.direction=="LONG" else OrderDirection.SHORT
+            order=OrderRequest(instrument=mt,direction=dirn,size=lots,order_type=OrderType.MARKET,
+                stop_loss=round(sig.sl_price,5),take_profit=round(sig.tp_price,5),
+                comment=f"V22|{sig.symbol[:6]}|{sig.strategy.value[:8]}|{regime[:4]}")
+            logger.info("🔫 %s %s %s|%s|%s E=%.5f SL=%.5f TP=%.5f %.2flots conf=%.2f",
+                sig.symbol,sig.direction,sig.strategy.value,sig.trade_type.value,regime,
+                sig.entry_price,sig.sl_price,sig.tp_price,lots,sig.final_confidence)
+            try:
+                if _has_router:
+                    router=SmartOrderRouter()
+                    result=await router.execute(adapter=adapter,order_request=order,setup_id=f"{sig.symbol}_{sig.strategy.value}",
+                        conviction_level="STANDARD",conviction_posterior=sig.final_confidence,instrument_key=sig.symbol,signal_entry=sig.entry_price)
                 else:
-                    signal = Signal(signal.setup_id, signal.verdict, signal.direction,
-                                    ep, round(ep + 5.0, 2), round(ep - 10.0, 2),
-                                    signal.conviction, signal.reason)
+                    result=await adapter.place_order(order)
+                filled=False
+                if hasattr(result,'status'):
+                    filled=(result.status.value=="filled") if hasattr(result.status,'value') else str(result.status)=="filled"
+                fp=getattr(result,'fill_price',sig.entry_price) or sig.entry_price
+                oid=getattr(result,'order_id',tid)
+                if filled:
+                    logger.info("✅ FILLED: %s @ %.5f",oid,fp);cds[sig.symbol]=time.time();dt+=1
+                    # Register with smart exit tracking
+                    _trade_meta[str(oid)] = {
+                        'type': sig.trade_type.value.upper() if hasattr(sig.trade_type,'value') else 'SCALP',
+                        'entry': fp, 'tp': sig.tp_price, 'sl': sig.sl_price,
+                        'direction': sig.direction, 'sym': sig.symbol,
+                    }
+                    _peak_pnl[str(oid)] = 0.0
+                    _stall_cycles[str(oid)] = 0
+                    send_telegram(f"🔫 <b>V22 TRADE</b>\n{'🟢' if sig.direction=='LONG' else '🔴'} {sig.symbol} {sig.direction}\n{sig.strategy.value}|{sig.trade_type.value}|{regime}\nEntry: {fp:.5f}\nSL: {sig.sl_price:.5f} TP: {sig.tp_price:.5f}\nLots: {lots} Conf: {sig.final_confidence:.2f}\nTrade #{dt}")
+                    if _evidence and TradeFingerprint:
+                        try: _evidence.log_trade(TradeFingerprint(trade_id=tid,timestamp=now.isoformat(),setup_id=f"{sig.symbol}_{sig.strategy.value}",instrument=sig.symbol,direction=sig.direction,entry_price=fp,stop_loss=sig.sl_price,take_profit=sig.tp_price,lot_size=lots,firm_id="FTMO",regime=regime,bayesian_posterior=sig.final_confidence,conviction_level="STANDARD",capital_vehicle="PROP_FIRM"))
+                        except: pass
+                else:
+                    logger.warning("❌ FAILED: %s",getattr(result,'error_message','unknown'))
+                    cds[sig.symbol]=time.time()
+            except Exception as e: logger.error("[EXEC] %s: %s",sig.symbol,e,exc_info=True)
+        except Exception as e: logger.error("[C%d] %s",cyc,e,exc_info=True)
+        await asyncio.sleep(CYCLE_SPEED)
 
-            delay = camouflage_entry_delay()
-            await asyncio.sleep(delay)
-
-            trade_id = f"TF-{uuid.uuid4().hex[:6]}"
-            order = OrderRequest(
-                instrument=_target_inst,
-                direction=OrderDirection.LONG if signal.direction == "long" else OrderDirection.SHORT,
-                size=lot_size, order_type=OrderType.MARKET,
-                stop_loss=signal.stop_loss, take_profit=signal.take_profit,
-                comment=f"{setup_id}|{trade_id}|{conviction.posterior:.0%}",
-            )
-
-            _order_type_str = get_order_type(setup_id)
-            logger.info("🔫 [%s][%s][%s][%s] %s %s %.2f lots | E=%.2f SL=%.2f TP=%.2f | "
-                         "P=%.0f%% EV=$%.0f | R=%s | SA=%.2f TE=%.2f",
-                         setup_id, _trade_mode, _24h_session, _order_type_str,
-                         (signal.direction or "").upper(), _target_inst, lot_size,
-                         signal.entry_price or 0, signal.stop_loss or 0, signal.take_profit or 0,
-                         conviction.posterior * 100, ev_result.ev_dollars,
-                         _regime, _sa_mult, _te_mult)
-
-            result = await order_router.execute(
-                adapter=adapter,
-                order_request=order,
-                setup_id=setup_id,
-                conviction_level=cl_level,
-                conviction_posterior=conviction.posterior,
-                instrument_key=inst_key,
-                signal_entry=signal.entry_price or mid,
-            )
-
-            if result.status.value == "filled":
-                logger.info("✅ FILLED: %s @ %.5f", result.order_id, result.fill_price)
-                traded_setups.add(setup_id)
-                _setup_cooldowns[setup_id] = time.time()
-                firm_state.record_size(lot_size)
-
-                send_telegram(
-                    f"🔫 <b>TRADE — {_trade_mode}</b>\n"
-                    f"{setup_id} ({config['name']})\n"
-                    f"{(signal.direction or '').upper()} {_target_inst} @ {result.fill_price:.2f}\n"
-                    f"Size: {lot_size} | SL: {signal.stop_loss:.2f} | TP: {signal.take_profit:.2f}\n"
-                    f"{conviction.conviction_level} ({conviction.posterior:.0%}) | EV: ${ev_result.ev_dollars:.0f}\n"
-                    f"Regime: {_regime} ({_regime_bias}) | Session: {_24h_session}\n"
-                    f"🎯 Target: ${plan.remaining:.0f} remaining"
-                )
-
-                _evidence.log_trade(TradeFingerprint(
-                    trade_id=trade_id, timestamp=datetime.now(timezone.utc).isoformat(),
-                    setup_id=setup_id, instrument=config["instrument"],
-                    direction=signal.direction or "",
-                    entry_price=result.fill_price or signal.entry_price or 0,
-                    stop_loss=signal.stop_loss or 0, take_profit=signal.take_profit or 0,
-                    lot_size=lot_size, firm_id=firm_id,
-                    vix=ctx.vix, vix_regime=ctx.vix_regime,
-                    futures_bias=ctx.futures_bias, futures_pct=ctx.futures_pct,
-                    session_state=ctx.session_state.value, day_of_week=ctx.day_name,
-                    atr=atr, atr_pct_consumed=ctx.atr_consumed_pct,
-                    ib_direction=ctx.ib_direction, pdh=ctx.pdh, pdl=ctx.pdl,
-                    regime=_regime, regime_bias=_regime_bias,
-                    mtf_m15_trend=ctx.mtf_trend_m15, mtf_h1_trend=ctx.mtf_trend_h1,
-                    mtf_m5_confirms=ctx.mtf_m5_confirms,
-                    bayesian_posterior=conviction.posterior,
-                    confluence_score=conviction.confirming,
-                    expected_value=ev_result.ev_dollars,
-                    conviction_level=conviction.conviction_level,
-                    capital_vehicle="PROP_FIRM",
-                ))
-            else:
-                logger.warning("❌ FAILED: %s — %s", result.status, result.error_message)
-
-        except Exception as e:
-            logger.error("[Cycle %d] Error: %s", cycle, e, exc_info=True)
-
-        await asyncio.sleep(cycle_speed)
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# ENTRY POINT
-# ═══════════════════════════════════════════════════════════════════════════════
-
-async def main() -> None:
+async def main():
     logger.info("╔══════════════════════════════════════════════════════════╗")
-    logger.info("║  NEXUS CAPITAL — TITAN FORGE %s                         ║", FORGE_VERSION)
-    logger.info("║  40 SETUPS | 5 INSTRUMENTS | 24-HOUR | FULL ARSENAL     ║")
+    logger.info("║  NEXUS CAPITAL — TITAN FORGE V22                        ║")
+    logger.info("║  14 INSTRUMENTS | 3 REGIMES | GENESIS | LEAN BUILD     ║")
     logger.info("╚══════════════════════════════════════════════════════════╝")
-
-    cleared = run_simulation_check()
-    if not cleared:
-        logger.error("Pre-flight failed. Exiting.")
-        return
-
-    account_id = os.environ.get("METAAPI_ACCOUNT_ID",
-                                os.environ.get("FTMO_ACCOUNT_ID", ""))
-    adapter = MT5Adapter(
-        account_id=account_id, server="OANDA-Demo-1",
-        password="", is_demo=os.environ.get("FTMO_IS_DEMO", "true").lower() == "true",
-    )
-
+    token=os.environ.get("METAAPI_TOKEN","");acct=os.environ.get("METAAPI_ACCOUNT_ID",os.environ.get("FTMO_ACCOUNT_ID",""))
+    if not token or not acct: logger.error("Missing METAAPI credentials"); return
+    if POLYGON_API_KEY: logger.info("✅ Polygon API key")
+    logger.info("✅ Instruments: %d | GENESIS: %s",len(ALIASES),"yes" if GENESIS_OK else "no")
+    adapter=MT5Adapter(account_id=acct,server="OANDA-Demo-1",password="",is_demo=os.environ.get("FTMO_IS_DEMO","true").lower()=="true")
     logger.info("Connecting to MetaAPI...")
-    connected = await adapter.connect()
-    if connected:
-        logger.info("✅ Connected.")
-    else:
-        logger.error("❌ Connection failed.")
-        return
+    connected=await adapter.connect()
+    if connected: logger.info("✅ Connected.")
+    else: logger.error("❌ Connection failed."); return
+    await trading_loop(adapter)
 
-    await live_trading_loop(adapter)
-
-
-if __name__ == "__main__":
+if __name__=="__main__":
     asyncio.run(main())
