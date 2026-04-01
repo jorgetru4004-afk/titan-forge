@@ -1,3 +1,4 @@
 aiohttp 
 numpy 
 requests
+metaapi-cloud-sdk
