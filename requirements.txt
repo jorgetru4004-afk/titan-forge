@@ -1,4 +1,4 @@
-aiohttp 
-numpy 
+aiohttp
+numpy
 requests
 metaapi-cloud-sdk

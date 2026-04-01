@@ -1,21 +1,25 @@
 """
-TITAN FORGE V22.5 — MAIN DEPLOYMENT SCRIPT
-=============================================
-Wires together: Direction Engine + 14 Strategies + Precision Scalps +
-                Daily Gate + Risk Budget + Trade Detector + Health Monitor +
-                Telegram Commands + Fallback Wrappers
+TITAN FORGE V22.6-AGG — MAIN DEPLOYMENT SCRIPT
+=================================================
+AGGRESSIVE REBUILD from V22.5 diagnostic findings.
 
-Every module wrapped with try/except — failure = skip feature, not crash bot.
-Every fallback triggers Telegram alert. /health shows all module status.
+CHANGES FROM V22.5:
+  1. DEFAULT_LOTS 2.0 → 1.0 (budget lasted 2 trades, now lasts 6+)
+  2. COOLDOWN 90s → 45s (more re-entry opportunities)
+  3. Risk budget $4K → $6K (room for 6+ concurrent trades)
+  4. Direction engine: ALL strategies allowed in all regimes (compass not wall)
+  5. Scalps: direction=0 uses momentum fallback instead of blocking
+  6. Gate sync: _open_symbols synced with broker each cycle (no phantom blocks)
+  7. Trailing stops: Chandelier exit — tight at profit, wide at entry (don't leave $$$)
+  8. Signal lookback: checks last 3 bars not just last 1 (catch recent signals)
+  9. Dynamic lots: scales with budget remaining
+ 10. Polygon fallback: MetaAPI SDK for symbols Polygon can't serve
 
-TELEGRAM COMMANDS:
-  /stop     — Close all positions, stop trading immediately
-  /pause    — Stop new trades, keep managing open positions
-  /resume   — Resume trading after pause
-  /status   — Show positions, daily P&L, risk budget
-  /health   — Show all module health status
-  /diag     — Show direction engine regime for all instruments
-  /scalps   — Show precision scalp status
+PHILOSOPHY: "ALL GAS FIRST, THEN BRAKES WHEN NEEDED"
+  - Enter on every qualified setup across all regimes
+  - Brakes ONLY when equity threatens prop limits (-3.5%/-4.0%)
+  - NEVER block a trade because of regime/strategy type mismatch
+  - Exits squeeze every dollar — trailing gets TIGHTER as profit grows
 
 ENV VARS REQUIRED:
   META_API_TOKEN, META_API_ACCOUNT_ID, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID
@@ -36,17 +40,17 @@ logging.basicConfig(level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s — %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 logger = logging.getLogger("titan_forge.main")
 
-VERSION = "V22.5-CAL"
+VERSION = "V22.6-AGG"
 META_API_TOKEN = os.environ.get("META_API_TOKEN", os.environ.get("METAAPI_TOKEN", os.environ.get("TOKEN", "")))
 META_API_ACCOUNT_ID = os.environ.get("META_API_ACCOUNT_ID", os.environ.get("METAAPI_ACCOUNT_ID", os.environ.get("ACCOUNT_ID", "")))
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", os.environ.get("TELEGRAM_BOT_TOKEN", ""))
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", os.environ.get("CHAT_ID", ""))
 
 CYCLE_SPEED = 20
-DEFAULT_LOTS = 2.0
+DEFAULT_LOTS = 1.0       # FIX: was 2.0 — budget exhausted in 2 trades
 CANDLE_COUNT = 300
+SIGNAL_LOOKBACK = 3      # NEW: check last 3 bars for signals, not just bar[-1]
 
-# All instruments — needed for direction engine + scalps + specific combos
 INSTRUMENTS = {
     "EURUSD": "EURUSD.sim", "GBPUSD": "GBPUSD.sim", "USDJPY": "USDJPY.sim",
     "USDCHF": "USDCHF.sim", "EURGBP": "EURGBP.sim", "GBPJPY": "GBPJPY.sim",
@@ -58,76 +62,32 @@ INSTRUMENTS = {
 # ═══════════════════════════════════════════════════════════════
 # CALIBRATED STRATEGY MAP — from 3,136 MT5 backtests
 # ═══════════════════════════════════════════════════════════════
-# Only strategy×instrument combos that showed PF >= 1.25 on MT5 OANDA data
-# Each entry: (SL_ATR_multiplier, TP_ATR_multiplier)
-# Source: forge_research_unified.py --quick on MT5, April 2026
 
 CALIBRATED_COMBOS = {
-    # ── VWAP_TREND — global winner, +39.2R on MT5 (6W/3B) ──
     "VWAP_TREND": {
-        "GBPJPY": (2.0, 4.0),   # PF=2.26 R=+13.9
-        "NZDUSD": (1.5, 3.0),   # PF=1.40 R=+8.7
-        "USDJPY": (2.0, 4.0),   # PF=1.40 R=+8.0
-        "EURUSD": (1.0, 2.0),   # PF=1.37 R=+7.0
-        "AUDUSD": (2.0, 2.0),   # PF=1.38 R=+5.0
-        "USOIL":  (2.0, 2.0),   # PF=1.37 R=+4.9
+        "GBPJPY": (2.0, 4.0), "NZDUSD": (1.5, 3.0), "USDJPY": (2.0, 4.0),
+        "EURUSD": (1.0, 2.0), "AUDUSD": (2.0, 2.0), "USOIL": (2.0, 2.0),
     },
-    # ── LONDON_BREAKOUT — +38.0R on MT5 (5W/4B) ──
     "LONDON_BREAKOUT": {
-        "US100":  (2.0, 4.0),   # PF=3.67 R=+16.0
-        "GBPJPY": (0.8, 2.0),   # PF=1.82 R=+9.0
-        "AUDNZD": (1.0, 1.5),   # PF=1.50 R=+6.0
-        "USDJPY": (2.0, 2.0),   # PF=2.00 R=+5.0
-        "USOIL":  (2.0, 2.0),   # PF=1.44 R=+4.0
+        "US100": (2.0, 4.0), "GBPJPY": (0.8, 2.0), "AUDNZD": (1.0, 1.5),
+        "USDJPY": (2.0, 2.0), "USOIL": (2.0, 2.0),
     },
-    # ── PREV_DAY_HL — tuned: only 2 winners on MT5 ──
-    "PREV_DAY_HL": {
-        "XAUUSD": (0.5, 1.5),   # PF=1.64 R=+54.0 ← best single combo
-        "GBPJPY": (1.0, 3.0),   # PF=1.35 R=+28.4
-    },
-    # ── MEAN_REVERT — tuned: 3 winners on MT5 ──
-    "MEAN_REVERT": {
-        "GBPJPY": (1.0, 3.0),   # PF=1.54 R=+29.4
-        "USDJPY": (0.8, 2.0),   # PF=1.61 R=+27.5
-        "USDCHF": (2.0, 4.0),   # PF=1.43 R=+11.2
-    },
-    # ── BREAKOUT — tuned: 1 winner + 1 borderline on MT5 ──
-    "BREAKOUT": {
-        "XAUUSD": (1.0, 1.5),   # PF=1.50 R=+27.0
-        "GBPJPY": (1.0, 3.0),   # PF=1.27 R=+21.4
-    },
-    # ── PREV_DAY_BOUNCE — tuned: 2 winners on MT5 ──
-    "PREV_DAY_BOUNCE": {
-        "EURJPY": (2.0, 4.0),   # PF=1.36 R=+24.8
-        "USDJPY": (2.0, 4.0),   # PF=1.33 R=+20.5
-    },
-    # ── LIQUIDITY_SWEEP — tuned: 3 winners on MT5 ──
-    "LIQUIDITY_SWEEP": {
-        "XAUUSD": (0.5, 0.75),  # PF=1.32 R=+23.5
-        "BTCUSD": (1.0, 3.0),   # PF=1.23 R=+23.4
-        "EURGBP": (2.0, 3.0),   # PF=1.32 R=+17.8
-    },
-    # ── MOMENTUM_CONT — tuned: 1 winner on MT5 ──
-    "MOMENTUM_CONT": {
-        "US100":  (1.0, 3.0),   # PF=1.28 R=+30.5
-    },
-    # ── US100 SPECIALS — these strategies are globally CUT but US100 wins ──
-    "ASIAN_RANGE": {
-        "US100":  (1.5, 2.0),   # PF=1.72 R=+39.7 ← strong edge
-    },
-    "VOL_SQUEEZE": {
-        "US100":  (1.5, 3.0),   # PF=1.38 R=+29.5
-    },
+    "PREV_DAY_HL": {"XAUUSD": (0.5, 1.5), "GBPJPY": (1.0, 3.0)},
+    "MEAN_REVERT": {"GBPJPY": (1.0, 3.0), "USDJPY": (0.8, 2.0), "USDCHF": (2.0, 4.0)},
+    "BREAKOUT": {"XAUUSD": (1.0, 1.5), "GBPJPY": (1.0, 3.0)},
+    "PREV_DAY_BOUNCE": {"EURJPY": (2.0, 4.0), "USDJPY": (2.0, 4.0)},
+    "LIQUIDITY_SWEEP": {"XAUUSD": (0.5, 0.75), "BTCUSD": (1.0, 3.0), "EURGBP": (2.0, 3.0)},
+    "MOMENTUM_CONT": {"US100": (1.0, 3.0)},
+    "ASIAN_RANGE": {"US100": (1.5, 2.0)},
+    "VOL_SQUEEZE": {"US100": (1.5, 3.0)},
 }
 
-# Derive enabled strategies from combos
 ENABLED_STRATEGIES = list(CALIBRATED_COMBOS.keys())
 
 ENABLE_SCALPS = True
 ENABLE_DIRECTION_ENGINE = True
-COOLDOWN_SECONDS = 90
+COOLDOWN_SECONDS = 45    # FIX: was 90 — too slow for aggressive system
 
-# Scalp sweet spots from MT5 data (only profitable instruments)
 SCALP_TARGETS = {
     "XAUUSD": 500, "BTCUSD": 500, "US100": 500,
     "GBPJPY": 400, "EURJPY": 300, "USDJPY": 200,
@@ -183,7 +143,7 @@ try:
     from forge_direction_engine import DirectionEngine, DailyPnLGate
     direction_engine = DirectionEngine()
     daily_gate = DailyPnLGate(soft_limit_pct=3.5, hard_limit_pct=4.0,
-                               max_risk_budget=4000, max_open=8)
+                               max_risk_budget=6000, max_open=8)  # FIX: was 4000
     health.ok("DirectionEngine"); health.ok("DailyGate")
 except Exception as e:
     direction_engine = None; daily_gate = None
@@ -293,39 +253,85 @@ class API:
         except: return []
 
     async def candles(self, symbol, tf="15m", count=300):
-        """Get historical candles from Polygon API (MetaAPI doesn't serve historical via RPC)"""
-        try:
-            # Map OANDA symbols to Polygon tickers
-            poly_map = {
-                "EURUSD": "C:EURUSD", "GBPUSD": "C:GBPUSD", "USDJPY": "C:USDJPY",
-                "USDCHF": "C:USDCHF", "EURGBP": "C:EURGBP", "GBPJPY": "C:GBPJPY",
-                "NZDUSD": "C:NZDUSD", "AUDUSD": "C:AUDUSD", "AUDNZD": "C:AUDNZD",
-                "EURJPY": "C:EURJPY", "XAUUSD": "C:XAUUSD", "BTCUSD": "X:BTCUSD",
-                "US100": "I:NDX", "USOIL": "USOIL",
-            }
-            clean = symbol.replace(".sim", "")
-            ticker = poly_map.get(clean)
-            if not ticker:
-                return None
+        """
+        FIX: Try Polygon first, then MetaAPI SDK fallback.
+        Polygon can't serve US100 (I:NDX) or USOIL on Currencies plan.
+        """
+        clean = symbol.replace(".sim", "")
 
-            # Polygon M15 = multiplier=15, timespan=minute
-            from datetime import timedelta
-            end = datetime.now(timezone.utc)
-            start = end - timedelta(days=8)
-            poly_key = os.environ.get("POLYGON_API_KEY", "SV9EsHr4rokUMivv7dyjTTsuwn_Eg9Za")
-            url = (f"https://api.polygon.io/v2/aggs/ticker/{ticker}/range/15/minute/"
-                   f"{start.strftime('%Y-%m-%d')}/{end.strftime('%Y-%m-%d')}"
-                   f"?adjusted=true&sort=asc&limit={count}&apiKey={poly_key}")
-            r = req.get(url, timeout=15)
-            if r.status_code == 200:
-                data = r.json()
-                bars = data.get("results", [])
-                if bars and len(bars) >= 50:
-                    return self._parse_candles_polygon(bars)
-            else:
-                logger.warning(f"[CANDLE] Polygon {clean}: HTTP {r.status_code}")
+        # ── METHOD 1: POLYGON ──
+        poly_map = {
+            "EURUSD": "C:EURUSD", "GBPUSD": "C:GBPUSD", "USDJPY": "C:USDJPY",
+            "USDCHF": "C:USDCHF", "EURGBP": "C:EURGBP", "GBPJPY": "C:GBPJPY",
+            "NZDUSD": "C:NZDUSD", "AUDUSD": "C:AUDUSD", "AUDNZD": "C:AUDNZD",
+            "EURJPY": "C:EURJPY", "XAUUSD": "C:XAUUSD", "BTCUSD": "X:BTCUSD",
+            # FIX: removed US100 and USOIL — they don't work on Currencies plan
+        }
+        ticker = poly_map.get(clean)
+        if ticker:
+            try:
+                from datetime import timedelta
+                end = datetime.now(timezone.utc)
+                start = end - timedelta(days=8)
+                poly_key = os.environ.get("POLYGON_API_KEY", "SV9EsHr4rokUMivv7dyjTTsuwn_Eg9Za")
+                url = (f"https://api.polygon.io/v2/aggs/ticker/{ticker}/range/15/minute/"
+                       f"{start.strftime('%Y-%m-%d')}/{end.strftime('%Y-%m-%d')}"
+                       f"?adjusted=true&sort=asc&limit={count}&apiKey={poly_key}")
+                r = req.get(url, timeout=15)
+                if r.status_code == 200:
+                    data = r.json()
+                    bars = data.get("results", [])
+                    if bars and len(bars) >= 50:
+                        return self._parse_candles_polygon(bars)
+                    else:
+                        logger.warning(f"[CANDLE] Polygon {clean}: only {len(bars) if bars else 0} bars")
+                else:
+                    logger.warning(f"[CANDLE] Polygon {clean}: HTTP {r.status_code}")
+            except Exception as e:
+                logger.warning(f"[CANDLE] Polygon {clean}: {e}")
+
+        # ── METHOD 2: METAAPI SDK (fallback for all, primary for US100/USOIL) ──
+        try:
+            mt5_sym = symbol if ".sim" in symbol else f"{clean}.sim"
+            candle_data = await self.connection.get_historical_candles(
+                mt5_sym, "15m", None, count
+            )
+            if candle_data and len(candle_data) >= 50:
+                return self._parse_candles(candle_data)
         except Exception as e:
-            logger.warning(f"[CANDLE] Polygon {symbol}: {e}")
+            logger.debug(f"[CANDLE] SDK historical {clean}: {e}")
+
+        # ── METHOD 3: MetaAPI REST market-data endpoint ──
+        try:
+            region = getattr(self.account, 'region', 'london')
+            headers = {"auth-token": self.token}
+            url = (f"https://mt-market-data-client-api-v1.{region}.agiliumtrade.agiliumtrade.ai/"
+                   f"users/current/accounts/{self.acct}/historical-market-data/symbols/"
+                   f"{symbol}/timeframes/15m/candles?limit={count}")
+            r = req.get(url, headers=headers, timeout=15)
+            if r.status_code == 200:
+                bars = r.json()
+                if bars and len(bars) >= 50:
+                    return self._parse_candles(bars)
+        except Exception as e:
+            logger.debug(f"[CANDLE] REST market-data {clean}: {e}")
+
+        # ── METHOD 4: MetaAPI REST client endpoint ──
+        try:
+            region = getattr(self.account, 'region', 'london')
+            headers = {"auth-token": self.token}
+            url = (f"https://mt-client-api-v1.{region}.agiliumtrade.agiliumtrade.ai/"
+                   f"users/current/accounts/{self.acct}/historical-market-data/symbols/"
+                   f"{symbol}/timeframes/15m/candles?limit={count}")
+            r = req.get(url, headers=headers, timeout=15)
+            if r.status_code == 200:
+                bars = r.json()
+                if bars and len(bars) >= 50:
+                    return self._parse_candles(bars)
+        except Exception as e:
+            logger.debug(f"[CANDLE] REST client {clean}: {e}")
+
+        logger.warning(f"[CANDLE] ❌ ALL methods failed for {clean}")
         return None
 
     def _parse_candles(self, cc):
@@ -384,7 +390,6 @@ class API:
         return closed
 
     async def resolve_symbols(self):
-        """Resolve symbols using SDK get_symbol_specification"""
         for name, mt5s in INSTRUMENTS.items():
             for sym_try in [mt5s, name]:
                 try:
@@ -400,10 +405,22 @@ class API:
 
 
 # ═══════════════════════════════════════════════════════════════
-# TRAILING STOP MANAGER
+# TRAILING STOP MANAGER — DON'T LEAVE MONEY ON THE TABLE
 # ═══════════════════════════════════════════════════════════════
+#
+# PHILOSOPHY: Let winners run, but lock in profit progressively.
+#   - DON'T move to BE too early (0.3R was killing good trades)
+#   - Chandelier trail: trail from the HIGH of the move, not from entry
+#   - Trail gets TIGHTER as profit grows (squeeze the last dollar out)
+#   - At 1R+: trail 2.0 ATR from peak (room to breathe)
+#   - At 2R+: trail 1.2 ATR from peak (tightening)
+#   - At 3R+: trail 0.8 ATR from peak (squeezing)
+#   - At 5R+: trail 0.5 ATR from peak (don't give back a monster)
+
+_position_peaks: Dict[str, float] = {}  # pid → highest profit seen
 
 async def manage_trails(api, positions, cdata):
+    global _position_peaks
     for pos in positions:
         try:
             sym = pos.get("symbol", "").replace(".sim", "")
@@ -420,57 +437,92 @@ async def manage_trails(api, positions, cdata):
             risk = abs(ep - csl) if csl > 0 else av * 1.5
             rm = ((cp - ep) / risk if d == 1 else (ep - cp) / risk) if risk > 0 else 0
 
+            # Track peak profit for chandelier exit
+            if pid not in _position_peaks:
+                _position_peaks[pid] = cp
+            if d == 1:
+                _position_peaks[pid] = max(_position_peaks[pid], cp)
+            else:
+                _position_peaks[pid] = min(_position_peaks[pid], cp)
+            peak = _position_peaks[pid]
+
+            # ── CHANDELIER TRAILING (trail from peak, not entry) ──
             nsl = csl
-            if rm >= 3.0:
-                t = cp - 1.0*av if d == 1 else cp + 1.0*av
+            if rm >= 5.0:
+                # Monster winner — squeeze tight: 0.5 ATR from peak
+                t = peak - 0.5 * av if d == 1 else peak + 0.5 * av
+            elif rm >= 3.0:
+                # Big winner — tight trail: 0.8 ATR from peak
+                t = peak - 0.8 * av if d == 1 else peak + 0.8 * av
             elif rm >= 2.0:
-                t = cp - 1.5*av if d == 1 else cp + 1.5*av
+                # Good winner — moderate trail: 1.2 ATR from peak
+                t = peak - 1.2 * av if d == 1 else peak + 1.2 * av
             elif rm >= 1.0:
-                t = cp - 2.0*av if d == 1 else cp + 2.0*av
-            elif rm >= 0.3:
-                t = ep  # Breakeven
+                # In profit — wide trail: 2.0 ATR from peak
+                t = peak - 2.0 * av if d == 1 else peak + 2.0 * av
+            elif rm >= 0.5:
+                # FIX: BE at 0.5R not 0.3R — give trade room to work
+                t = ep + av * 0.05 if d == 1 else ep - av * 0.05  # Tiny profit lock
             else:
                 continue
 
             if d == 1:
                 nsl = max(csl, t)
-                if nsl > csl:
+                if nsl > csl and nsl > ep * 0.9:  # Sanity: don't trail below 90% of entry
                     await api.modify_sl(pid, round(nsl, 5))
-                    logger.info(f"[TRAIL] {pid} {rm:.1f}R SL→{nsl:.5f}")
+                    logger.info(f"[TRAIL] {sym} {pid[:8]} {rm:.1f}R SL→{nsl:.5f} (peak={peak:.5f})")
             else:
                 nsl = min(csl, t) if csl > 0 else t
                 if csl == 0 or nsl < csl:
                     await api.modify_sl(pid, round(nsl, 5))
-                    logger.info(f"[TRAIL] {pid} {rm:.1f}R SL→{nsl:.5f}")
+                    logger.info(f"[TRAIL] {sym} {pid[:8]} {rm:.1f}R SL→{nsl:.5f} (peak={peak:.5f})")
         except Exception as e:
             logger.error(f"[TRAIL] {pos.get('id','?')}: {e}")
 
+    # Clean up peaks for closed positions
+    open_pids = {str(p.get("id", "")) for p in positions}
+    stale = [pid for pid in _position_peaks if pid not in open_pids]
+    for pid in stale:
+        del _position_peaks[pid]
+
 
 # ═══════════════════════════════════════════════════════════════
-# SIGNAL GENERATOR
+# SIGNAL GENERATOR — AGGRESSIVE: CHECK LAST 3 BARS
 # ═══════════════════════════════════════════════════════════════
 
 def gen_signals(sym, data):
+    """
+    FIX: Check last SIGNAL_LOOKBACK bars (3) not just bar[-1].
+    A signal on bar[-2] or bar[-3] is still actionable on M15 (45 min window).
+    This dramatically increases signal throughput.
+    """
     signals = []
     for sname in ENABLED_STRATEGIES:
         if sname not in ALL_STRATEGIES: continue
-        # Only fire if this strategy×instrument combo is calibrated
         combo = CALIBRATED_COMBOS.get(sname, {})
         if sym not in combo: continue
         sl_mult, tp_mult = combo[sym]
         fn, meta = ALL_STRATEGIES[sname]
         try:
             sigs = fn(o=data["o"], h=data["h"], l=data["l"], c=data["c"], v=data["v"])
-            if len(sigs) > 0 and sigs[-1] != 0:
-                atr_arr = calc_atr(data["h"], data["l"], data["c"])
-                signals.append({
-                    "sym": sym, "strat": sname, "dir": int(sigs[-1]),
-                    "dir_str": "LONG" if sigs[-1] > 0 else "SHORT",
-                    "dir_type": meta.direction_type,
-                    "atr": atr_arr[-1] if len(atr_arr) > 0 else 0,
-                    "price": data["c"][-1],
-                    "sl_mult": sl_mult, "tp_mult": tp_mult,
-                })
+            if len(sigs) < 1:
+                continue
+
+            # Check last SIGNAL_LOOKBACK bars for signals (most recent first)
+            for lookback_i in range(min(SIGNAL_LOOKBACK, len(sigs))):
+                idx = -(lookback_i + 1)
+                if sigs[idx] != 0:
+                    atr_arr = calc_atr(data["h"], data["l"], data["c"])
+                    signals.append({
+                        "sym": sym, "strat": sname, "dir": int(sigs[idx]),
+                        "dir_str": "LONG" if sigs[idx] > 0 else "SHORT",
+                        "dir_type": meta.direction_type,
+                        "atr": atr_arr[-1] if len(atr_arr) > 0 else 0,
+                        "price": data["c"][-1],  # Always use current price for entry
+                        "sl_mult": sl_mult, "tp_mult": tp_mult,
+                        "signal_age": lookback_i,  # 0=current bar, 1=prev, 2=2 ago
+                    })
+                    break  # One signal per strategy (most recent)
         except Exception as e:
             if health.warn(f"Strat_{sname}", f"{sym}:{str(e)[:30]}"):
                 tg_send(f"⚠️ {sname} failed on {sym}: {str(e)[:80]}")
@@ -535,7 +587,7 @@ async def _main():
 
     logger.info("╔══════════════════════════════════════════════════════════╗")
     logger.info(f"║  NEXUS CAPITAL — TITAN FORGE {VERSION}                ║")
-    logger.info("║  CALIBRATED | Direction | Scalps | Gate | Health      ║")
+    logger.info("║  AGGRESSIVE | Direction | Scalps | Gate | Chandelier   ║")
     logger.info("╚══════════════════════════════════════════════════════════╝")
 
     if not META_API_TOKEN or not META_API_ACCOUNT_ID:
@@ -561,7 +613,8 @@ async def _main():
             f"Instruments: {len(api.symbols)}\n"
             f"Strats: {len(ENABLED_STRATEGIES)} | Combos: {n_combos}\n"
             f"Scalps: {'ON' if ENABLE_SCALPS else 'OFF'}\n"
-            f"Gate: -3.5%/-4.0% | Budget: $4K\n{health.compact()}")
+            f"Lots: {DEFAULT_LOTS} | Cooldown: {COOLDOWN_SECONDS}s\n"
+            f"Gate: -3.5%/-4.0% | Budget: $6K\n{health.compact()}")
     logger.info(boot); tg_send(boot)
 
     # ─── LOOP ───
@@ -600,6 +653,12 @@ async def _main():
                     if health.warn("TradeDetector", str(e)[:40]):
                         tg_send(f"⚠️ Detector: {str(e)[:80]}")
 
+            # 4.5 FIX: Sync daily gate with actual positions (prevents phantom blocks)
+            if daily_gate:
+                try:
+                    daily_gate.sync_open_symbols(positions)
+                except: pass
+
             # 5. Daily gate
             can_trade, must_close, reason = True, False, "OK"
             if daily_gate:
@@ -624,6 +683,7 @@ async def _main():
                     if d and d["n"] >= 50: cdata[sym] = d
                 except: pass
             if not cdata:
+                logger.warning(f"[C{cycle}] No candle data — skipping")
                 await asyncio.sleep(CYCLE_SPEED); continue
 
             # 7. Direction engine
@@ -642,7 +702,7 @@ async def _main():
             except Exception as e:
                 logger.error(f"[TRAIL] {e}")
 
-            # 9. Signals + execution
+            # 9. Signals + execution — AGGRESSIVE
             if can_trade and not paused and calc_atr:
                 for sym, d in cdata.items():
                     try:
@@ -654,7 +714,7 @@ async def _main():
                             if daily_gate:
                                 ok, _ = daily_gate.can_open_symbol(sym)
                                 if not ok: continue
-                            # Direction filter
+                            # Direction filter (only blocks counter-trend in STRONG trend)
                             if direction_engine and ENABLE_DIRECTION_ENGINE:
                                 try:
                                     ok, why = direction_engine.should_allow_trade(sym, s["dir_type"], s["dir"])
@@ -662,38 +722,54 @@ async def _main():
                                         logger.info(f"[DIR] BLOCKED {sym} {s['strat']} — {why}")
                                         continue
                                 except: pass
-                            # Risk budget
+                            # Risk budget with dynamic lot sizing
                             sl_m = s.get("sl_mult", 1.0)
                             tp_m = s.get("tp_mult", 1.5)
-                            rdol = s["atr"] * DOLLAR_PER_UNIT.get(sym, 100000) * sl_m
-                            if daily_gate:
-                                ok, _ = daily_gate.can_afford_risk(sym, rdol)
-                                if not ok: continue
-                            # Lots
+                            atr_val = s["atr"]
+                            dpu = DOLLAR_PER_UNIT.get(sym, 100000)
+                            rdol_per_lot = atr_val * dpu * sl_m  # Risk per 1.0 lot
+
+                            # FIX: Dynamic lot sizing based on remaining budget
                             lots = DEFAULT_LOTS
                             if direction_engine:
                                 dr = direction_engine.get_last(sym)
                                 if dr: lots = DEFAULT_LOTS * dr.aggression
-                            lots = round(min(lots, 5.0), 2)
+
+                            # Cap lots so risk fits within remaining budget
+                            if daily_gate and rdol_per_lot > 0:
+                                remaining = daily_gate.max_risk_budget - sum(daily_gate._open_risk.values())
+                                max_lots_for_budget = remaining / rdol_per_lot
+                                lots = min(lots, max_lots_for_budget)
+
+                            lots = round(max(min(lots, 5.0), 0.01), 2)
+
+                            rdol = rdol_per_lot * lots
+                            if daily_gate:
+                                ok, _ = daily_gate.can_afford_risk(sym, rdol)
+                                if not ok: continue
+
                             # SL/TP — calibrated per combo
-                            av = s["atr"]; p = s["price"]
+                            av = atr_val; p = s["price"]
                             if s["dir"] == 1:
                                 sl = p - sl_m * av; tp = p + tp_m * av
                             else:
                                 sl = p + sl_m * av; tp = p - tp_m * av
                             # Execute
                             mt5s = api.symbols.get(sym, f"{sym}.sim")
+                            age = s.get("signal_age", 0)
+                            age_str = f" age={age}" if age > 0 else ""
                             cmt = f"{VERSION}|{sym}|{s['strat'][:8]}"
-                            logger.info(f"🔫 {sym} {s['dir_str']} {s['strat']} lots={lots}")
+                            logger.info(f"🔫 {sym} {s['dir_str']} {s['strat']} lots={lots}{age_str}")
                             oid = await api.order(mt5s, s["dir_str"], lots, round(sl,5), round(tp,5), cmt)
                             if oid:
                                 last_sig[sym] = time.time(); trades_today += 1
-                                tg_send(f"🔫 {s['dir_str']} {sym}\n{s['strat']} | {lots}L | SL={sl:.5f} TP={tp:.5f}")
+                                tg_send(f"🔫 {s['dir_str']} {sym}\n{s['strat']} | {lots}L | "
+                                        f"SL={sl:.5f} TP={tp:.5f}{age_str}")
                                 break  # One trade per symbol per cycle
                     except Exception as e:
                         logger.error(f"[SIG] {sym}: {e}")
 
-            # 10. Precision scalps
+            # 10. Precision scalps — FIX: direction=0 uses momentum fallback
             if ENABLE_SCALPS and scalp_executor and can_trade and not paused and calc_atr:
                 try:
                     for sym, d in cdata.items():
@@ -701,7 +777,14 @@ async def _main():
                         if direction_engine:
                             dr = direction_engine.get_last(sym)
                             if dr: sd = dr.direction
-                        if sd == 0: continue
+
+                        # FIX: When direction=0, use 5-bar momentum instead of blocking
+                        if sd == 0:
+                            if len(d["c"]) >= 6:
+                                sd = 1 if d["c"][-1] > d["c"][-6] else -1
+                            else:
+                                continue  # Not enough data
+
                         if daily_gate:
                             ok, _ = daily_gate.can_open_symbol(sym)
                             if not ok: continue
@@ -731,7 +814,7 @@ async def _main():
             # 11. Status log
             dd = ((eq - bal) / bal * 100) if bal > 0 else 0
             logger.info(f"[C{cycle}] ${bal:.0f} eq=${eq:.0f} DD={dd:+.1f}% "
-                        f"P={npos} T={trades_today} {health.compact()}")
+                        f"P={npos} T={trades_today} cd={len(cdata)} {health.compact()}")
 
         except Exception as e:
             logger.error(f"[C{cycle}] ERROR: {e}")
@@ -741,7 +824,7 @@ async def _main():
         elapsed = time.time() - t0
         await asyncio.sleep(max(1, CYCLE_SPEED - elapsed))
 
-    logger.info("[SHUTDOWN] FORGE V22.5 stopped.")
+    logger.info(f"[SHUTDOWN] FORGE {VERSION} stopped.")
     tg_send(f"🛑 FORGE {VERSION} STOPPED.")
 
 if __name__ == "__main__":
