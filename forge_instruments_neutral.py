@@ -1,16 +1,18 @@
 """
-FORGE v22 — NEUTRAL REGIME INSTRUMENT CONFIG
-==============================================
-Built from NEUTRAL regime research (9 months, ADX < 20 / BB squeeze only).
-Activated by GENESIS when an instrument is in choppy/ranging conditions.
+FORGE v22.3 — NEUTRAL REGIME INSTRUMENT CONFIG (FIXED)
+=======================================================
+FIXES:
+  OLD: All GAP_FILL → requires gaps that don't exist on hourly/daily forex data
+  NEW: MEAN_REVERT, STOCH_REVERSAL, VWAP_REVERT as primaries with alt_strategies
+  
+  These are the SAME strategies that produced the March 30 winning streak
+  ($1,344 in one session) before GENESIS switched to the broken NEUTRAL config.
 
 KEY INSIGHT: Forex pairs spend 96-100% of time in NEUTRAL regime.
-This config is effectively the PRIMARY config for most forex pairs.
+This config IS the system for most instruments most of the time.
+It MUST produce signals or the system sits idle.
 
-GAP_FILL dominates — gaps fill in both directions when markets range.
-STOCH_REVERSAL catches oversold/overbought bounces in ranges.
-
-Both-direction setups are used where both sides are profitable.
+"All gas first then brakes." — Jorge Trujillo
 """
 
 from forge_instruments_v22 import (
@@ -21,147 +23,169 @@ from typing import Dict
 
 NEUTRAL_SETUP_CONFIG: Dict[str, InstrumentSetup] = {
 
-    # ─── GAP_FILL BOTH — these instruments gap-fill in both directions ───
+    # ─── MEAN REVERT — dominant strategy in neutral/ranging markets ───
+    # RSI extremes + BB breach. Works on hourly data. No gap required.
 
-    # GER40 — GAP_FILL BOTH | +101R combined | LONG +50R SHORT +51R
-    # Best neutral combo in entire research. 60%+ WR both sides.
-    "GER40": InstrumentSetup(
-        symbol="GER40", strategy=Strategy.GAP_FILL,
-        direction=Direction.BOTH, sl_atr=2.5, tp_atr=3.0,
-        risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
-        expectancy=0.50, win_rate=0.608, profit_factor=3.30,
-        long_sl=2.5, long_tp=3.0, short_sl=2.5, short_tp=3.0,
-    ),
-
-    # USOIL — GAP_FILL BOTH | +98R combined | LONG +54R SHORT +44R
-    # Oil gaps fill hard in range-bound markets. 69-77% WR.
-    "USOIL": InstrumentSetup(
-        symbol="USOIL", strategy=Strategy.GAP_FILL,
-        direction=Direction.BOTH, sl_atr=2.5, tp_atr=3.0,
-        risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
-        expectancy=0.50, win_rate=0.735, profit_factor=5.13,
-        long_sl=2.5, long_tp=3.0, short_sl=2.5, short_tp=3.0,
-    ),
-
-    # US100 — GAP_FILL BOTH | +71R combined | LONG +32R SHORT +39R
-    # NQ gaps fill beautifully in chop. 72-75% WR.
-    "US100": InstrumentSetup(
-        symbol="US100", strategy=Strategy.GAP_FILL,
-        direction=Direction.BOTH, sl_atr=2.5, tp_atr=3.0,
-        risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
-        expectancy=0.45, win_rate=0.740, profit_factor=6.27,
-        long_sl=2.5, long_tp=3.0, short_sl=2.5, short_tp=3.0,
-    ),
-
-    # USDCHF — GAP_FILL BOTH | +52R combined | LONG +27R SHORT +25R
-    # 77-83% WR on gap fills. PF 14+ on LONG side.
-    "USDCHF": InstrumentSetup(
-        symbol="USDCHF", strategy=Strategy.GAP_FILL,
-        direction=Direction.BOTH, sl_atr=2.5, tp_atr=3.0,
-        risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
-        expectancy=0.50, win_rate=0.800, profit_factor=9.56,
-        long_sl=2.5, long_tp=3.0, short_sl=2.5, short_tp=3.0,
-    ),
-
-    # UK100 — GAP_FILL BOTH | +51R combined | LONG +35R SHORT +16R
-    # Strong LONG bias on gap fills in chop. 71% WR LONG.
-    "UK100": InstrumentSetup(
-        symbol="UK100", strategy=Strategy.GAP_FILL,
-        direction=Direction.BOTH, sl_atr=2.5, tp_atr=3.0,
-        risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
-        expectancy=0.40, win_rate=0.626, profit_factor=2.70,
-        long_sl=2.5, long_tp=3.0, short_sl=2.5, short_tp=3.0,
-    ),
-
-    # EURGBP — GAP_FILL BOTH | +43R combined | LONG +17R SHORT +25R
-    # 84-88% WR. EURGBP is 100% NEUTRAL — this is its ONLY config.
-    "EURGBP": InstrumentSetup(
-        symbol="EURGBP", strategy=Strategy.GAP_FILL,
-        direction=Direction.BOTH, sl_atr=2.5, tp_atr=3.0,
-        risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
-        expectancy=0.50, win_rate=0.862, profit_factor=12.62,
-        long_sl=2.5, long_tp=3.0, short_sl=2.5, short_tp=3.0,
-    ),
-
-    # GBPUSD — GAP_FILL BOTH | +30R combined | LONG +22R SHORT +8R
-    # 65-77% WR. 98.4% of time in NEUTRAL.
-    "GBPUSD": InstrumentSetup(
-        symbol="GBPUSD", strategy=Strategy.GAP_FILL,
-        direction=Direction.BOTH, sl_atr=2.5, tp_atr=3.0,
-        risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
-        expectancy=0.40, win_rate=0.714, profit_factor=5.43,
-        long_sl=2.5, long_tp=3.0, short_sl=2.5, short_tp=3.0,
-    ),
-
-    # GBPJPY — GAP_FILL BOTH | +29R combined | LONG +15R SHORT +14R
-    # Balanced both sides. 59-75% WR.
-    "GBPJPY": InstrumentSetup(
-        symbol="GBPJPY", strategy=Strategy.GAP_FILL,
-        direction=Direction.BOTH, sl_atr=2.5, tp_atr=3.0,
-        risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
-        expectancy=0.40, win_rate=0.661, profit_factor=3.73,
-        long_sl=2.5, long_tp=3.0, short_sl=2.5, short_tp=3.0,
-    ),
-
-    # USDJPY — GAP_FILL BOTH | +20R combined | LONG +12R SHORT +8R
-    # 66-76% WR. PF 4-5.
-    "USDJPY": InstrumentSetup(
-        symbol="USDJPY", strategy=Strategy.GAP_FILL,
-        direction=Direction.BOTH, sl_atr=2.5, tp_atr=3.0,
-        risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
-        expectancy=0.40, win_rate=0.719, profit_factor=4.79,
-        long_sl=2.5, long_tp=3.0, short_sl=2.5, short_tp=3.0,
-    ),
-
-    # NZDUSD — GAP_FILL BOTH | +18R combined | LONG +13R SHORT +5R
-    # 69-71% WR. 96.5% of time in NEUTRAL.
-    "NZDUSD": InstrumentSetup(
-        symbol="NZDUSD", strategy=Strategy.GAP_FILL,
-        direction=Direction.BOTH, sl_atr=2.5, tp_atr=3.0,
-        risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
-        expectancy=0.40, win_rate=0.700, profit_factor=4.70,
-        long_sl=2.5, long_tp=3.0, short_sl=2.5, short_tp=3.0,
-    ),
-
-    # XAUUSD — GAP_FILL BOTH | +12R combined | LONG +2R SHORT +9R
-    # 66-90% WR but low volume. SHORT side stronger.
-    "XAUUSD": InstrumentSetup(
-        symbol="XAUUSD", strategy=Strategy.GAP_FILL,
-        direction=Direction.BOTH, sl_atr=2.5, tp_atr=3.0,
-        risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
-        expectancy=0.35, win_rate=0.812, profit_factor=6.60,
-        long_sl=2.5, long_tp=3.0, short_sl=2.5, short_tp=3.0,
-    ),
-
-    # EURUSD — GAP_FILL BOTH | +11R combined | LONG +0.6R SHORT +11R
-    # 37-84% WR. SHORT much stronger. 98% NEUTRAL.
+    # EURUSD — Mean Revert BOTH | Research: 62% WR, PF 2.83
     "EURUSD": InstrumentSetup(
-        symbol="EURUSD", strategy=Strategy.GAP_FILL,
-        direction=Direction.BOTH, sl_atr=2.5, tp_atr=3.0,
-        risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
-        expectancy=0.35, win_rate=0.619, profit_factor=3.90,
-        long_sl=2.5, long_tp=3.0, short_sl=2.5, short_tp=3.0,
+        symbol="EURUSD", strategy=Strategy.MEAN_REVERT,
+        direction=Direction.BOTH, sl_atr=0.8, tp_atr=1.5,
+        risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.MARKET,
+        expectancy=0.385, win_rate=0.46, profit_factor=1.37,
+        alt_strategies=[Strategy.VWAP_REVERT, Strategy.STOCH_REVERSAL],
     ),
 
-    # ─── STOCH_REVERSAL — crypto works better with stoch in neutral ───
+    # USDCHF — Mean Revert BOTH | Research: 55% WR, PF 2.07
+    "USDCHF": InstrumentSetup(
+        symbol="USDCHF", strategy=Strategy.MEAN_REVERT,
+        direction=Direction.BOTH, sl_atr=0.5, tp_atr=1.5,
+        risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.MARKET,
+        expectancy=0.225, win_rate=0.55, profit_factor=2.07,
+        alt_strategies=[Strategy.VWAP_REVERT, Strategy.STOCH_REVERSAL],
+    ),
 
-    # BTCUSD — STOCH_REVERSAL BOTH | +17R combined | LONG +9R SHORT +8R
-    # Catches overbought/oversold in BTC ranges. 50% NEUTRAL.
+    # GBPUSD — Stoch Reversal BOTH | Research: 49% WR, PF 1.42
+    "GBPUSD": InstrumentSetup(
+        symbol="GBPUSD", strategy=Strategy.STOCH_REVERSAL,
+        direction=Direction.BOTH, sl_atr=0.5, tp_atr=1.0,
+        risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.MARKET,
+        expectancy=0.235, win_rate=0.49, profit_factor=1.42,
+        alt_strategies=[Strategy.MEAN_REVERT, Strategy.VWAP_REVERT],
+    ),
+
+    # NZDUSD — Mean Revert BOTH | Research: 80% WR, PF 4.19
+    "NZDUSD": InstrumentSetup(
+        symbol="NZDUSD", strategy=Strategy.MEAN_REVERT,
+        direction=Direction.BOTH, sl_atr=2.5, tp_atr=3.0,
+        risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.MARKET,
+        expectancy=0.555, win_rate=0.70, profit_factor=4.19,
+        alt_strategies=[Strategy.STOCH_REVERSAL, Strategy.VWAP_REVERT],
+    ),
+
+    # ─── VWAP REVERT — works well in ranging/choppy conditions ───
+
+    # EURGBP — VWAP Revert BOTH | Research: 46% WR, PF 1.14
+    "EURGBP": InstrumentSetup(
+        symbol="EURGBP", strategy=Strategy.VWAP_REVERT,
+        direction=Direction.BOTH, sl_atr=2.5, tp_atr=3.0,
+        risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.MARKET,
+        expectancy=0.307, win_rate=0.46, profit_factor=1.14,
+        alt_strategies=[Strategy.MEAN_REVERT, Strategy.STOCH_REVERSAL],
+    ),
+
+    # XAUUSD — VWAP Revert BOTH | Research: 52% WR, PF 1.18
+    "XAUUSD": InstrumentSetup(
+        symbol="XAUUSD", strategy=Strategy.VWAP_REVERT,
+        direction=Direction.BOTH, sl_atr=0.5, tp_atr=4.0,
+        risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.MARKET,
+        expectancy=0.481, win_rate=0.52, profit_factor=1.18,
+        alt_strategies=[Strategy.MEAN_REVERT, Strategy.STOCH_REVERSAL],
+    ),
+
+    # ─── STOCH REVERSAL — catches oversold/overbought in ranges ───
+
+    # GBPJPY — Stoch Reversal BOTH | Research: 53% WR, PF 1.45
+    "GBPJPY": InstrumentSetup(
+        symbol="GBPJPY", strategy=Strategy.STOCH_REVERSAL,
+        direction=Direction.BOTH, sl_atr=0.5, tp_atr=0.8,
+        risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.MARKET,
+        expectancy=0.404, win_rate=0.53, profit_factor=1.45,
+        alt_strategies=[Strategy.MEAN_REVERT, Strategy.VWAP_REVERT],
+    ),
+
+    # USDJPY — Mean Revert BOTH | Research: 67% WR, PF 1.25
+    "USDJPY": InstrumentSetup(
+        symbol="USDJPY", strategy=Strategy.MEAN_REVERT,
+        direction=Direction.BOTH, sl_atr=0.8, tp_atr=1.5,
+        risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.MARKET,
+        expectancy=0.333, win_rate=0.67, profit_factor=1.25,
+        alt_strategies=[Strategy.STOCH_REVERSAL, Strategy.VWAP_REVERT],
+    ),
+
+    # ─── INDICES & COMMODITIES ───
+
+    # US100 — Mean Revert BOTH | Research: 48% WR, PF 1.56
+    "US100": InstrumentSetup(
+        symbol="US100", strategy=Strategy.MEAN_REVERT,
+        direction=Direction.BOTH, sl_atr=2.0, tp_atr=3.0,
+        risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.MARKET,
+        expectancy=0.425, win_rate=0.48, profit_factor=1.56,
+        alt_strategies=[Strategy.EMA_BOUNCE, Strategy.STOCH_REVERSAL],
+    ),
+
+    # USOIL — VWAP Revert BOTH | Research: 44% WR, PF 1.06
+    "USOIL": InstrumentSetup(
+        symbol="USOIL", strategy=Strategy.VWAP_REVERT,
+        direction=Direction.BOTH, sl_atr=1.0, tp_atr=3.0,
+        risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.MARKET,
+        expectancy=0.308, win_rate=0.44, profit_factor=1.06,
+        alt_strategies=[Strategy.MEAN_REVERT, Strategy.EMA_BOUNCE],
+    ),
+
+    # ─── CRYPTO ───
+
+    # BTCUSD — Stoch Reversal BOTH | PF 1.35
     "BTCUSD": InstrumentSetup(
         symbol="BTCUSD", strategy=Strategy.STOCH_REVERSAL,
-        direction=Direction.BOTH, sl_atr=0.5, tp_atr=1.0,
-        risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
-        expectancy=0.20, win_rate=0.199, profit_factor=1.35,
-        long_sl=0.5, long_tp=1.0, short_sl=0.5, short_tp=1.0,
+        direction=Direction.BOTH, sl_atr=1.5, tp_atr=2.0,
+        risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.MARKET,
+        expectancy=0.20, win_rate=0.50, profit_factor=1.35,
+        alt_strategies=[Strategy.VWAP_REVERT],
     ),
 
-    # ETHUSD — STOCH_REVERSAL LONG | +15R | 25.7% WR
-    # LONG only in neutral — oversold bounces in ETH ranges.
+    # ─── 3 NEW PAIRS ───
+
+    # AUDNZD — Stoch Reversal BOTH
+    "AUDNZD": InstrumentSetup(
+        symbol="AUDNZD", strategy=Strategy.STOCH_REVERSAL,
+        direction=Direction.BOTH, sl_atr=1.5, tp_atr=1.0,
+        risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.MARKET,
+        expectancy=0.50, win_rate=0.85, profit_factor=3.25,
+        alt_strategies=[Strategy.MEAN_REVERT, Strategy.VWAP_REVERT],
+    ),
+
+    # AUDUSD — Mean Revert BOTH
+    "AUDUSD": InstrumentSetup(
+        symbol="AUDUSD", strategy=Strategy.MEAN_REVERT,
+        direction=Direction.BOTH, sl_atr=1.5, tp_atr=1.5,
+        risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.MARKET,
+        expectancy=0.30, win_rate=0.50, profit_factor=1.50,
+        alt_strategies=[Strategy.STOCH_REVERSAL, Strategy.VWAP_REVERT],
+    ),
+
+    # EURJPY — Stoch Reversal BOTH
+    "EURJPY": InstrumentSetup(
+        symbol="EURJPY", strategy=Strategy.STOCH_REVERSAL,
+        direction=Direction.BOTH, sl_atr=1.5, tp_atr=2.0,
+        risk_pct=1.5, trade_type=TradeType.RUNNER, order_type=OrderType.MARKET,
+        expectancy=0.30, win_rate=0.55, profit_factor=1.75,
+        alt_strategies=[Strategy.MEAN_REVERT, Strategy.VWAP_REVERT],
+    ),
+
+    # ─── GER40/UK100/ETHUSD — keep for GENESIS if pairs become available ───
+
+    "GER40": InstrumentSetup(
+        symbol="GER40", strategy=Strategy.VWAP_REVERT,
+        direction=Direction.BOTH, sl_atr=0.5, tp_atr=2.0,
+        risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.MARKET,
+        expectancy=0.358, win_rate=0.47, profit_factor=1.27,
+        alt_strategies=[Strategy.MEAN_REVERT, Strategy.STOCH_REVERSAL],
+    ),
+
+    "UK100": InstrumentSetup(
+        symbol="UK100", strategy=Strategy.VWAP_REVERT,
+        direction=Direction.BOTH, sl_atr=0.5, tp_atr=4.0,
+        risk_pct=1.5, trade_type=TradeType.SCALP, order_type=OrderType.MARKET,
+        expectancy=0.358, win_rate=0.47, profit_factor=1.19,
+        alt_strategies=[Strategy.MEAN_REVERT, Strategy.STOCH_REVERSAL],
+    ),
+
     "ETHUSD": InstrumentSetup(
         symbol="ETHUSD", strategy=Strategy.STOCH_REVERSAL,
-        direction=Direction.LONG, sl_atr=0.5, tp_atr=1.0,
-        risk_pct=1.2, trade_type=TradeType.SCALP, order_type=OrderType.LIMIT,
+        direction=Direction.BOTH, sl_atr=0.5, tp_atr=1.0,
+        risk_pct=1.2, trade_type=TradeType.SCALP, order_type=OrderType.MARKET,
         expectancy=0.20, win_rate=0.257, profit_factor=1.65,
+        alt_strategies=[Strategy.MEAN_REVERT, Strategy.VWAP_REVERT],
     ),
 }
 
@@ -171,19 +195,21 @@ def get_neutral_symbols():
 
 
 def print_neutral_config():
-    print("\nFORGE NEUTRAL CONFIG:")
-    print(f"{'Symbol':10s} {'Strategy':20s} {'Dir':5s} {'Risk':>5s} {'SL':>4s} {'TP':>4s}")
-    print("-" * 55)
+    print("\nFORGE NEUTRAL CONFIG (FIXED — no more broken GAP_FILL):")
+    print(f"{'Symbol':10s} {'Strategy':20s} {'Dir':5s} {'Risk':>5s} {'SL':>4s} {'TP':>4s} {'Alts':>20s}")
+    print("-" * 75)
     for sym, s in NEUTRAL_SETUP_CONFIG.items():
+        alts = ",".join(a.value[:6] for a in s.alt_strategies) if s.alt_strategies else "none"
         print(f"{sym:10s} {s.strategy.value:20s} {s.direction.value:5s} "
-              f"{s.risk_pct:4.1f}% {s.sl_atr:3.1f} {s.tp_atr:3.1f}")
+              f"{s.risk_pct:4.1f}% {s.sl_atr:3.1f} {s.tp_atr:3.1f} {alts:>20s}")
 
 
 if __name__ == "__main__":
     print_neutral_config()
     print(f"\nTotal: {len(NEUTRAL_SETUP_CONFIG)} instruments")
-    gap = sum(1 for s in NEUTRAL_SETUP_CONFIG.values() if s.strategy == Strategy.GAP_FILL)
-    stoch = sum(1 for s in NEUTRAL_SETUP_CONFIG.values() if s.strategy == Strategy.STOCH_REVERSAL)
-    both = sum(1 for s in NEUTRAL_SETUP_CONFIG.values() if s.direction == Direction.BOTH)
-    print(f"GAP_FILL: {gap} | STOCH_REVERSAL: {stoch}")
-    print(f"BOTH direction: {both} | Single direction: {len(NEUTRAL_SETUP_CONFIG) - both}")
+    mr = sum(1 for s in NEUTRAL_SETUP_CONFIG.values() if s.strategy == Strategy.MEAN_REVERT)
+    sr = sum(1 for s in NEUTRAL_SETUP_CONFIG.values() if s.strategy == Strategy.STOCH_REVERSAL)
+    vr = sum(1 for s in NEUTRAL_SETUP_CONFIG.values() if s.strategy == Strategy.VWAP_REVERT)
+    gf = sum(1 for s in NEUTRAL_SETUP_CONFIG.values() if s.strategy == Strategy.GAP_FILL)
+    print(f"MEAN_REVERT: {mr} | STOCH_REVERSAL: {sr} | VWAP_REVERT: {vr} | GAP_FILL: {gf}")
+    print(f"GAP_FILL count should be 0: {'✅' if gf == 0 else '❌ STILL BROKEN'}")
